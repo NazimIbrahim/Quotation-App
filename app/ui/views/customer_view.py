@@ -88,7 +88,7 @@ class CustomerManagementView(ctk.CTkFrame):
             font=ctk.CTkFont(size=11)
         )
         self.search_entry.pack(fill="x", padx=16, pady=(0, 10))
-        self.search_entry.bind("<KeyRelease>", lambda e: self.refresh_customer_list())
+        self.search_entry.bind("<KeyRelease>", self._on_search_key)
 
         self.customer_scroll = ctk.CTkScrollableFrame(left_card, fg_color="transparent")
         self.customer_scroll.pack(fill="both", expand=True, padx=12, pady=(0, 12))
@@ -105,6 +105,11 @@ class CustomerManagementView(ctk.CTkFrame):
 
         self.profile_container = ctk.CTkFrame(self.right_card, fg_color="transparent")
         self.profile_container.pack(fill="both", expand=True, padx=16, pady=16)
+
+    def _on_search_key(self, event=None):
+        if hasattr(self, '_search_timer') and self._search_timer:
+            self.after_cancel(self._search_timer)
+        self._search_timer = self.after(200, self.refresh_customer_list)
 
     def refresh_customer_list(self):
         for widget in self.customer_scroll.winfo_children():
@@ -124,6 +129,18 @@ class CustomerManagementView(ctk.CTkFrame):
         if not cust_list:
             ctk.CTkLabel(self.customer_scroll, text="No matching customers found.").pack(pady=20)
             return
+
+        # Batch-fetch quote counts for all displayed customers in 1 fast query
+        from peewee import fn
+        c_ids = [c.id for c in cust_list]
+        counts_map = dict(
+            Quotation.select(Quotation.customer_id, fn.COUNT(Quotation.id))
+            .where(Quotation.customer_id.in_(c_ids))
+            .group_by(Quotation.customer_id)
+            .tuples()
+        )
+        for c in cust_list:
+            c._cached_quote_count = counts_map.get(c.id, 0)
 
         for c in cust_list:
             is_active = self.selected_customer and self.selected_customer.id == c.id

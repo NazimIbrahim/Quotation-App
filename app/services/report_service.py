@@ -86,10 +86,21 @@ class ReportService:
             ).scalar() or 0.0
         )
 
-        # Total outstanding balance across won quotations
-        all_won_quotes = Quotation.select().where(Quotation.status == Quotation.STATUS_WON)
-        total_won_net = sum(q.net_total for q in all_won_quotes)
-        total_won_cleared = sum(q.get_cleared_payments() for q in all_won_quotes)
+        # Total outstanding balance across won quotations (single-query aggregate)
+        total_won_net = float(
+            Quotation.select(fn.SUM(Quotation.net_total))
+            .where(Quotation.status == Quotation.STATUS_WON)
+            .scalar() or 0.0
+        )
+        total_won_cleared = float(
+            Payment.select(fn.SUM(Payment.amount))
+            .join(Quotation)
+            .where(
+                (Quotation.status == Quotation.STATUS_WON) &
+                (Payment.status == Payment.STATUS_CLEARED)
+            )
+            .scalar() or 0.0
+        )
         total_outstanding = max(0.0, total_won_net - total_won_cleared)
 
         conversion_rate = (won_quotes_count / total_quotes_count * 100.0) if total_quotes_count > 0 else 0.0
@@ -188,6 +199,20 @@ class ReportService:
         quotes = list(
             Quotation.select().where(Quotation.quotation_date == target_date).order_by(Quotation.created_at.desc())
         )
+        if quotes:
+            q_ids = [q.id for q in quotes]
+            cleared_sums = dict(
+                Payment.select(Payment.quotation_id, fn.SUM(Payment.amount))
+                .where(
+                    (Payment.quotation_id.in_(q_ids)) &
+                    (Payment.status == Payment.STATUS_CLEARED)
+                )
+                .group_by(Payment.quotation_id)
+                .tuples()
+            )
+            for q in quotes:
+                q._cached_cleared_payments = float(cleared_sums.get(q.id, 0.0) or 0.0)
+
         total_quotes = len(quotes)
         won_quotes = [q for q in quotes if q.status == Quotation.STATUS_WON]
         open_quotes = [q for q in quotes if q.status == Quotation.STATUS_OPEN]
@@ -344,6 +369,19 @@ class ReportService:
                 (Quotation.quotation_date <= end_date)
             ).order_by(Quotation.quotation_date.desc(), Quotation.id.desc())
         )
+        if quotes:
+            q_ids = [q.id for q in quotes]
+            cleared_sums = dict(
+                Payment.select(Payment.quotation_id, fn.SUM(Payment.amount))
+                .where(
+                    (Payment.quotation_id.in_(q_ids)) &
+                    (Payment.status == Payment.STATUS_CLEARED)
+                )
+                .group_by(Payment.quotation_id)
+                .tuples()
+            )
+            for q in quotes:
+                q._cached_cleared_payments = float(cleared_sums.get(q.id, 0.0) or 0.0)
 
         total_quotes = len(quotes)
         won_quotes = [q for q in quotes if q.status == Quotation.STATUS_WON]
@@ -366,9 +404,21 @@ class ReportService:
         cleared_total = sum(p.amount for p in cleared_payments)
         pending_total = sum(p.amount for p in pending_payments)
 
-        all_won_quotes = list(Quotation.select().where(Quotation.status == Quotation.STATUS_WON))
-        total_won_net = sum(q.net_total for q in all_won_quotes)
-        total_won_cleared = sum(q.get_cleared_payments() for q in all_won_quotes)
+        # Single-query aggregate for total outstanding across won orders
+        total_won_net = float(
+            Quotation.select(fn.SUM(Quotation.net_total))
+            .where(Quotation.status == Quotation.STATUS_WON)
+            .scalar() or 0.0
+        )
+        total_won_cleared = float(
+            Payment.select(fn.SUM(Payment.amount))
+            .join(Quotation)
+            .where(
+                (Quotation.status == Quotation.STATUS_WON) &
+                (Payment.status == Payment.STATUS_CLEARED)
+            )
+            .scalar() or 0.0
+        )
         total_outstanding = max(0.0, total_won_net - total_won_cleared)
 
         sales_team = list(SalesPerson.select().where(SalesPerson.is_active == True))

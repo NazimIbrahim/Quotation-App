@@ -199,15 +199,28 @@ class ItemRowWidget(ctk.CTkFrame):
         if not data.get("coverage_area"):
             self.apply_catalog_specs(self.brand_combo.get().strip(), self.size_combo.get().strip())
 
+    _brands_cache = None
+    _brand_sizes_cache = {}
+
     @classmethod
-    def get_active_brands_from_db(cls) -> list[str]:
-        """Fetches active brands directly from database in real time."""
+    def invalidate_catalog_cache(cls):
+        """Invalidates catalog caches when new brands or sizes are added."""
+        cls._brands_cache = None
+        cls._brand_sizes_cache.clear()
+
+    @classmethod
+    def get_active_brands_from_db(cls, force_refresh: bool = False) -> list[str]:
+        """Fetches active brands directly from database with caching for high performance."""
+        if not force_refresh and cls._brands_cache is not None:
+            return list(cls._brands_cache)
+
         from app.database.models import TileBrand
         try:
             records = list(TileBrand.select().where(TileBrand.is_active == True).order_by(TileBrand.name))
             names = [b.name for b in records]
             if names:
-                return names
+                cls._brands_cache = names
+                return list(names)
         except Exception:
             pass
         return [
@@ -220,13 +233,18 @@ class ItemRowWidget(ctk.CTkFrame):
         ]
 
     @classmethod
-    def fetch_brand_sizes_from_db(cls, brand_name: str) -> list[str]:
-        """Fetches ONLY the exact sizes configured for this specific brand directly from the database."""
-        from peewee import fn
-        from app.database.models import BrandSizeCoverage, TileBrand
+    def fetch_brand_sizes_from_db(cls, brand_name: str, force_refresh: bool = False) -> list[str]:
+        """Fetches ONLY the exact sizes configured for this specific brand with caching."""
         b_clean = (brand_name or "").strip()
         if not b_clean:
             return []
+
+        cache_key = b_clean.lower()
+        if not force_refresh and cache_key in cls._brand_sizes_cache:
+            return list(cls._brand_sizes_cache[cache_key])
+
+        from peewee import fn
+        from app.database.models import BrandSizeCoverage, TileBrand
 
         # 1. Exact case-insensitive match for brand
         records = (
@@ -253,11 +271,12 @@ class ItemRowWidget(ctk.CTkFrame):
             )
             sizes = [r.size.strip() for r in records if r.size.strip()]
 
-        return sizes
+        cls._brand_sizes_cache[cache_key] = sizes
+        return list(sizes)
 
-    def get_sizes_for_brand(self, brand_name: str) -> list[str]:
+    def get_sizes_for_brand(self, brand_name: str, force_refresh: bool = False) -> list[str]:
         """Returns BRAND-WISE SIZES ONLY for the selected brand directly from database."""
-        brand_sizes = self.fetch_brand_sizes_from_db(brand_name)
+        brand_sizes = self.fetch_brand_sizes_from_db(brand_name, force_refresh=force_refresh)
         b_label = brand_name.strip() if brand_name else "Brand"
         if brand_sizes:
             # STRICTLY BRAND-WISE SIZES ONLY + quick add shortcut
@@ -273,7 +292,7 @@ class ItemRowWidget(ctk.CTkFrame):
         try:
             orig_open_brand = self.brand_combo._open_dropdown_menu
             def on_open_brand_dropdown():
-                fresh_brands = self.get_active_brands_from_db()
+                fresh_brands = self.get_active_brands_from_db(force_refresh=True)
                 if fresh_brands:
                     self.brand_combo.configure(values=fresh_brands)
                 orig_open_brand()
@@ -285,7 +304,7 @@ class ItemRowWidget(ctk.CTkFrame):
             orig_open_size = self.size_combo._open_dropdown_menu
             def on_open_size_dropdown():
                 curr_brand = self.brand_combo.get().strip()
-                fresh_sizes = self.get_sizes_for_brand(curr_brand)
+                fresh_sizes = self.get_sizes_for_brand(curr_brand, force_refresh=True)
                 self.size_combo.configure(values=fresh_sizes)
                 orig_open_size()
             self.size_combo._open_dropdown_menu = on_open_size_dropdown
@@ -423,8 +442,9 @@ class ItemRowWidget(ctk.CTkFrame):
 
             dialog.destroy()
 
-            # Refresh sizes for this row and set to newly added size
-            fresh_sizes = self.get_sizes_for_brand(b_name)
+            # Invalidate cache and refresh sizes for this row
+            ItemRowWidget.invalidate_catalog_cache()
+            fresh_sizes = self.get_sizes_for_brand(b_name, force_refresh=True)
             self.size_combo.configure(values=fresh_sizes)
             self.size_combo.set(sz)
 

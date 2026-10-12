@@ -159,14 +159,22 @@ class Customer(BaseModel):
         table_name = "customers"
 
     def get_quote_count(self):
-        return Quotation.select().where(Quotation.customer == self).count()
+        if hasattr(self, '_cached_quote_count') and self._cached_quote_count is not None:
+            return self._cached_quote_count
+        val = Quotation.select().where(Quotation.customer == self).count()
+        self._cached_quote_count = val
+        return val
 
     def get_total_won_value(self):
+        if hasattr(self, '_cached_total_won') and self._cached_total_won is not None:
+            return self._cached_total_won
         val = Quotation.select(fn.SUM(Quotation.net_total)).where(
             (Quotation.customer == self) &
             (Quotation.status == Quotation.STATUS_WON)
         ).scalar()
-        return float(val or 0.0)
+        val = float(val or 0.0)
+        self._cached_total_won = val
+        return val
 
 
 class Quotation(BaseModel):
@@ -179,7 +187,7 @@ class Quotation(BaseModel):
     ALL_STATUSES = [STATUS_OPEN, STATUS_IN_REVIEW, STATUS_WON, STATUS_LOST]
 
     quotation_number = CharField(max_length=60, unique=True, index=True)
-    quotation_date = DateField(default=date.today)
+    quotation_date = DateField(default=date.today, index=True)
     
     # Relationships
     customer = ForeignKeyField(Customer, backref="quotations", on_delete="CASCADE")
@@ -192,7 +200,7 @@ class Quotation(BaseModel):
     sales_person_name = CharField(max_length=120)
 
     # Status & Approvals
-    status = CharField(max_length=30, default=STATUS_OPEN)
+    status = CharField(max_length=30, default=STATUS_OPEN, index=True)
     manager_approval_note = TextField(null=True)
     approved_by = ForeignKeyField(SalesPerson, null=True, backref="approved_quotations")
     approved_at = DateTimeField(null=True)
@@ -223,18 +231,26 @@ class Quotation(BaseModel):
         return self.gross_total, self.net_total
 
     def get_cleared_payments(self):
+        if hasattr(self, '_cached_cleared_payments') and self._cached_cleared_payments is not None:
+            return self._cached_cleared_payments
         val = Payment.select(fn.SUM(Payment.amount)).where(
             (Payment.quotation == self) &
             (Payment.status == Payment.STATUS_CLEARED)
         ).scalar()
-        return float(val or 0.0)
+        val = float(val or 0.0)
+        self._cached_cleared_payments = val
+        return val
 
     def get_pending_payments(self):
+        if hasattr(self, '_cached_pending_payments') and self._cached_pending_payments is not None:
+            return self._cached_pending_payments
         val = Payment.select(fn.SUM(Payment.amount)).where(
             (Payment.quotation == self) &
             (Payment.status == Payment.STATUS_PENDING)
         ).scalar()
-        return float(val or 0.0)
+        val = float(val or 0.0)
+        self._cached_pending_payments = val
+        return val
 
     def get_outstanding_balance(self):
         cleared = self.get_cleared_payments()
@@ -322,8 +338,8 @@ class Payment(BaseModel):
     quotation = ForeignKeyField(Quotation, backref="payments", on_delete="CASCADE")
     amount = FloatField()
     payment_mode = CharField(max_length=50, default=MODE_GPAY)
-    payment_date = DateField(default=date.today)
-    status = CharField(max_length=30, default=STATUS_CLEARED)
+    payment_date = DateField(default=date.today, index=True)
+    status = CharField(max_length=30, default=STATUS_CLEARED, index=True)
     reference_number = CharField(max_length=100, null=True)
     notes = TextField(null=True)
     created_at = DateTimeField(default=datetime.now)
@@ -488,12 +504,25 @@ class CompanySetting(BaseModel):
     terms_json = TextField(null=True)
     updated_at = DateTimeField(default=datetime.now)
 
+    _cached_instance = None
+
     class Meta:
         table_name = "company_settings"
 
     @classmethod
+    def invalidate_cache(cls):
+        cls._cached_instance = None
+
+    def save(self, *args, **kwargs):
+        CompanySetting.invalidate_cache()
+        return super().save(*args, **kwargs)
+
+    @classmethod
     def get_settings(cls):
-        """Fetches the singleton company setting row, creating defaults if missing."""
+        """Fetches the singleton company setting row, caching in memory for instant reuse."""
+        if cls._cached_instance is not None:
+            return cls._cached_instance
+
         import json
         setting = cls.select().first()
         if not setting:
@@ -535,6 +564,7 @@ class CompanySetting(BaseModel):
             if def_logo.exists():
                 setting.logo_path = str(def_logo)
                 setting.save()
+        cls._cached_instance = setting
         return setting
 
     def get_terms_list(self):
@@ -554,7 +584,7 @@ class CompanySetting(BaseModel):
 
 
 def init_database():
-    """Initializes tables and creates schema automatically."""
+    """Initializes tables and creates schema automatically with high-performance indexes."""
     db.connect(reuse_if_open=True)
     db.create_tables([
         SalesPerson,
@@ -576,5 +606,18 @@ def init_database():
             db.execute_sql("ALTER TABLE quotation_items ADD COLUMN brand VARCHAR(120) DEFAULT ''")
         if "coverage_area" not in cols:
             db.execute_sql("ALTER TABLE quotation_items ADD COLUMN coverage_area REAL DEFAULT 0.0")
+    except Exception:
+        pass
+
+    # High-performance composite indexes for instant report generation & table filters
+    try:
+        db.execute_sql("CREATE INDEX IF NOT EXISTS idx_quote_status_date ON quotations(status, quotation_date)")
+        db.execute_sql("CREATE INDEX IF NOT EXISTS idx_quote_sp_status_date ON quotations(sales_person_id, status, quotation_date)")
+        db.execute_sql("CREATE INDEX IF NOT EXISTS idx_quote_cust_status ON quotations(customer_id, status)")
+        db.execute_sql("CREATE INDEX IF NOT EXISTS idx_payment_quote_status ON payments(quotation_id, status)")
+        db.execute_sql("CREATE INDEX IF NOT EXISTS idx_payment_status_date ON payments(status, payment_date)")
+        db.execute_sql("CREATE INDEX IF NOT EXISTS idx_sales_target_sp_type ON sales_targets(sales_person_id, target_type, year, month)")
+        db.execute_sql("CREATE INDEX IF NOT EXISTS idx_sales_target_period ON sales_targets(sales_person_id, start_date, end_date)")
+        db.execute_sql("CREATE INDEX IF NOT EXISTS idx_brand_size ON brand_size_coverages(brand_id, size)")
     except Exception:
         pass

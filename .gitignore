@@ -1,0 +1,17 @@
+# Byte-compiled / optimized files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# SQLite WAL and journal temporary files
+*.db-wal
+*.db-shm
+*.db-journal
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Generated test and runtime PDF exports
+output_pdfs/*.pdf
+output_pdfs/*_*_*.csv

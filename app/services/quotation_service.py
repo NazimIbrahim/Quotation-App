@@ -11,6 +11,7 @@ from app.database.models import (
     QuotationItem,
     Customer,
     SalesPerson,
+    Payment,
 )
 
 
@@ -41,7 +42,7 @@ class QuotationService:
 
     @staticmethod
     def get_all_quotations(status=None, sales_person_id=None, search_query=None):
-        """Fetches quotations with optional filtering."""
+        """Fetches quotations with optional filtering and pre-aggregates cleared payments in a single query."""
         query = Quotation.select().order_by(Quotation.id.desc())
         
         if status and status != "All":
@@ -59,7 +60,25 @@ class QuotationService:
                 (Quotation.project_name.ilike(pattern))
             )
             
-        return list(query)
+        quotes = list(query)
+        if not quotes:
+            return []
+
+        # Batch-fetch cleared payments for all retrieved quotations in a single group-by query
+        quote_ids = [q.id for q in quotes]
+        cleared_sums = dict(
+            Payment.select(Payment.quotation_id, fn.SUM(Payment.amount))
+            .where(
+                (Payment.quotation_id.in_(quote_ids)) &
+                (Payment.status == Payment.STATUS_CLEARED)
+            )
+            .group_by(Payment.quotation_id)
+            .tuples()
+        )
+        for q in quotes:
+            q._cached_cleared_payments = float(cleared_sums.get(q.id, 0.0) or 0.0)
+
+        return quotes
 
     @staticmethod
     def get_quotation_by_id(quote_id: int):
@@ -68,15 +87,20 @@ class QuotationService:
 
     @staticmethod
     def get_quotation_details(quote_id: int):
-        """Returns structured dictionary of quotation including areas and line items."""
+        """Returns structured dictionary of quotation including areas and line items using prefetch."""
         quote = Quotation.get_or_none(Quotation.id == quote_id)
         if not quote:
             return None
 
+        from peewee import prefetch
+        areas_query = quote.areas.order_by(QuotationArea.display_order)
+        items_query = QuotationItem.select().order_by(QuotationItem.sl_no)
+        prefetched_areas = prefetch(areas_query, items_query)
+
         areas_data = []
-        for area in quote.areas.order_by(QuotationArea.display_order):
+        for area in prefetched_areas:
             items_data = []
-            for it in area.items.order_by(QuotationItem.sl_no):
+            for it in area.items:
                 items_data.append({
                     "id": it.id,
                     "sl_no": it.sl_no,

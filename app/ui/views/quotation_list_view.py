@@ -89,6 +89,7 @@ class QuotationListView(ctk.CTkFrame):
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11)
         )
         self.search_entry.pack(side="left", padx=(0, 6))
+        self.search_entry.bind("<KeyRelease>", self._on_search_key)
         self.search_entry.bind("<Return>", lambda e: self.on_search())
 
         search_btn = ctk.CTkButton(
@@ -138,6 +139,11 @@ class QuotationListView(ctk.CTkFrame):
         # Scrollable rows frame
         self.rows_frame = ctk.CTkScrollableFrame(self.table_card, fg_color="transparent")
         self.rows_frame.pack(fill="both", expand=True, padx=12, pady=(0, 12))
+
+    def _on_search_key(self, event=None):
+        if hasattr(self, '_search_timer') and self._search_timer:
+            self.after_cancel(self._search_timer)
+        self._search_timer = self.after(250, self.on_search)
 
     def on_status_filter(self, val):
         self.selected_status = val

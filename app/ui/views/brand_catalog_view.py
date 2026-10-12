@@ -88,7 +88,7 @@ class BrandCatalogView(ctk.CTkFrame):
             font=ctk.CTkFont(size=11)
         )
         self.search_entry.pack(fill="x", padx=16, pady=(0, 10))
-        self.search_entry.bind("<KeyRelease>", lambda e: self.load_brands())
+        self.search_entry.bind("<KeyRelease>", self._on_search_key)
 
         self.brands_scroll = ctk.CTkScrollableFrame(left_card, fg_color="transparent")
         self.brands_scroll.pack(fill="both", expand=True, padx=12, pady=(0, 12))
@@ -105,6 +105,11 @@ class BrandCatalogView(ctk.CTkFrame):
 
         self.brand_detail_container = ctk.CTkFrame(self.right_card, fg_color="transparent")
         self.brand_detail_container.pack(fill="both", expand=True, padx=16, pady=16)
+
+    def _on_search_key(self, event=None):
+        if hasattr(self, '_search_timer') and self._search_timer:
+            self.after_cancel(self._search_timer)
+        self._search_timer = self.after(200, self.load_brands)
 
     def load_brands(self):
         for widget in self.brands_scroll.winfo_children():
@@ -355,6 +360,11 @@ class BrandCatalogView(ctk.CTkFrame):
                 new_b = TileBrand.create(name=n, description=d or None)
                 self.selected_brand = new_b
             dialog.destroy()
+            try:
+                from app.ui.views.quotation_editor_view import ItemRowWidget
+                ItemRowWidget.invalidate_catalog_cache()
+            except Exception:
+                pass
             self.load_brands()
             self.render_brand_detail()
 
@@ -374,6 +384,11 @@ class BrandCatalogView(ctk.CTkFrame):
         if confirm:
             brand.delete_instance(recursive=True)
             self.selected_brand = None
+            try:
+                from app.ui.views.quotation_editor_view import ItemRowWidget
+                ItemRowWidget.invalidate_catalog_cache()
+            except Exception:
+                pass
             self.load_brands()
             self.render_brand_detail()
 
@@ -481,6 +496,11 @@ class BrandCatalogView(ctk.CTkFrame):
                 )
 
             dialog.destroy()
+            try:
+                from app.ui.views.quotation_editor_view import ItemRowWidget
+                ItemRowWidget.invalidate_catalog_cache()
+            except Exception:
+                pass
             self.load_brands()
             self.render_brand_detail()
 
@@ -496,5 +516,10 @@ class BrandCatalogView(ctk.CTkFrame):
         confirm = msgbox.askyesno("Confirm Delete", f"Delete size '{item.size}' from {item.brand.name}?")
         if confirm:
             item.delete_instance()
+            try:
+                from app.ui.views.quotation_editor_view import ItemRowWidget
+                ItemRowWidget.invalidate_catalog_cache()
+            except Exception:
+                pass
             self.render_brand_detail()
             self.load_brands()
