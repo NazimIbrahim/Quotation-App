@@ -21,6 +21,7 @@ from app.database.models import (
     QuotationArea,
     QuotationItem,
     Payment,
+    SalesTarget,
 )
 from app.database.seed_data import seed_database
 from app.services.quotation_service import QuotationService
@@ -234,6 +235,54 @@ def test_system():
     archive_csv = ReportService.export_target_archive_csv()
     assert Path(archive_csv).exists() and Path(archive_csv).stat().st_size > 100
     print(f" -> PASS: Target Archive Report exported successfully - PDF: {Path(archive_pdf).name} ({Path(archive_pdf).stat().st_size:,} B), CSV: {Path(archive_csv).name}")
+
+    print("\n[TEST 14] Verifying Month-Specific Target Alteration, Weekly Sprint, and Custom Date Range Targets...")
+    test_sp = SalesPerson.get(SalesPerson.role == SalesPerson.ROLE_SALES)
+    base_target = test_sp.monthly_target
+
+    # 1. Alter target for a single specific month (e.g. October 2026)
+    oct_target = 850000.0
+    rec_oct = SalesTarget.set_monthly_target(test_sp, 2026, 10, oct_target, "October Festive Sprint Target")
+    assert rec_oct.target_amount == oct_target
+    assert test_sp.get_target_for_month(2026, 10) == oct_target, f"Expected {oct_target}, got {test_sp.get_target_for_month(2026, 10)}"
+
+    # Crucial test: Ensure other months (e.g. November 2026, September 2026) retain the base target ("only month")
+    assert test_sp.get_target_for_month(2026, 11) == base_target, "Other months must retain default base target!"
+    assert test_sp.get_target_for_month(2026, 9) == base_target, "Other months must retain default base target!"
+    print(f" -> PASS: Altered target for October 2026 only: ₹{oct_target:,.2f}. November remains at default ₹{base_target:,.2f}")
+
+    # 2. Weekly Sprint Target (Monday to Sunday)
+    week_ref_date = date(2026, 10, 14)  # Wednesday
+    rec_week = SalesTarget.set_weekly_target(test_sp, week_ref_date, 225000.0, "Week 42 Festive Sprint")
+    assert rec_week.start_date == date(2026, 10, 12)  # Monday
+    assert rec_week.end_date == date(2026, 10, 18)    # Sunday
+    assert test_sp.get_target_for_period(date(2026, 10, 12), date(2026, 10, 18)) == 225000.0
+    print(f" -> PASS: Set 7-day Weekly Target: {rec_week.period_label} -> ₹{rec_week.target_amount:,.2f}")
+
+    # 3. Custom Date Range Target (e.g. 15-day promotional window)
+    c_start = date(2026, 10, 1)
+    c_end = date(2026, 10, 15)
+    rec_custom = SalesTarget.set_custom_target(test_sp, c_start, c_end, 420000.0, "Navratri Mega Campaign", "Promotional Sprint")
+    assert rec_custom.target_amount == 420000.0
+    assert test_sp.get_target_for_period(c_start, c_end) == 420000.0
+    print(f" -> PASS: Set Custom Date Range Target: {rec_custom.period_label} -> ₹{rec_custom.target_amount:,.2f}")
+
+    # 4. Verify ReportService reflects month-specific altered target vs other months
+    perf_oct = ReportService.get_salesperson_performances(date(2026, 10, 1), date(2026, 10, 31))
+    sp_oct_data = next((p for p in perf_oct["individuals"] if p["id"] == test_sp.id), None)
+    assert sp_oct_data is not None
+    assert sp_oct_data["target"] == oct_target, f"Expected {oct_target}, got {sp_oct_data['target']}"
+
+    perf_nov = ReportService.get_salesperson_performances(date(2026, 11, 1), date(2026, 11, 30))
+    sp_nov_data = next((p for p in perf_nov["individuals"] if p["id"] == test_sp.id), None)
+    assert sp_nov_data is not None
+    assert sp_nov_data["target"] == base_target, f"Expected base {base_target}, got {sp_nov_data['target']}"
+    print(f" -> PASS: ReportService audits reflect month-specific altered target (Oct: ₹{sp_oct_data['target']:,.2f}, Nov: ₹{sp_nov_data['target']:,.2f})")
+
+    # 5. Clean up altered target and verify clean revert to base target
+    rec_oct.delete_instance()
+    assert test_sp.get_target_for_month(2026, 10) == base_target
+    print(" -> PASS: Deleted altered target and verified instant rollback to base target.")
 
     print("\n" + "=" * 65)
     print("  ALL CORE MODULES AND TESTS COMPLETED WITH 100% SUCCESS!")

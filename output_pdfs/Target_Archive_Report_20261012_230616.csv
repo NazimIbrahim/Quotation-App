@@ -1,0 +1,22 @@
+=== SALES TARGET & REVENUE ARCHIVE AUDIT ===
+Generated At,2026-10-12 23:06:16
+Total Historical Periods,1
+Cumulative Target Allocated (INR),4900000.00
+Cumulative Won Sales Achieved (INR),1024000.00
+Cumulative Realized Collections (INR),995000.00
+Overall Team Target %,20.9%
+
+--- PERIOD BY PERIOD ARCHIVE BREAKDOWN ---
+Period,Sales Executive,Role,Target (INR),Achieved (INR),Variance (INR),% Achieved,Won Deals Count,Realized Collections (INR),Status
+October 2026,Rajesh Sharma,Manager,2500000.00,0.00,-2500000.00,0.0%,0,0.00,Shortfall
+October 2026,Ananya Verma,Sales Person,900000.00,1024000.00,124000.00,113.8%,2,945000.00,Achieved
+October 2026,Vikram Patel,Sales Person,800000.00,0.00,-800000.00,0.0%,0,0.00,Shortfall
+October 2026,Pooja Hegde,Sales Person,700000.00,0.00,-700000.00,0.0%,0,50000.00,Shortfall
+TOTAL October 2026,All Representatives,Team Aggregate,4900000.00,1024000.00,-3876000.00,20.9%,2,995000.00,Team Period Total
+
+--- CUMULATIVE CAREER / YTD ARCHIVE SUMMARY ---
+Sales Executive,Role,Cumulative Target (INR),Total Won Sales (INR),Net Variance (INR),Overall %,Total Won Deals,Lifetime Collections (INR),Audit Status
+Rajesh Sharma,Manager,2500000.00,0.00,-2500000.00,0.0%,0,0.00,Shortfall
+Ananya Verma,Sales Person,900000.00,1024000.00,124000.00,113.8%,2,945000.00,Achieved
+Vikram Patel,Sales Person,800000.00,0.00,-800000.00,0.0%,0,0.00,Shortfall
+Pooja Hegde,Sales Person,700000.00,0.00,-700000.00,0.0%,0,50000.00,Shortfall

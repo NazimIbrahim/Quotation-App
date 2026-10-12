@@ -388,6 +388,447 @@ class SalesTeamView(ctk.CTkFrame):
         msgbox.showinfo("Status Updated", f"Quotation status updated to '{new_status}'!")
         self.refresh_team_data()
 
+    def open_alter_target_modal(self, preselected_member=None):
+        """
+        Interactive modal dialog to set or alter sales targets for:
+        1. A specific single month (without affecting base targets for other months)
+        2. A 7-day weekly sprint (Monday to Sunday)
+        3. A custom date range (promotions / campaigns)
+        Also manages and allows deleting active custom targets.
+        """
+        if not isinstance(preselected_member, SalesPerson):
+            preselected_member = None
+
+        dialog = ctk.CTkToplevel(self)
+        dialog.title("Set / Alter Sales Targets")
+        dialog.geometry("640x740")
+        dialog.minsize(600, 650)
+        dialog.transient(self.winfo_toplevel())
+        dialog.grab_set()
+
+        # Main scroll container
+        scroll = ctk.CTkScrollableFrame(dialog, fg_color="transparent")
+        scroll.pack(fill="both", expand=True, padx=20, pady=16)
+
+        # Header
+        header_frame = ctk.CTkFrame(scroll, fg_color="transparent")
+        header_frame.pack(fill="x", pady=(0, 14))
+
+        ctk.CTkLabel(
+            header_frame,
+            text="🎯 Set & Alter Salesperson Targets",
+            font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=18, weight="bold"),
+            text_color=("#0F172A", "#F8FAFC")
+        ).pack(anchor="w")
+
+        ctk.CTkLabel(
+            header_frame,
+            text="Override targets for an individual month, a 7-day sprint, or custom campaign dates.",
+            font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11),
+            text_color=("#64748B", "#94A3B8")
+        ).pack(anchor="w", pady=(2, 0))
+
+        # Member Selection Card
+        member_card = ctk.CTkFrame(scroll, corner_radius=10, fg_color=("white", "#1E293B"), border_width=1, border_color=("#E2E8F0", "#334155"))
+        member_card.pack(fill="x", pady=(0, 12), ipady=6)
+
+        ctk.CTkLabel(
+            member_card,
+            text="1. SELECT SALESPERSON",
+            font=ctk.CTkFont(size=10, weight="bold"),
+            text_color=Theme.PRIMARY
+        ).pack(anchor="w", padx=14, pady=(10, 4))
+
+        all_members = list(SalesPerson.select().where(SalesPerson.is_active == True).order_by(SalesPerson.name))
+        if not all_members:
+            all_members = list(SalesPerson.select().order_by(SalesPerson.name))
+
+        member_map = {f"{m.name} ({m.role}) - Base: ₹{m.monthly_target:,.0f}": m for m in all_members}
+        member_options = list(member_map.keys())
+
+        default_str = None
+        if preselected_member:
+            for k, m in member_map.items():
+                if m.id == preselected_member.id:
+                    default_str = k
+                    break
+        if not default_str and member_options:
+            default_str = member_options[0]
+
+        member_combo = ctk.CTkComboBox(
+            member_card,
+            values=member_options,
+            width=500,
+            font=ctk.CTkFont(size=12)
+        )
+        if default_str:
+            member_combo.set(default_str)
+        member_combo.pack(fill="x", padx=14, pady=(0, 10))
+
+        # Target Type & Parameters Card
+        config_card = ctk.CTkFrame(scroll, corner_radius=10, fg_color=("white", "#1E293B"), border_width=1, border_color=("#E2E8F0", "#334155"))
+        config_card.pack(fill="x", pady=(0, 12), ipady=6)
+
+        ctk.CTkLabel(
+            config_card,
+            text="2. TARGET PERIOD SCOPE",
+            font=ctk.CTkFont(size=10, weight="bold"),
+            text_color=Theme.PRIMARY
+        ).pack(anchor="w", padx=14, pady=(10, 6))
+
+        scope_segment = ctk.CTkSegmentedButton(
+            config_card,
+            values=["📅 Specific Month", "📆 Weekly (7 Days)", "🎯 Custom Date Range"],
+            selected_color=Theme.PRIMARY,
+            selected_hover_color=Theme.PRIMARY_HOVER,
+            font=ctk.CTkFont(size=11, weight="bold")
+        )
+        scope_segment.set("📅 Specific Month")
+        scope_segment.pack(fill="x", padx=14, pady=(0, 12))
+
+        # Dynamic Fields Container
+        fields_container = ctk.CTkFrame(config_card, fg_color="transparent")
+        fields_container.pack(fill="x", padx=14, pady=(0, 8))
+
+        today = date.today()
+        month_names = [
+            "January", "February", "March", "April", "May", "June",
+            "July", "August", "September", "October", "November", "December"
+        ]
+
+        # Field References
+        month_combo_ref = [None]
+        year_combo_ref = [None]
+        week_date_entry_ref = [None]
+        week_calc_lbl_ref = [None]
+        start_date_entry_ref = [None]
+        end_date_entry_ref = [None]
+        custom_label_entry_ref = [None]
+
+        def update_week_calc_label(*args):
+            lbl = week_calc_lbl_ref[0]
+            ent = week_date_entry_ref[0]
+            if not lbl or not ent:
+                return
+            try:
+                ref_d = datetime.strptime(ent.get().strip(), "%Y-%m-%d").date()
+                mon = ref_d - timedelta(days=ref_d.weekday())
+                sun = mon + timedelta(days=6)
+                lbl.configure(text=f"✓ Computed 7-Day Sprint: Mon {mon.strftime('%d %b %Y')} to Sun {sun.strftime('%d %b %Y')}", text_color=Theme.SUCCESS)
+            except Exception:
+                lbl.configure(text="⚠ Please enter date in YYYY-MM-DD format (e.g. 2026-10-15)", text_color=Theme.DANGER)
+
+        def render_scope_fields(selected_scope):
+            for child in fields_container.winfo_children():
+                child.destroy()
+
+            if selected_scope == "📅 Specific Month":
+                ctk.CTkLabel(
+                    fields_container,
+                    text="Select Calendar Month & Year:",
+                    font=ctk.CTkFont(size=11, weight="bold")
+                ).pack(anchor="w", pady=(0, 4))
+
+                m_row = ctk.CTkFrame(fields_container, fg_color="transparent")
+                m_row.pack(fill="x", pady=(0, 6))
+
+                cur_month_name = month_names[today.month - 1]
+                month_combo = ctk.CTkComboBox(m_row, values=month_names, width=180)
+                month_combo.set(cur_month_name)
+                month_combo.pack(side="left", padx=(0, 8))
+                month_combo_ref[0] = month_combo
+
+                years = [str(today.year - 1), str(today.year), str(today.year + 1), str(today.year + 2)]
+                year_combo = ctk.CTkComboBox(m_row, values=years, width=120)
+                year_combo.set(str(today.year))
+                year_combo.pack(side="left")
+                year_combo_ref[0] = year_combo
+
+                ctk.CTkLabel(
+                    fields_container,
+                    text="ℹ️ Overrides target ONLY for this chosen month. Other months automatically retain default base targets.",
+                    font=ctk.CTkFont(size=10),
+                    text_color=("#64748B", "#94A3B8"),
+                    wraplength=520,
+                    justify="left"
+                ).pack(anchor="w", pady=(2, 0))
+
+            elif selected_scope == "📆 Weekly (7 Days)":
+                ctk.CTkLabel(
+                    fields_container,
+                    text="Any Date in Week (YYYY-MM-DD):",
+                    font=ctk.CTkFont(size=11, weight="bold")
+                ).pack(anchor="w", pady=(0, 4))
+
+                w_ent = ctk.CTkEntry(fields_container, width=220)
+                w_ent.insert(0, today.strftime("%Y-%m-%d"))
+                w_ent.pack(anchor="w", pady=(0, 4))
+                week_date_entry_ref[0] = w_ent
+
+                w_lbl = ctk.CTkLabel(
+                    fields_container,
+                    text="",
+                    font=ctk.CTkFont(size=10, weight="bold"),
+                    text_color=Theme.SUCCESS
+                )
+                w_lbl.pack(anchor="w", pady=(0, 4))
+                week_calc_lbl_ref[0] = w_lbl
+                update_week_calc_label()
+                w_ent.bind("<KeyRelease>", update_week_calc_label)
+
+                ctk.CTkLabel(
+                    fields_container,
+                    text="ℹ️ Automatically calculates the Monday to Sunday 7-day sprint containing this date.",
+                    font=ctk.CTkFont(size=10),
+                    text_color=("#64748B", "#94A3B8")
+                ).pack(anchor="w")
+
+            else:  # "🎯 Custom Date Range"
+                ctk.CTkLabel(
+                    fields_container,
+                    text="Custom Start Date & End Date (YYYY-MM-DD):",
+                    font=ctk.CTkFont(size=11, weight="bold")
+                ).pack(anchor="w", pady=(0, 4))
+
+                d_row = ctk.CTkFrame(fields_container, fg_color="transparent")
+                d_row.pack(fill="x", pady=(0, 6))
+
+                s_ent = ctk.CTkEntry(d_row, width=150)
+                s_ent.insert(0, today.strftime("%Y-%m-%d"))
+                s_ent.pack(side="left", padx=(0, 8))
+                start_date_entry_ref[0] = s_ent
+
+                ctk.CTkLabel(d_row, text="to", font=ctk.CTkFont(size=11)).pack(side="left", padx=(0, 8))
+
+                e_ent = ctk.CTkEntry(d_row, width=150)
+                default_end = today + timedelta(days=14)
+                e_ent.insert(0, default_end.strftime("%Y-%m-%d"))
+                e_ent.pack(side="left")
+                end_date_entry_ref[0] = e_ent
+
+                ctk.CTkLabel(
+                    fields_container,
+                    text="Sprint / Campaign Name (Optional):",
+                    font=ctk.CTkFont(size=11, weight="bold")
+                ).pack(anchor="w", pady=(4, 2))
+
+                lbl_ent = ctk.CTkEntry(fields_container, placeholder_text="e.g. Diwali Mega Promotion, Q4 Surge")
+                lbl_ent.pack(fill="x", pady=(0, 4))
+                custom_label_entry_ref[0] = lbl_ent
+
+                ctk.CTkLabel(
+                    fields_container,
+                    text="ℹ️ Target will be applied strictly between Start Date and End Date.",
+                    font=ctk.CTkFont(size=10),
+                    text_color=("#64748B", "#94A3B8")
+                ).pack(anchor="w")
+
+        scope_segment.configure(command=render_scope_fields)
+        render_scope_fields("📅 Specific Month")
+
+        # Amount & Notes Section
+        amount_card = ctk.CTkFrame(scroll, corner_radius=10, fg_color=("white", "#1E293B"), border_width=1, border_color=("#E2E8F0", "#334155"))
+        amount_card.pack(fill="x", pady=(0, 12), ipady=6)
+
+        ctk.CTkLabel(
+            amount_card,
+            text="3. TARGET AMOUNT & NOTES",
+            font=ctk.CTkFont(size=10, weight="bold"),
+            text_color=Theme.PRIMARY
+        ).pack(anchor="w", padx=14, pady=(10, 6))
+
+        ctk.CTkLabel(amount_card, text="Target Amount (₹):", font=ctk.CTkFont(size=11, weight="bold")).pack(anchor="w", padx=14, pady=(0, 2))
+        amount_ent = ctk.CTkEntry(amount_card)
+        cur_selected_sp = member_map.get(member_combo.get())
+        default_amt = str(cur_selected_sp.monthly_target) if cur_selected_sp else "600000.0"
+        amount_ent.insert(0, default_amt)
+        amount_ent.pack(fill="x", padx=14, pady=(0, 6))
+
+        ctk.CTkLabel(amount_card, text="Notes / Reason (Optional):", font=ctk.CTkFont(size=11, weight="bold")).pack(anchor="w", padx=14, pady=(0, 2))
+        notes_ent = ctk.CTkEntry(amount_card, placeholder_text="e.g. Festival Season Surge, S-Tier Incentive Sprint")
+        notes_ent.pack(fill="x", padx=14, pady=(0, 10))
+
+        # Save Button
+        def save_target():
+            selected_sp_str = member_combo.get()
+            sp = member_map.get(selected_sp_str)
+            if not sp:
+                msgbox.showerror("Error", "Please select a valid salesperson.", parent=dialog)
+                return
+
+            amt_str = amount_ent.get().strip()
+            try:
+                amt = float(amt_str)
+                if amt <= 0:
+                    raise ValueError
+            except ValueError:
+                msgbox.showerror("Error", "Target amount must be a positive number.", parent=dialog)
+                return
+
+            notes = notes_ent.get().strip() or None
+            scope_mode = scope_segment.get()
+
+            try:
+                if scope_mode == "📅 Specific Month":
+                    m_name = month_combo_ref[0].get()
+                    m_idx = month_names.index(m_name) + 1
+                    y_val = int(year_combo_ref[0].get().strip())
+                    SalesTarget.set_monthly_target(sp, y_val, m_idx, amt, notes)
+                    msgbox.showinfo("Success", f"Target for {sp.name} for {m_name} {y_val} set to ₹{amt:,.2f}!", parent=dialog)
+
+                elif scope_mode == "📆 Weekly (7 Days)":
+                    w_str = week_date_entry_ref[0].get().strip()
+                    ref_d = datetime.strptime(w_str, "%Y-%m-%d").date()
+                    rec = SalesTarget.set_weekly_target(sp, ref_d, amt, notes)
+                    msgbox.showinfo("Success", f"Weekly target for {sp.name} set to ₹{amt:,.2f} ({rec.period_label})!", parent=dialog)
+
+                else:  # Custom
+                    s_str = start_date_entry_ref[0].get().strip()
+                    e_str = end_date_entry_ref[0].get().strip()
+                    lbl_val = custom_label_entry_ref[0].get().strip() or None
+                    s_d = datetime.strptime(s_str, "%Y-%m-%d").date()
+                    e_d = datetime.strptime(e_str, "%Y-%m-%d").date()
+                    if e_d < s_d:
+                        msgbox.showerror("Error", "End Date must be on or after Start Date.", parent=dialog)
+                        return
+                    rec = SalesTarget.set_custom_target(sp, s_d, e_d, amt, lbl_val, notes)
+                    msgbox.showinfo("Success", f"Custom target for {sp.name} set to ₹{amt:,.2f} ({rec.period_label})!", parent=dialog)
+
+                self.refresh_team_data()
+                refresh_active_targets_table()
+            except Exception as err:
+                msgbox.showerror("Error", f"Failed to save target: {str(err)}", parent=dialog)
+
+        save_btn = ctk.CTkButton(
+            scroll,
+            text="Save / Alter Target 💾",
+            font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=13, weight="bold"),
+            fg_color=Theme.PRIMARY,
+            hover_color=Theme.PRIMARY_HOVER,
+            height=36,
+            command=save_target
+        )
+        save_btn.pack(fill="x", pady=(0, 16))
+
+        # Active Altered Targets List Container
+        active_targets_frame = ctk.CTkFrame(scroll, corner_radius=10, fg_color=("white", "#1E293B"), border_width=1, border_color=("#E2E8F0", "#334155"))
+        active_targets_frame.pack(fill="x", pady=(0, 16), ipady=6)
+
+        targets_header_lbl = ctk.CTkLabel(
+            active_targets_frame,
+            text="📋 ACTIVE ALTERED TARGETS",
+            font=ctk.CTkFont(size=10, weight="bold"),
+            text_color=Theme.PRIMARY
+        )
+        targets_header_lbl.pack(anchor="w", padx=14, pady=(10, 4))
+
+        targets_sub_lbl = ctk.CTkLabel(
+            active_targets_frame,
+            text="Configured target overrides for the selected salesperson:",
+            font=ctk.CTkFont(size=10),
+            text_color=("#64748B", "#94A3B8")
+        )
+        targets_sub_lbl.pack(anchor="w", padx=14, pady=(0, 8))
+
+        targets_items_box = ctk.CTkFrame(active_targets_frame, fg_color="transparent")
+        targets_items_box.pack(fill="x", padx=14, pady=(0, 10))
+
+        def refresh_active_targets_table():
+            for child in targets_items_box.winfo_children():
+                child.destroy()
+
+            selected_sp_str = member_combo.get()
+            sp = member_map.get(selected_sp_str)
+            if not sp:
+                return
+
+            targets_header_lbl.configure(text=f"📋 ACTIVE ALTERED TARGETS — {sp.name.upper()}")
+            targets_sub_lbl.configure(text=f"Base Monthly Target: ₹{sp.monthly_target:,.2f}  |  Custom overrides below:")
+
+            # Fetch active targets
+            configured = list(
+                SalesTarget.select()
+                .where(SalesTarget.sales_person == sp)
+                .order_by(SalesTarget.start_date.desc())
+            )
+
+            if not configured:
+                ctk.CTkLabel(
+                    targets_items_box,
+                    text="✓ No altered targets currently configured. Member uses base monthly target for all periods.",
+                    font=ctk.CTkFont(size=11),
+                    text_color=Theme.SUCCESS
+                ).pack(anchor="w", pady=6)
+                return
+
+            for tgt in configured:
+                row_card = ctk.CTkFrame(targets_items_box, fg_color=("#F8FAFC", "#0F172A"), corner_radius=6)
+                row_card.pack(fill="x", pady=3)
+
+                info_f = ctk.CTkFrame(row_card, fg_color="transparent")
+                info_f.pack(side="left", padx=10, pady=8)
+
+                type_bg = ("#E0F2FE", "#075985") if tgt.target_type == "Monthly" else (("#DCFCE7", "#166534") if tgt.target_type == "Weekly" else ("#FEF3C7", "#92400E"))
+                type_fg = Theme.PRIMARY if tgt.target_type == "Monthly" else (Theme.SUCCESS if tgt.target_type == "Weekly" else Theme.WARNING)
+
+                badge_row = ctk.CTkFrame(info_f, fg_color="transparent")
+                badge_row.pack(anchor="w")
+
+                ctk.CTkLabel(
+                    badge_row,
+                    text=f" {tgt.target_type} ",
+                    font=ctk.CTkFont(size=9, weight="bold"),
+                    fg_color=type_bg,
+                    text_color=type_fg,
+                    corner_radius=4
+                ).pack(side="left", padx=(0, 6))
+
+                ctk.CTkLabel(
+                    badge_row,
+                    text=tgt.period_label,
+                    font=ctk.CTkFont(size=11, weight="bold"),
+                    text_color=("#0F172A", "#F8FAFC")
+                ).pack(side="left")
+
+                notes_txt = f"  •  {tgt.notes}" if tgt.notes else ""
+                ctk.CTkLabel(
+                    info_f,
+                    text=f"Target: ₹ {tgt.target_amount:,.2f}  ({tgt.start_date} to {tgt.end_date}){notes_txt}",
+                    font=ctk.CTkFont(size=10),
+                    text_color=("#64748B", "#94A3B8")
+                ).pack(anchor="w", pady=(2, 0))
+
+                del_btn = ctk.CTkButton(
+                    row_card,
+                    text="Delete ✕",
+                    font=ctk.CTkFont(size=10, weight="bold"),
+                    fg_color=Theme.DANGER,
+                    hover_color=Theme.DANGER_HOVER,
+                    width=70,
+                    height=24,
+                    command=lambda tid=tgt.id: delete_target_record(tid)
+                )
+                del_btn.pack(side="right", padx=10)
+
+        def delete_target_record(tid):
+            try:
+                SalesTarget.delete_by_id(tid)
+                msgbox.showinfo("Deleted", "Altered target removed. Reverted to standard target.", parent=dialog)
+                self.refresh_team_data()
+                refresh_active_targets_table()
+            except Exception as e:
+                msgbox.showerror("Error", f"Failed to delete target: {str(e)}", parent=dialog)
+
+        def on_member_selection_changed(new_val):
+            sp = member_map.get(new_val)
+            if sp:
+                amount_ent.delete(0, "end")
+                amount_ent.insert(0, str(sp.monthly_target))
+            refresh_active_targets_table()
+
+        member_combo.configure(command=on_member_selection_changed)
+        refresh_active_targets_table()
+
     def open_member_modal(self, member=None):
         dialog = ctk.CTkToplevel(self)
         dialog.title("Edit Team Member" if member else "Add Team Member")

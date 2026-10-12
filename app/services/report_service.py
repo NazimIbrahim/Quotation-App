@@ -112,9 +112,16 @@ class ReportService:
         }
 
     @staticmethod
-    def get_salesperson_performances(timeframe: str = "Monthly"):
+    def get_salesperson_performances(timeframe_or_start="Monthly", end_date_arg=None):
         """Calculates each salesperson's target, achieved sales, balance, and %."""
-        start_date, end_date = ReportService.get_timeframe_dates(timeframe)
+        if isinstance(timeframe_or_start, date):
+            start_date = timeframe_or_start
+            end_date = end_date_arg if isinstance(end_date_arg, date) else timeframe_or_start
+        elif end_date_arg is not None and isinstance(end_date_arg, date):
+            start_date, end_date = timeframe_or_start, end_date_arg
+        else:
+            timeframe = timeframe_or_start if isinstance(timeframe_or_start, str) else "Monthly"
+            start_date, end_date = ReportService.get_timeframe_dates(timeframe)
         sales_team = list(SalesPerson.select().where(SalesPerson.is_active == True))
 
         results = []
