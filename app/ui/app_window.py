@@ -5,6 +5,7 @@ navigation sidebar, user role switcher, and dynamic view router.
 import tkinter.messagebox as msgbox
 import customtkinter as ctk
 
+from app.config import ASSETS_DIR
 from app.ui.theme import Theme
 from app.database.models import SalesPerson, CompanySetting, init_database
 from app.database.seed_data import seed_database
@@ -28,6 +29,14 @@ class AppWindow(ctk.CTk):
         self.title("AMA Ceramics Pvt Ltd - Ceramic & Tile Quotation Management System")
         self.geometry("1320x840")
         self.minsize(1080, 680)
+
+        # Set Window Taskbar and Titlebar Icon
+        ico_path = ASSETS_DIR / "app_icon.ico"
+        if ico_path.exists():
+            try:
+                self.iconbitmap(str(ico_path))
+            except Exception:
+                pass
 
         # Configure CustomTkinter Appearance
         ctk.set_appearance_mode("Dark")  # Default to Dark mode

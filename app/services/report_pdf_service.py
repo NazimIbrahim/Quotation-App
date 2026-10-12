@@ -24,7 +24,7 @@ from reportlab.platypus import (
 from reportlab.pdfgen import canvas
 from reportlab.pdfbase import pdfmetrics
 
-from app.config import OUTPUT_PDF_DIR
+from app.config import OUTPUT_PDF_DIR, ASSETS_DIR
 from app.database.models import CompanySetting, Quotation
 from app.services.pdf_service import CeramicPDFGenerator
 from app.services.report_service import ReportService
@@ -219,7 +219,7 @@ class ReportPDFGenerator:
     def _create_header_elements(cls, title_str: str, subtitle_str: str, styles) -> list:
         """Creates top header with right-flush branding and lower report title banner (clears top-left geometric accents)."""
         setting = CompanySetting.get_settings()
-        logo_img_path = setting.logo_path if (setting.logo_path and os.path.isfile(setting.logo_path)) else str(Path("assets/company_logo.png").resolve())
+        logo_img_path = setting.logo_path if (setting.logo_path and os.path.isfile(setting.logo_path)) else str(ASSETS_DIR / "company_logo.png")
         logo_sz = 50
 
         logo_flowable = None

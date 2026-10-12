@@ -10,7 +10,21 @@ PROJECT_ROOT = Path(__file__).resolve().parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-if hasattr(sys.stdout, 'reconfigure'):
+import os
+
+# Redirect stdout / stderr if None (prevents crashes under --noconsole on Windows)
+if sys.stdout is None:
+    try:
+        sys.stdout = open(os.devnull, "w", encoding="utf-8")
+    except Exception:
+        pass
+if sys.stderr is None:
+    try:
+        sys.stderr = open(os.devnull, "w", encoding="utf-8")
+    except Exception:
+        pass
+
+if hasattr(sys.stdout, 'reconfigure') and sys.stdout is not None:
     try:
         sys.stdout.reconfigure(encoding='utf-8')
     except Exception:

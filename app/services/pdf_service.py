@@ -31,6 +31,7 @@ from app.config import (
     STANDARD_TERMS_AND_CONDITIONS,
     SIGNATORIES,
     OUTPUT_PDF_DIR,
+    ASSETS_DIR,
 )
 from app.database.models import Quotation, QuotationArea, QuotationItem, CompanySetting
 
@@ -451,7 +452,7 @@ class CeramicPDFGenerator:
         # =============================================================
         # 1. TOP HEADER: Right-Handed Alignment with Increased Logo Scale
         # =============================================================
-        logo_img_path = setting.logo_path if (setting.logo_path and os.path.isfile(setting.logo_path)) else str(Path("assets/company_logo.png").resolve())
+        logo_img_path = setting.logo_path if (setting.logo_path and os.path.isfile(setting.logo_path)) else str(ASSETS_DIR / "company_logo.png")
         # Increased scale of 1:1 logo to 150% (from 46pt to 69pt)
         logo_sz = 69
 

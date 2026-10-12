@@ -226,3 +226,29 @@ The application comes preloaded with ready-to-test data:
    - `AMA-2026-0002` (Status: In-Review, Net: ₹1,35,000) — *Bar Counter* (NERO MARQUINA), *Balcony* (TEAK PLANK), *First Floor Bathroom* (BOTTOCHINO).
    - `AMA-2026-0003` (Status: Open, Net: ₹2,40,000) — *Kids Bathroom & Living Room*.
    - `AMA-2026-0004` (Status: Won, Net: ₹5,75,000) — Bulk commercial full-body tiles.
+
+---
+
+## 💾 Installation on Another PC (No Python Required)
+
+The application is fully bundled as a standalone Windows desktop distribution. **No Python installation or command line knowledge is required on the target computer.**
+
+### Option 1: Official Windows Installer (Recommended)
+1. Download **[`AMA_Ceramics_Quotation_Setup_v1.0.exe`](https://github.com/NazimIbrahim/Quotation-App/releases/download/v1.0/AMA_Ceramics_Quotation_Setup_v1.0.exe)** from [GitHub Releases v1.0](https://github.com/NazimIbrahim/Quotation-App/releases/tag/v1.0).
+2. Double-click `AMA_Ceramics_Quotation_Setup_v1.0.exe` to run the setup wizard.
+3. Choose your installation location (defaults to your user profile or Program Files without requiring admin elevation).
+4. Check **Create Desktop Icon**.
+5. Click **Install**.
+6. The setup wizard creates a desktop shortcut with the official AMA Ceramics icon and launches the system immediately.
+
+### Option 2: Portable ZIP Package
+1. Download **[`AMA_Ceramics_Quotation_Portable_v1.0.zip`](https://github.com/NazimIbrahim/Quotation-App/releases/download/v1.0/AMA_Ceramics_Quotation_Portable_v1.0.zip)**.
+2. Extract the archive to any folder or USB drive.
+3. Double-click `AMA_Ceramics_Quotation.exe` to launch directly.
+
+### Building the Setup Installer from Source
+To recompile the standalone binary and setup installer at any time:
+```cmd
+build_setup.bat
+```
+This runs the full PyInstaller compilation and Inno Setup package generator in `dist_installer/`.

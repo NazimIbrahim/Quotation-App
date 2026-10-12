@@ -3,11 +3,55 @@ Configuration and constants for AMA Ceramics Quotation Management System.
 """
 from pathlib import Path
 
-# Paths
-BASE_DIR = Path(__file__).resolve().parent.parent
-DB_PATH = BASE_DIR / "ceramics_quotation.db"
-OUTPUT_PDF_DIR = BASE_DIR / "output_pdfs"
+import sys
+import os
+from pathlib import Path
+
+# Runtime directory resolution (dev vs frozen executable)
+if getattr(sys, "frozen", False):
+    EXE_DIR = Path(sys.executable).resolve().parent
+    BUNDLE_DIR = Path(getattr(sys, "_MEIPASS", EXE_DIR))
+
+    # Test if executable directory is writable (portable or user folder)
+    is_writable = False
+    try:
+        test_file = EXE_DIR / ".write_test"
+        test_file.touch()
+        test_file.unlink()
+        is_writable = True
+    except (PermissionError, OSError):
+        is_writable = False
+
+    if is_writable:
+        DATA_DIR = EXE_DIR
+    else:
+        DATA_DIR = Path(os.environ.get("LOCALAPPDATA", Path.home() / "AppData" / "Local")) / "AMA_Ceramics_Quotation"
+        DATA_DIR.mkdir(parents=True, exist_ok=True)
+
+    BASE_DIR = DATA_DIR
+    RESOURCE_DIR = BUNDLE_DIR
+else:
+    BASE_DIR = Path(__file__).resolve().parent.parent
+    DATA_DIR = BASE_DIR
+    RESOURCE_DIR = BASE_DIR
+
+DB_PATH = DATA_DIR / "ceramics_quotation.db"
+OUTPUT_PDF_DIR = DATA_DIR / "output_pdfs"
 OUTPUT_PDF_DIR.mkdir(parents=True, exist_ok=True)
+
+ASSETS_DIR = DATA_DIR / "assets"
+ASSETS_DIR.mkdir(parents=True, exist_ok=True)
+
+# Ensure essential assets exist in ASSETS_DIR if bundled separately
+if RESOURCE_DIR != DATA_DIR and (RESOURCE_DIR / "assets").exists():
+    import shutil
+    for asset_file in (RESOURCE_DIR / "assets").glob("*.*"):
+        target_file = ASSETS_DIR / asset_file.name
+        if not target_file.exists():
+            try:
+                shutil.copy2(asset_file, target_file)
+            except Exception:
+                pass
 
 # Company Branding & Header Details
 COMPANY_CONFIG = {
