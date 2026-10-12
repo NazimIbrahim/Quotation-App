@@ -1,0 +1,31 @@
+=== DAILY SALES & COLLECTION AUDIT REPORT ===
+Report Date,12 October 2026
+Generated At,2026-10-12 02:16:21
+
+--- EXECUTIVE SUMMARY ---
+Metric,Value
+Total Quotations Created,2
+Won Quotations Count,0
+Gross Total Quoted (INR),68316.00
+Net Total Quoted (INR),68266.00
+Won Sales Revenue (INR),0.00
+Pipeline Value (INR),68266.00
+Realized Bank Collections (INR),20000.00
+Pending Token Collections (INR),30000.00
+
+--- QUOTATIONS CREATED TODAY ---
+Quote No,Customer,Phone,Sales Executive,Status,Gross Total,Net Total,Cleared Paid,Outstanding
+AMA-2026-BRAND-TEST,Dr. Priya Sengupta,+91 98980 11223,Ananya Verma,Open,30316.00,30316.00,0.00,30316.00
+AMA-2026-TEST,Dr. Priya Sengupta,+91 98980 11223,Ananya Verma,Open,38000.00,37950.00,20000.00,17950.00
+
+--- COLLECTIONS REALIZED TODAY ---
+Receipt / Ref No,Quote No,Customer,Payment Mode,Amount,Status
+TEST-UPI-1234,AMA-2026-TEST,Dr. Priya Sengupta,GPay,20000.00,Cleared
+UPI/PHONEPE/PendingCl,AMA-2026-0003,Manav & Neha Kapoor,PhonePe,30000.00,Pending
+
+--- SALES REPRESENTATIVE DAILY ACTIVITY ---
+Sales Executive,Role,Quotes Made,Won Sales Achieved,Daily Target Pro-Rata,% Achieved
+Rajesh Sharma,Manager,0,0.00,96153.85,0.0%
+Ananya Verma,Sales Person,2,0.00,34615.38,0.0%
+Vikram Patel,Sales Person,0,0.00,30769.23,0.0%
+Pooja Hegde,Sales Person,0,0.00,26923.08,0.0%

@@ -1,0 +1,6 @@
+# Ceramic & Tile Quotation Management System Dependencies
+customtkinter>=5.2.0
+reportlab>=4.0.0
+peewee>=3.17.0
+pillow>=10.0.0
+matplotlib>=3.7.0
