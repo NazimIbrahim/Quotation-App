@@ -125,9 +125,9 @@ class AppWindow(ctk.CTk):
         user_box = ctk.CTkFrame(
             self.sidebar,
             fg_color=("#FAF8F5", "#1E1C1A"),
-            corner_radius=10,
-            border_width=1,
-            border_color=("#D4CDBC", "#332F28")
+            corner_radius=Theme.RADIUS_CARD,
+            border_width=Theme.BORDER_WIDTH_CARD,
+            border_color=Theme.INSET_BORDER
         )
         user_box.pack(fill="x", padx=14, pady=(0, 16))
 
@@ -145,7 +145,8 @@ class AppWindow(ctk.CTk):
             font=ctk.CTkFont(size=11, weight="bold"),
             fg_color=Theme.PRIMARY,
             button_color=Theme.PRIMARY_HOVER,
-            height=28
+            corner_radius=Theme.RADIUS_BUTTON,
+            height=30
         )
         if self.active_user:
             self.user_dropdown.set(f"{self.active_user.name} ({self.active_user.role})")
@@ -181,8 +182,8 @@ class AppWindow(ctk.CTk):
                 text=label,
                 font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=12, weight="bold"),
                 anchor="w",
-                height=38,
-                corner_radius=8,
+                height=40,
+                corner_radius=Theme.RADIUS_BUTTON,
                 fg_color="transparent",
                 text_color=("#2E2B27", "#D5CFC3"),
                 hover_color=("#D4CDBC", "#22201D"),
@@ -219,7 +220,9 @@ class AppWindow(ctk.CTk):
             values=["Light", "Dark"],
             command=self.toggle_theme,
             selected_color=Theme.PRIMARY,
-            height=24,
+            corner_radius=Theme.RADIUS_PILL,
+            border_width=Theme.BORDER_WIDTH_INPUT,
+            height=26,
             font=ctk.CTkFont(size=10)
         )
         self.theme_segment.set("Light")
@@ -229,11 +232,14 @@ class AppWindow(ctk.CTk):
         reset_btn = ctk.CTkButton(
             bottom_box,
             text="↺ Reset Demo Seed Data",
-            font=ctk.CTkFont(size=10),
-            fg_color=("#DCD6CA", "#1E1C1A"),
+            font=ctk.CTkFont(size=10, weight="bold"),
+            fg_color=Theme.BTN_SECONDARY_BG,
             text_color=("#3D3A35", "#C4BEB2"),
+            border_width=1,
+            border_color=Theme.BTN_SECONDARY_BORDER,
+            corner_radius=Theme.RADIUS_BUTTON,
             hover_color=Theme.DANGER,
-            height=26,
+            height=28,
             command=self.reset_seed_data
         )
         reset_btn.pack(fill="x")
@@ -298,11 +304,14 @@ class AppWindow(ctk.CTk):
             if vk == view_name or (view_name == "quotation_editor" and vk == "quotation_editor" and param is None):
                 btn.configure(
                     fg_color=Theme.PRIMARY,
+                    border_width=1,
+                    border_color=Theme.BTN_PRIMARY_BORDER,
                     text_color="#FFFFFF"
                 )
             else:
                 btn.configure(
                     fg_color="transparent",
+                    border_width=0,
                     text_color=("#2E2B27", "#D5CFC3")
                 )
 

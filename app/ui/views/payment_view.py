@@ -52,10 +52,10 @@ class PaymentTrackingView(ctk.CTkFrame):
         # 2. Quotation Selector Card
         select_card = ctk.CTkFrame(
             self.scroll_body,
-            corner_radius=12,
+            corner_radius=Theme.RADIUS_CARD,
             fg_color=("#FFFFFF", "#201E1C"),
-            border_width=1,
-            border_color=(Theme.STONE, "#2B2824")
+            border_width=Theme.BORDER_WIDTH_CARD,
+            border_color=(Theme.STONE, "#38342E")
         )
         select_card.pack(fill="x", pady=(0, 14))
 
@@ -73,6 +73,8 @@ class PaymentTrackingView(ctk.CTkFrame):
             s_bar,
             values=["Loading..."],
             width=420,
+            height=34,
+            corner_radius=Theme.RADIUS_INPUT,
             font=ctk.CTkFont(size=11),
             command=self.on_quote_change
         )
@@ -89,7 +91,7 @@ class PaymentTrackingView(ctk.CTkFrame):
         self.box_pending = self.create_mini_kpi(self.summary_row, 2, "PENDING CLEARANCE", "₹ 0.00", Theme.WARNING)
         self.box_balance = self.create_mini_kpi(self.summary_row, 3, "OUTSTANDING BALANCE", "₹ 0.00", Theme.DANGER)
 
-        # 4. Middle Section: Two Columns (Left: Record Payment Form, Right: Payment History Table)
+        # 4. Middle Section: Two Columns (Left: Record Payment Entry, Right: Payment History Table)
         split_frame = ctk.CTkFrame(self.scroll_body, fg_color="transparent")
         split_frame.pack(fill="x", pady=(0, 14))
         split_frame.grid_columnconfigure(0, weight=2)
@@ -98,10 +100,10 @@ class PaymentTrackingView(ctk.CTkFrame):
         # Left Column: "Record Payment Entry"
         record_card = ctk.CTkFrame(
             split_frame,
-            corner_radius=12,
+            corner_radius=Theme.RADIUS_CARD,
             fg_color=("#FFFFFF", "#201E1C"),
-            border_width=1,
-            border_color=(Theme.STONE, "#2B2824")
+            border_width=Theme.BORDER_WIDTH_CARD,
+            border_color=(Theme.STONE, "#38342E")
         )
         record_card.grid(row=0, column=0, padx=(0, 8), sticky="nsew")
 
@@ -117,7 +119,16 @@ class PaymentTrackingView(ctk.CTkFrame):
 
         # Amount
         ctk.CTkLabel(form, text="Payment Amount (₹):", font=ctk.CTkFont(size=11, weight="bold")).pack(anchor="w", pady=(2, 2))
-        self.amount_entry = ctk.CTkEntry(form, font=ctk.CTkFont(size=12, weight="bold"), placeholder_text="e.g. 50000")
+        self.amount_entry = ctk.CTkEntry(
+            form,
+            height=34,
+            corner_radius=Theme.RADIUS_INPUT,
+            fg_color=Theme.INSET_BG,
+            border_color=Theme.INSET_BORDER,
+            border_width=Theme.BORDER_WIDTH_INPUT,
+            font=ctk.CTkFont(size=12, weight="bold"),
+            placeholder_text="e.g. 50000"
+        )
         self.amount_entry.pack(fill="x", pady=(0, 8))
 
         # Payment Mode
@@ -125,6 +136,8 @@ class PaymentTrackingView(ctk.CTkFrame):
         self.mode_combo = ctk.CTkComboBox(
             form,
             values=[Payment.MODE_GPAY, Payment.MODE_PHONEPE, Payment.MODE_BANK, Payment.MODE_CHEQUE, Payment.MODE_CASH],
+            height=34,
+            corner_radius=Theme.RADIUS_INPUT,
             font=ctk.CTkFont(size=11)
         )
         self.mode_combo.set(Payment.MODE_GPAY)
@@ -132,7 +145,15 @@ class PaymentTrackingView(ctk.CTkFrame):
 
         # Date
         ctk.CTkLabel(form, text="Payment Date (YYYY-MM-DD):", font=ctk.CTkFont(size=11)).pack(anchor="w", pady=(2, 2))
-        self.date_entry = ctk.CTkEntry(form, font=ctk.CTkFont(size=11))
+        self.date_entry = ctk.CTkEntry(
+            form,
+            height=34,
+            corner_radius=Theme.RADIUS_INPUT,
+            fg_color=Theme.INSET_BG,
+            border_color=Theme.INSET_BORDER,
+            border_width=Theme.BORDER_WIDTH_INPUT,
+            font=ctk.CTkFont(size=11)
+        )
         self.date_entry.insert(0, str(date.today()))
         self.date_entry.pack(fill="x", pady=(0, 8))
 
@@ -143,6 +164,8 @@ class PaymentTrackingView(ctk.CTkFrame):
             values=[Payment.STATUS_CLEARED, Payment.STATUS_PENDING],
             selected_color=Theme.SUCCESS,
             selected_hover_color=Theme.SUCCESS_HOVER,
+            corner_radius=Theme.RADIUS_PILL,
+            height=32,
             font=ctk.CTkFont(size=11, weight="bold")
         )
         self.status_segment.set(Payment.STATUS_CLEARED)
@@ -150,12 +173,30 @@ class PaymentTrackingView(ctk.CTkFrame):
 
         # Reference No / Cheque
         ctk.CTkLabel(form, text="Reference / Cheque / UTR No:", font=ctk.CTkFont(size=11)).pack(anchor="w", pady=(2, 2))
-        self.ref_entry = ctk.CTkEntry(form, font=ctk.CTkFont(size=11), placeholder_text="UPI Ref / Cheque #")
+        self.ref_entry = ctk.CTkEntry(
+            form,
+            height=34,
+            corner_radius=Theme.RADIUS_INPUT,
+            fg_color=Theme.INSET_BG,
+            border_color=Theme.INSET_BORDER,
+            border_width=Theme.BORDER_WIDTH_INPUT,
+            font=ctk.CTkFont(size=11),
+            placeholder_text="UPI Ref / Cheque #"
+        )
         self.ref_entry.pack(fill="x", pady=(0, 8))
 
         # Notes
         ctk.CTkLabel(form, text="Notes / Remarks:", font=ctk.CTkFont(size=11)).pack(anchor="w", pady=(2, 2))
-        self.notes_entry = ctk.CTkEntry(form, font=ctk.CTkFont(size=11), placeholder_text="e.g. 50% order booking advance")
+        self.notes_entry = ctk.CTkEntry(
+            form,
+            height=34,
+            corner_radius=Theme.RADIUS_INPUT,
+            fg_color=Theme.INSET_BG,
+            border_color=Theme.INSET_BORDER,
+            border_width=Theme.BORDER_WIDTH_INPUT,
+            font=ctk.CTkFont(size=11),
+            placeholder_text="e.g. 50% order booking advance"
+        )
         self.notes_entry.pack(fill="x", pady=(0, 12))
 
         # Submit button
@@ -165,18 +206,21 @@ class PaymentTrackingView(ctk.CTkFrame):
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=12, weight="bold"),
             fg_color=Theme.SUCCESS,
             hover_color=Theme.SUCCESS_HOVER,
+            border_width=Theme.BORDER_WIDTH_BUTTON,
+            border_color=Theme.BTN_SUCCESS_BORDER,
+            corner_radius=Theme.RADIUS_PILL,
             command=self.submit_payment,
-            height=34
+            height=36
         )
         submit_btn.pack(fill="x")
 
         # Right Column: Existing Payments History
         history_card = ctk.CTkFrame(
             split_frame,
-            corner_radius=12,
+            corner_radius=Theme.RADIUS_CARD,
             fg_color=("#FFFFFF", "#201E1C"),
-            border_width=1,
-            border_color=(Theme.STONE, "#2B2824")
+            border_width=Theme.BORDER_WIDTH_CARD,
+            border_color=(Theme.STONE, "#38342E")
         )
         history_card.grid(row=0, column=1, padx=(8, 0), sticky="nsew")
 
@@ -188,7 +232,7 @@ class PaymentTrackingView(ctk.CTkFrame):
         ).pack(anchor="w", padx=16, pady=(14, 10))
 
         # Table Header
-        h_frame = ctk.CTkFrame(history_card, fg_color=(Theme.STONE, "#242220"), height=30)
+        h_frame = ctk.CTkFrame(history_card, fg_color=(Theme.STONE, "#242220"), height=30, corner_radius=Theme.RADIUS_SM)
         h_frame.pack(fill="x", padx=12, pady=(0, 4))
         h_frame.grid_columnconfigure((0, 1, 2, 3, 4), weight=1)
 
@@ -202,10 +246,10 @@ class PaymentTrackingView(ctk.CTkFrame):
         # 5. Global Pending Clearances Section
         pending_card = ctk.CTkFrame(
             self.scroll_body,
-            corner_radius=12,
+            corner_radius=Theme.RADIUS_CARD,
             fg_color=("#FFFFFF", "#201E1C"),
-            border_width=1,
-            border_color=(Theme.STONE, "#2B2824")
+            border_width=Theme.BORDER_WIDTH_CARD,
+            border_color=(Theme.STONE, "#38342E")
         )
         pending_card.pack(fill="x", pady=(0, 10))
 
@@ -222,10 +266,10 @@ class PaymentTrackingView(ctk.CTkFrame):
     def create_mini_kpi(self, parent, col_idx, title, val, color):
         card = ctk.CTkFrame(
             parent,
-            corner_radius=10,
+            corner_radius=Theme.RADIUS_CARD,
             fg_color=("#FFFFFF", "#201E1C"),
-            border_width=1,
-            border_color=(Theme.STONE, "#2B2824")
+            border_width=Theme.BORDER_WIDTH_CARD,
+            border_color=(Theme.STONE, "#38342E")
         )
         card.grid(row=0, column=col_idx, padx=4, sticky="ew")
 
@@ -297,7 +341,7 @@ class PaymentTrackingView(ctk.CTkFrame):
             return
 
         for p in payments:
-            r = ctk.CTkFrame(self.history_rows_frame, fg_color=("#F8FAFC", "#111827"), corner_radius=6)
+            r = ctk.CTkFrame(self.history_rows_frame, fg_color=("#F8FAFC", "#111827"), corner_radius=Theme.RADIUS_SM)
             r.pack(fill="x", pady=2)
             r.grid_columnconfigure((0, 1, 2, 3, 4), weight=1)
 
@@ -319,10 +363,14 @@ class PaymentTrackingView(ctk.CTkFrame):
                 toggle_btn = ctk.CTkButton(
                     act_box,
                     text="Clear ✓",
-                    width=50,
-                    height=22,
+                    width=58,
+                    height=24,
+                    corner_radius=Theme.RADIUS_PILL,
+                    border_width=1,
+                    border_color=Theme.BTN_SUCCESS_BORDER,
                     font=ctk.CTkFont(size=9, weight="bold"),
                     fg_color=Theme.SUCCESS,
+                    hover_color=Theme.SUCCESS_HOVER,
                     command=lambda pid=p.id: self.toggle_status(pid, Payment.STATUS_CLEARED)
                 )
                 toggle_btn.pack(side="left", padx=2)
@@ -330,8 +378,11 @@ class PaymentTrackingView(ctk.CTkFrame):
             del_btn = ctk.CTkButton(
                 act_box,
                 text="✕",
-                width=24,
-                height=22,
+                width=26,
+                height=24,
+                corner_radius=Theme.RADIUS_PILL,
+                border_width=1,
+                border_color=Theme.BTN_DANGER_BORDER,
                 fg_color="transparent",
                 text_color=Theme.DANGER,
                 command=lambda pid=p.id: self.delete_pmt(pid)
@@ -358,7 +409,7 @@ class PaymentTrackingView(ctk.CTkFrame):
             return
 
         for p in pending_list:
-            r = ctk.CTkFrame(self.pending_global_frame, fg_color=("#FEF3C7", "#78350F"), corner_radius=6)
+            r = ctk.CTkFrame(self.pending_global_frame, fg_color=("#FEF3C7", "#78350F"), corner_radius=Theme.RADIUS_SM)
             r.pack(fill="x", pady=2)
 
             ctk.CTkLabel(
@@ -374,8 +425,11 @@ class PaymentTrackingView(ctk.CTkFrame):
                 font=ctk.CTkFont(size=10, weight="bold"),
                 fg_color=Theme.SUCCESS,
                 hover_color=Theme.SUCCESS_HOVER,
-                width=90,
-                height=24,
+                corner_radius=Theme.RADIUS_PILL,
+                border_width=1,
+                border_color=Theme.BTN_SUCCESS_BORDER,
+                width=100,
+                height=28,
                 command=lambda pid=p.id: self.toggle_status(pid, Payment.STATUS_CLEARED)
             )
             clear_btn.pack(side="right", padx=10)

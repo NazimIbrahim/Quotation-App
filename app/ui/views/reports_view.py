@@ -58,6 +58,8 @@ class ReportsView(ctk.CTkFrame):
             command=self.on_filter_changed,
             selected_color=Theme.PRIMARY,
             selected_hover_color=Theme.PRIMARY_HOVER,
+            corner_radius=Theme.RADIUS_PILL,
+            height=34,
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11, weight="bold")
         )
         self.timeframe_segment.set("Monthly")
@@ -69,8 +71,11 @@ class ReportsView(ctk.CTkFrame):
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11, weight="bold"),
             fg_color=Theme.PRIMARY,
             hover_color=Theme.PRIMARY_HOVER,
+            corner_radius=Theme.RADIUS_PILL,
+            border_width=Theme.BORDER_WIDTH_BUTTON,
+            border_color=Theme.BTN_PRIMARY_BORDER,
             command=self.export_active_pdf,
-            height=32
+            height=36
         )
         export_pdf_btn.pack(side="left", padx=(0, 6))
 
@@ -78,11 +83,14 @@ class ReportsView(ctk.CTkFrame):
             btn_box,
             text="Export CSV 📥",
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11, weight="bold"),
-            fg_color=(Theme.STONE, "#2B2824"),
+            fg_color=Theme.BTN_SECONDARY_BG,
             text_color=(Theme.BLACK, Theme.PAPER),
-            hover_color=Theme.SUCCESS,
+            hover_color=Theme.BTN_SECONDARY_HOVER,
+            corner_radius=Theme.RADIUS_PILL,
+            border_width=Theme.BORDER_WIDTH_BUTTON,
+            border_color=Theme.BTN_SECONDARY_BORDER,
             command=self.export_csv,
-            height=32
+            height=36
         )
         export_csv_btn.pack(side="left")
 
@@ -93,10 +101,10 @@ class ReportsView(ctk.CTkFrame):
         # 1.5 Executive Report Exports Toolbar
         export_toolbar = ctk.CTkFrame(
             self.scroll_body,
-            corner_radius=12,
+            corner_radius=Theme.RADIUS_CARD,
             fg_color=("#FFFFFF", "#201E1C"),
-            border_width=1,
-            border_color=(Theme.STONE, "#2B2824")
+            border_width=Theme.BORDER_WIDTH_CARD,
+            border_color=(Theme.STONE, "#38342E")
         )
         export_toolbar.pack(fill="x", pady=(0, 16))
 
@@ -116,6 +124,9 @@ class ReportsView(ctk.CTkFrame):
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11, weight="bold"),
             fg_color=Theme.PRIMARY,
             hover_color=Theme.PRIMARY_HOVER,
+            corner_radius=Theme.RADIUS_PILL,
+            border_width=1,
+            border_color=Theme.BTN_PRIMARY_BORDER,
             command=self.export_daily_pdf,
             height=30
         ).pack(side="left", padx=4)
@@ -124,8 +135,12 @@ class ReportsView(ctk.CTkFrame):
             tb_box,
             text="📄 Monthly Report (PDF)",
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11, weight="bold"),
-            fg_color=Theme.SECONDARY,
-            hover_color=Theme.PRIMARY_HOVER,
+            fg_color=Theme.BTN_SECONDARY_BG,
+            hover_color=Theme.BTN_SECONDARY_HOVER,
+            text_color=(Theme.BLACK, Theme.PAPER),
+            corner_radius=Theme.RADIUS_PILL,
+            border_width=1,
+            border_color=Theme.BTN_SECONDARY_BORDER,
             command=self.export_monthly_pdf,
             height=30
         ).pack(side="left", padx=4)
@@ -136,6 +151,9 @@ class ReportsView(ctk.CTkFrame):
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11, weight="bold"),
             fg_color=Theme.SUCCESS,
             hover_color=Theme.SUCCESS_HOVER,
+            corner_radius=Theme.RADIUS_PILL,
+            border_width=1,
+            border_color=Theme.BTN_SUCCESS_BORDER,
             command=self.export_target_archive_pdf,
             height=30
         ).pack(side="left", padx=4)
@@ -144,9 +162,12 @@ class ReportsView(ctk.CTkFrame):
             tb_box,
             text="📊 Target Archive (CSV)",
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11, weight="bold"),
-            fg_color=(Theme.STONE, "#2B2824"),
+            fg_color=Theme.BTN_SECONDARY_BG,
             text_color=(Theme.BLACK, Theme.PAPER),
-            hover_color=Theme.SUCCESS,
+            hover_color=Theme.BTN_SECONDARY_HOVER,
+            corner_radius=Theme.RADIUS_PILL,
+            border_width=1,
+            border_color=Theme.BTN_SECONDARY_BORDER,
             command=self.export_target_archive_csv,
             height=30
         ).pack(side="left", padx=4)
@@ -157,7 +178,10 @@ class ReportsView(ctk.CTkFrame):
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11),
             fg_color="transparent",
             text_color=Theme.PRIMARY,
-            hover_color=("#F1F5F9", "#334155"),
+            hover_color=Theme.BTN_SECONDARY_HOVER,
+            corner_radius=Theme.RADIUS_PILL,
+            border_width=1,
+            border_color=Theme.BTN_PRIMARY_BORDER,
             command=self.open_export_modal,
             height=30
         ).pack(side="right")
@@ -165,10 +189,10 @@ class ReportsView(ctk.CTkFrame):
         # 2. Key Metrics Card
         self.metrics_card = ctk.CTkFrame(
             self.scroll_body,
-            corner_radius=12,
+            corner_radius=Theme.RADIUS_CARD,
             fg_color=("#FFFFFF", "#201E1C"),
-            border_width=1,
-            border_color=(Theme.STONE, "#2B2824")
+            border_width=Theme.BORDER_WIDTH_CARD,
+            border_color=(Theme.STONE, "#38342E")
         )
         self.metrics_card.pack(fill="x", pady=(0, 16))
 
@@ -203,10 +227,10 @@ class ReportsView(ctk.CTkFrame):
         # Team Performance Card
         self.team_card = ctk.CTkFrame(
             mid_row,
-            corner_radius=12,
+            corner_radius=Theme.RADIUS_CARD,
             fg_color=("#FFFFFF", "#201E1C"),
-            border_width=1,
-            border_color=(Theme.STONE, "#2B2824")
+            border_width=Theme.BORDER_WIDTH_CARD,
+            border_color=(Theme.STONE, "#38342E")
         )
         self.team_card.grid(row=0, column=0, padx=(0, 8), sticky="nsew")
 
@@ -223,10 +247,10 @@ class ReportsView(ctk.CTkFrame):
         # Financial Clearance Card
         self.clearance_card = ctk.CTkFrame(
             mid_row,
-            corner_radius=12,
+            corner_radius=Theme.RADIUS_CARD,
             fg_color=("#FFFFFF", "#201E1C"),
-            border_width=1,
-            border_color=(Theme.STONE, "#2B2824")
+            border_width=Theme.BORDER_WIDTH_CARD,
+            border_color=(Theme.STONE, "#38342E")
         )
         self.clearance_card.grid(row=0, column=1, padx=(8, 0), sticky="nsew")
 
@@ -243,10 +267,10 @@ class ReportsView(ctk.CTkFrame):
         # 4. Status Distribution Breakdown Table
         self.status_card = ctk.CTkFrame(
             self.scroll_body,
-            corner_radius=12,
+            corner_radius=Theme.RADIUS_CARD,
             fg_color=("#FFFFFF", "#201E1C"),
-            border_width=1,
-            border_color=(Theme.STONE, "#2B2824")
+            border_width=Theme.BORDER_WIDTH_CARD,
+            border_color=(Theme.STONE, "#38342E")
         )
         self.status_card.pack(fill="x")
 
@@ -514,12 +538,19 @@ class ReportsView(ctk.CTkFrame):
             ],
             variable=report_type_var,
             width=470,
-            height=34
+            height=34,
+            corner_radius=Theme.RADIUS_INPUT
         )
         report_dropdown.pack(fill="x", pady=(0, 14))
 
         # 2. Dynamic Scope Container
-        scope_frame = ctk.CTkFrame(body_f, fg_color=("#F8FAFC", "#1E293B"), corner_radius=8)
+        scope_frame = ctk.CTkFrame(
+            body_f,
+            fg_color=("#FFFFFF", "#201E1C"),
+            corner_radius=Theme.RADIUS_CARD,
+            border_width=Theme.BORDER_WIDTH_CARD,
+            border_color=(Theme.STONE, "#38342E")
+        )
         scope_frame.pack(fill="x", pady=(0, 14), ipady=8)
 
         scope_lbl = ctk.CTkLabel(
@@ -545,16 +576,41 @@ class ReportsView(ctk.CTkFrame):
                 row = ctk.CTkFrame(param_container, fg_color="transparent")
                 row.pack(fill="x")
                 ctk.CTkLabel(row, text="Audit Date (YYYY-MM-DD):", font=ctk.CTkFont(size=11)).pack(side="left", padx=(0, 8))
-                ctk.CTkEntry(row, textvariable=date_entry_var, width=160, height=30).pack(side="left")
+                ctk.CTkEntry(
+                    row,
+                    textvariable=date_entry_var,
+                    width=160,
+                    height=32,
+                    corner_radius=Theme.RADIUS_INPUT,
+                    fg_color=Theme.INSET_BG,
+                    border_color=Theme.INSET_BORDER,
+                    border_width=Theme.BORDER_WIDTH_INPUT
+                ).pack(side="left")
                 ctk.CTkLabel(row, text=f"(Today: {date.today().strftime('%Y-%m-%d')})", font=ctk.CTkFont(size=10), text_color="#64748B").pack(side="left", padx=8)
 
             elif choice == "Monthly Performance & Revenue Audit":
                 row = ctk.CTkFrame(param_container, fg_color="transparent")
                 row.pack(fill="x")
                 ctk.CTkLabel(row, text="Month (1-12):", font=ctk.CTkFont(size=11)).pack(side="left", padx=(0, 6))
-                ctk.CTkOptionMenu(row, values=[str(i) for i in range(1, 13)], variable=month_var, width=75, height=30).pack(side="left", padx=(0, 12))
+                ctk.CTkOptionMenu(
+                    row,
+                    values=[str(i) for i in range(1, 13)],
+                    variable=month_var,
+                    width=75,
+                    height=32,
+                    corner_radius=Theme.RADIUS_INPUT
+                ).pack(side="left", padx=(0, 12))
                 ctk.CTkLabel(row, text="Year:", font=ctk.CTkFont(size=11)).pack(side="left", padx=(0, 6))
-                ctk.CTkEntry(row, textvariable=year_var, width=90, height=30).pack(side="left")
+                ctk.CTkEntry(
+                    row,
+                    textvariable=year_var,
+                    width=90,
+                    height=32,
+                    corner_radius=Theme.RADIUS_INPUT,
+                    fg_color=Theme.INSET_BG,
+                    border_color=Theme.INSET_BORDER,
+                    border_width=Theme.BORDER_WIDTH_INPUT
+                ).pack(side="left")
 
             else:  # Target Archive
                 ctk.CTkLabel(
@@ -579,6 +635,7 @@ class ReportsView(ctk.CTkFrame):
             values=["PDF Document (*.pdf)", "CSV Spreadsheet (*.csv)"],
             selected_color=Theme.PRIMARY,
             selected_hover_color=Theme.PRIMARY_HOVER,
+            corner_radius=Theme.RADIUS_PILL,
             height=34
         )
         format_seg.set("PDF Document (*.pdf)")
@@ -640,6 +697,9 @@ class ReportsView(ctk.CTkFrame):
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=12, weight="bold"),
             fg_color=Theme.PRIMARY,
             hover_color=Theme.PRIMARY_HOVER,
+            corner_radius=Theme.RADIUS_PILL,
+            border_width=Theme.BORDER_WIDTH_BUTTON,
+            border_color=Theme.BTN_PRIMARY_BORDER,
             command=do_export,
             height=36
         ).pack(side="right", padx=(8, 0))
@@ -650,7 +710,8 @@ class ReportsView(ctk.CTkFrame):
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=12),
             fg_color="transparent",
             text_color=("#615D56", "#A8A297"),
-            hover_color=("#F1F5F9", "#334155"),
+            hover_color=Theme.BTN_SECONDARY_HOVER,
+            corner_radius=Theme.RADIUS_PILL,
             command=modal.destroy,
             height=36
         ).pack(side="right")

@@ -49,8 +49,11 @@ class CustomerManagementView(ctk.CTkFrame):
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=12, weight="bold"),
             fg_color=Theme.PRIMARY,
             hover_color=Theme.PRIMARY_HOVER,
+            corner_radius=Theme.RADIUS_PILL,
+            border_width=Theme.BORDER_WIDTH_BUTTON,
+            border_color=Theme.BTN_PRIMARY_BORDER,
             command=self.open_customer_editor_modal,
-            height=34
+            height=36
         )
         add_cust_btn.pack(side="right")
 
@@ -63,10 +66,10 @@ class CustomerManagementView(ctk.CTkFrame):
         # Left Column: Customer Directory Card
         left_card = ctk.CTkFrame(
             main_split,
-            corner_radius=12,
+            corner_radius=Theme.RADIUS_CARD,
             fg_color=("#FFFFFF", "#201E1C"),
-            border_width=1,
-            border_color=(Theme.STONE, "#2B2824")
+            border_width=Theme.BORDER_WIDTH_CARD,
+            border_color=(Theme.STONE, "#38342E")
         )
         left_card.grid(row=0, column=0, padx=(0, 8), sticky="nsew")
 
@@ -84,7 +87,11 @@ class CustomerManagementView(ctk.CTkFrame):
         self.search_entry = ctk.CTkEntry(
             left_card,
             placeholder_text="Filter customer name or phone...",
-            height=30,
+            height=34,
+            corner_radius=Theme.RADIUS_PILL,
+            fg_color=Theme.INSET_BG,
+            border_color=Theme.INSET_BORDER,
+            border_width=Theme.BORDER_WIDTH_INPUT,
             font=ctk.CTkFont(size=11)
         )
         self.search_entry.pack(fill="x", padx=16, pady=(0, 10))
@@ -96,10 +103,10 @@ class CustomerManagementView(ctk.CTkFrame):
         # Right Column: Customer Details & Past Quotes History Card
         self.right_card = ctk.CTkFrame(
             main_split,
-            corner_radius=12,
+            corner_radius=Theme.RADIUS_CARD,
             fg_color=("#FFFFFF", "#201E1C"),
-            border_width=1,
-            border_color=(Theme.STONE, "#2B2824")
+            border_width=Theme.BORDER_WIDTH_CARD,
+            border_color=(Theme.STONE, "#38342E")
         )
         self.right_card.grid(row=0, column=1, padx=(8, 0), sticky="nsew")
 
@@ -144,9 +151,9 @@ class CustomerManagementView(ctk.CTkFrame):
 
         for c in cust_list:
             is_active = self.selected_customer and self.selected_customer.id == c.id
-            card_bg = (Theme.PRIMARY, "#0284C7") if is_active else (Theme.PAPER, "#1E1C1A")
+            card_bg = (Theme.PRIMARY, "#B83222") if is_active else Theme.BTN_SECONDARY_BG
             text_color = "white" if is_active else (Theme.BLACK, Theme.PAPER)
-            sub_color = "#E0F2FE" if is_active else ("#615D56", "#A8A297")
+            border_col = Theme.BTN_PRIMARY_BORDER if is_active else Theme.BTN_SECONDARY_BORDER
 
             btn_text = f"{c.name}\n{c.mobile_number}  •  {c.get_quote_count()} Quotes"
             c_btn = ctk.CTkButton(
@@ -155,10 +162,12 @@ class CustomerManagementView(ctk.CTkFrame):
                 font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11, weight="bold"),
                 text_color=text_color,
                 fg_color=card_bg,
-                hover_color=Theme.PRIMARY_HOVER,
-                corner_radius=8,
+                hover_color=Theme.PRIMARY_HOVER if is_active else Theme.BTN_SECONDARY_HOVER,
+                corner_radius=Theme.RADIUS_BUTTON,
+                border_width=1,
+                border_color=border_col,
                 anchor="w",
-                height=46,
+                height=48,
                 command=lambda cust=c: self.select_customer(cust)
             )
             c_btn.pack(fill="x", pady=3)
@@ -206,16 +215,26 @@ class CustomerManagementView(ctk.CTkFrame):
             header_row,
             text="✏️ Edit Info",
             font=ctk.CTkFont(size=11, weight="bold"),
-            width=80,
-            height=28,
-            fg_color=(Theme.STONE, "#2B2824"),
+            width=90,
+            height=30,
+            corner_radius=Theme.RADIUS_PILL,
+            fg_color=Theme.BTN_SECONDARY_BG,
+            hover_color=Theme.BTN_SECONDARY_HOVER,
+            border_width=Theme.BORDER_WIDTH_BUTTON,
+            border_color=Theme.BTN_SECONDARY_BORDER,
             text_color=(Theme.BLACK, Theme.PAPER),
             command=lambda: self.open_customer_editor_modal(c)
         )
         edit_btn.pack(side="right")
 
         # Stats summary row
-        stats_frame = ctk.CTkFrame(self.profile_container, fg_color=(Theme.PAPER, "#1E1C1A"), corner_radius=8)
+        stats_frame = ctk.CTkFrame(
+            self.profile_container,
+            fg_color=("#FFFFFF", "#201E1C"),
+            corner_radius=Theme.RADIUS_CARD,
+            border_width=Theme.BORDER_WIDTH_CARD,
+            border_color=(Theme.STONE, "#38342E")
+        )
         stats_frame.pack(fill="x", pady=(0, 12))
         stats_frame.grid_columnconfigure((0, 1, 2), weight=1)
 
@@ -227,7 +246,13 @@ class CustomerManagementView(ctk.CTkFrame):
         self.create_profile_stat(stats_frame, 2, "Site Location", c.site_location or "Standard Delivery")
 
         # Delivery Address Box
-        addr_box = ctk.CTkFrame(self.profile_container, fg_color=("#F1F5F9", "#111827"), corner_radius=8)
+        addr_box = ctk.CTkFrame(
+            self.profile_container,
+            fg_color=Theme.INSET_BG,
+            corner_radius=Theme.RADIUS_CARD,
+            border_width=Theme.BORDER_WIDTH_CARD,
+            border_color=Theme.INSET_BORDER
+        )
         addr_box.pack(fill="x", pady=(0, 14))
 
         ctk.CTkLabel(
@@ -263,7 +288,7 @@ class CustomerManagementView(ctk.CTkFrame):
             return
 
         for q in quotes:
-            r = ctk.CTkFrame(history_scroll, fg_color=(Theme.PAPER, "#1E1C1A"), corner_radius=6)
+            r = ctk.CTkFrame(history_scroll, fg_color=(Theme.PAPER, "#1E1C1A"), corner_radius=Theme.RADIUS_SM)
             r.pack(fill="x", pady=3)
             r.grid_columnconfigure((0, 1, 2, 3, 4), weight=1)
 
@@ -304,20 +329,28 @@ class CustomerManagementView(ctk.CTkFrame):
             ctk.CTkButton(
                 btn_box,
                 text="PDF",
-                width=45,
-                height=22,
+                width=50,
+                height=26,
+                corner_radius=Theme.RADIUS_PILL,
                 font=ctk.CTkFont(size=9, weight="bold"),
                 fg_color=Theme.ACCENT_GOLD,
+                hover_color=Theme.ACCENT_GOLD_HOVER,
+                border_width=1,
+                border_color=Theme.BTN_SECONDARY_BORDER,
                 command=lambda qid=q.id: self.export_pdf(qid)
             ).pack(side="left", padx=2)
 
             ctk.CTkButton(
                 btn_box,
                 text="Edit",
-                width=45,
-                height=22,
+                width=50,
+                height=26,
+                corner_radius=Theme.RADIUS_PILL,
                 font=ctk.CTkFont(size=9, weight="bold"),
                 fg_color=Theme.PRIMARY,
+                hover_color=Theme.PRIMARY_HOVER,
+                border_width=1,
+                border_color=Theme.BTN_PRIMARY_BORDER,
                 command=lambda qid=q.id: self.controller.show_view("quotation_editor", qid)
             ).pack(side="left", padx=2)
 
@@ -339,45 +372,85 @@ class CustomerManagementView(ctk.CTkFrame):
     def open_customer_editor_modal(self, customer=None):
         dialog = ctk.CTkToplevel(self)
         dialog.title("Edit Customer" if customer else "New Customer Profile")
-        dialog.geometry("480x440")
+        dialog.geometry("480x480")
         dialog.transient(self.winfo_toplevel())
         dialog.grab_set()
 
         ctk.CTkLabel(
             dialog,
             text="Customer Profile Details",
-            font=ctk.CTkFont(size=16, weight="bold")
+            font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=16, weight="bold")
         ).pack(pady=(16, 12))
 
         f = ctk.CTkFrame(dialog, fg_color="transparent")
         f.pack(fill="both", expand=True, padx=24)
 
         ctk.CTkLabel(f, text="Customer / Architect Name:", font=ctk.CTkFont(size=11, weight="bold")).pack(anchor="w")
-        name_ent = ctk.CTkEntry(f, font=ctk.CTkFont(size=11))
+        name_ent = ctk.CTkEntry(
+            f,
+            height=34,
+            corner_radius=Theme.RADIUS_INPUT,
+            fg_color=Theme.INSET_BG,
+            border_color=Theme.INSET_BORDER,
+            border_width=Theme.BORDER_WIDTH_INPUT,
+            font=ctk.CTkFont(size=11)
+        )
         if customer:
             name_ent.insert(0, customer.name)
         name_ent.pack(fill="x", pady=(2, 6))
 
         ctk.CTkLabel(f, text="Mobile Number:", font=ctk.CTkFont(size=11, weight="bold")).pack(anchor="w")
-        phone_ent = ctk.CTkEntry(f, font=ctk.CTkFont(size=11))
+        phone_ent = ctk.CTkEntry(
+            f,
+            height=34,
+            corner_radius=Theme.RADIUS_INPUT,
+            fg_color=Theme.INSET_BG,
+            border_color=Theme.INSET_BORDER,
+            border_width=Theme.BORDER_WIDTH_INPUT,
+            font=ctk.CTkFont(size=11)
+        )
         if customer:
             phone_ent.insert(0, customer.mobile_number)
         phone_ent.pack(fill="x", pady=(2, 6))
 
         ctk.CTkLabel(f, text="Email Address (Optional):", font=ctk.CTkFont(size=11)).pack(anchor="w")
-        email_ent = ctk.CTkEntry(f, font=ctk.CTkFont(size=11))
+        email_ent = ctk.CTkEntry(
+            f,
+            height=34,
+            corner_radius=Theme.RADIUS_INPUT,
+            fg_color=Theme.INSET_BG,
+            border_color=Theme.INSET_BORDER,
+            border_width=Theme.BORDER_WIDTH_INPUT,
+            font=ctk.CTkFont(size=11)
+        )
         if customer and customer.email:
             email_ent.insert(0, customer.email)
         email_ent.pack(fill="x", pady=(2, 6))
 
         ctk.CTkLabel(f, text="Site / Project Location Reference:", font=ctk.CTkFont(size=11)).pack(anchor="w")
-        site_ent = ctk.CTkEntry(f, font=ctk.CTkFont(size=11))
+        site_ent = ctk.CTkEntry(
+            f,
+            height=34,
+            corner_radius=Theme.RADIUS_INPUT,
+            fg_color=Theme.INSET_BG,
+            border_color=Theme.INSET_BORDER,
+            border_width=Theme.BORDER_WIDTH_INPUT,
+            font=ctk.CTkFont(size=11)
+        )
         if customer and customer.site_location:
             site_ent.insert(0, customer.site_location)
         site_ent.pack(fill="x", pady=(2, 6))
 
         ctk.CTkLabel(f, text="Delivery / Godown Address:", font=ctk.CTkFont(size=11, weight="bold")).pack(anchor="w")
-        addr_ent = ctk.CTkEntry(f, font=ctk.CTkFont(size=11))
+        addr_ent = ctk.CTkEntry(
+            f,
+            height=34,
+            corner_radius=Theme.RADIUS_INPUT,
+            fg_color=Theme.INSET_BG,
+            border_color=Theme.INSET_BORDER,
+            border_width=Theme.BORDER_WIDTH_INPUT,
+            font=ctk.CTkFont(size=11)
+        )
         if customer:
             addr_ent.insert(0, customer.delivery_address)
         addr_ent.pack(fill="x", pady=(2, 14))
@@ -413,5 +486,10 @@ class CustomerManagementView(ctk.CTkFrame):
             text="Save Profile",
             font=ctk.CTkFont(size=12, weight="bold"),
             fg_color=Theme.PRIMARY,
+            hover_color=Theme.PRIMARY_HOVER,
+            corner_radius=Theme.RADIUS_PILL,
+            border_width=Theme.BORDER_WIDTH_BUTTON,
+            border_color=Theme.BTN_PRIMARY_BORDER,
+            height=36,
             command=save_profile
         ).pack(pady=(0, 20))

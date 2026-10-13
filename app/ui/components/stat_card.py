@@ -10,9 +10,9 @@ class StatCard(ctk.CTkFrame):
                  accent_color: str = Theme.PRIMARY, icon: str = "✦", **kwargs):
         super().__init__(
             master,
-            corner_radius=12,
+            corner_radius=Theme.RADIUS_CARD,
             fg_color=("#FFFFFF", "#201E1C"),
-            border_width=1,
+            border_width=Theme.BORDER_WIDTH_CARD,
             border_color=(Theme.STONE, "#38342E"),
             **kwargs
         )
@@ -49,10 +49,10 @@ class StatCard(ctk.CTkFrame):
             text=icon,
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=13, weight="bold"),
             text_color=accent_color,
-            width=24,
-            height=24,
-            corner_radius=6,
-            fg_color=(Theme.PAPER, "#171615")
+            width=28,
+            height=28,
+            corner_radius=Theme.RADIUS_ICON,
+            fg_color=Theme.INSET_BG
         )
         self.icon_badge.pack(side="right")
 

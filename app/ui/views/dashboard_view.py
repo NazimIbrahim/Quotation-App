@@ -54,6 +54,9 @@ class DashboardView(ctk.CTkFrame):
             command=self.on_timeframe_change,
             selected_color=Theme.PRIMARY,
             selected_hover_color=Theme.PRIMARY_HOVER,
+            corner_radius=Theme.RADIUS_PILL,
+            border_width=Theme.BORDER_WIDTH_INPUT,
+            height=36,
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=12, weight="bold")
         )
         self.timeframe_segmented.set("Monthly")
@@ -65,8 +68,11 @@ class DashboardView(ctk.CTkFrame):
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=12, weight="bold"),
             fg_color=Theme.PRIMARY,
             hover_color=Theme.PRIMARY_HOVER,
+            border_width=1,
+            border_color=Theme.BTN_PRIMARY_BORDER,
+            corner_radius=Theme.RADIUS_PILL,
             command=lambda: self.controller.show_view("quotation_editor", None),
-            height=34
+            height=36
         )
         new_quote_btn.pack(side="left")
 
@@ -128,9 +134,9 @@ class DashboardView(ctk.CTkFrame):
         # Left: Salesperson Target vs Achievement Progress Bars
         self.target_card = ctk.CTkFrame(
             middle_row,
-            corner_radius=12,
+            corner_radius=Theme.RADIUS_CARD,
             fg_color=("#FFFFFF", "#201E1C"),
-            border_width=1,
+            border_width=Theme.BORDER_WIDTH_CARD,
             border_color=(Theme.STONE, "#38342E")
         )
         self.target_card.grid(row=0, column=0, padx=(0, 8), sticky="nsew")
@@ -159,9 +165,9 @@ class DashboardView(ctk.CTkFrame):
         # Right: Payment Clearance vs Pending Receivables
         self.receivables_card = ctk.CTkFrame(
             middle_row,
-            corner_radius=12,
+            corner_radius=Theme.RADIUS_CARD,
             fg_color=("#FFFFFF", "#201E1C"),
-            border_width=1,
+            border_width=Theme.BORDER_WIDTH_CARD,
             border_color=(Theme.STONE, "#38342E")
         )
         self.receivables_card.grid(row=0, column=1, padx=(8, 0), sticky="nsew")
@@ -182,9 +188,9 @@ class DashboardView(ctk.CTkFrame):
         # 4. Bottom Section: Recent Quotations Table
         recent_card = ctk.CTkFrame(
             self.scroll_body,
-            corner_radius=12,
+            corner_radius=Theme.RADIUS_CARD,
             fg_color=("#FFFFFF", "#201E1C"),
-            border_width=1,
+            border_width=Theme.BORDER_WIDTH_CARD,
             border_color=(Theme.STONE, "#38342E")
         )
         recent_card.pack(fill="x", pady=(0, 10))
@@ -203,11 +209,14 @@ class DashboardView(ctk.CTkFrame):
             recent_header,
             text="View All Quotes →",
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11, weight="bold"),
-            fg_color="transparent",
-            text_color=Theme.PRIMARY,
-            hover_color=(Theme.STONE, "#242220"),
+            fg_color=Theme.BTN_SECONDARY_BG,
+            border_width=1,
+            border_color=Theme.BTN_SECONDARY_BORDER,
+            corner_radius=Theme.RADIUS_SM,
+            text_color=(Theme.BLACK, Theme.PAPER),
+            hover_color=Theme.PRIMARY,
             command=lambda: self.controller.show_view("quotations", None),
-            height=26
+            height=28
         ).pack(side="right")
 
         self.recent_table_frame = ctk.CTkFrame(recent_card, fg_color="transparent")

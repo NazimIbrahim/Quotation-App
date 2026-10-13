@@ -64,11 +64,14 @@ class CompanySettingsView(ctk.CTkFrame):
             btn_box,
             text="📄 Preview PDF",
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11, weight="bold"),
-            fg_color=(Theme.STONE, "#2B2824"),
+            fg_color=Theme.BTN_SECONDARY_BG,
             text_color=(Theme.BLACK, Theme.PAPER),
-            hover_color=Theme.PRIMARY,
+            hover_color=Theme.BTN_SECONDARY_HOVER,
+            corner_radius=Theme.RADIUS_PILL,
+            border_width=Theme.BORDER_WIDTH_BUTTON,
+            border_color=Theme.BTN_SECONDARY_BORDER,
             command=self.preview_sample_pdf,
-            height=34
+            height=36
         )
         preview_btn.pack(side="left", padx=4)
 
@@ -78,15 +81,18 @@ class CompanySettingsView(ctk.CTkFrame):
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=12, weight="bold"),
             fg_color=Theme.SUCCESS,
             hover_color=Theme.SUCCESS_HOVER,
+            corner_radius=Theme.RADIUS_PILL,
+            border_width=Theme.BORDER_WIDTH_BUTTON,
+            border_color=Theme.BTN_SUCCESS_BORDER,
             command=self.save_settings,
-            height=34
+            height=36
         )
         save_btn.pack(side="left", padx=4)
 
         # 2. Tabview for Settings Categories
         self.tabview = ctk.CTkTabview(
             self,
-            corner_radius=12,
+            corner_radius=Theme.RADIUS_CARD,
             fg_color=("#FFFFFF", "#201E1C"),
             segmented_button_selected_color=Theme.PRIMARY,
             segmented_button_selected_hover_color=Theme.PRIMARY_HOVER,
@@ -114,49 +120,61 @@ class CompanySettingsView(ctk.CTkFrame):
         f.pack(fill="x")
         f.grid_columnconfigure((0, 1), weight=1)
 
+        # Helper for input fields
+        def make_entry(font_weight="normal"):
+            return ctk.CTkEntry(
+                f,
+                height=34,
+                corner_radius=Theme.RADIUS_INPUT,
+                fg_color=Theme.INSET_BG,
+                border_color=Theme.INSET_BORDER,
+                border_width=Theme.BORDER_WIDTH_INPUT,
+                font=ctk.CTkFont(size=11, weight=font_weight)
+            )
+
         # Company Name
         ctk.CTkLabel(f, text="Company / Showroom Name:", font=ctk.CTkFont(size=11, weight="bold")).grid(row=0, column=0, padx=8, pady=(4, 2), sticky="w")
-        self.c_name_entry = ctk.CTkEntry(f, font=ctk.CTkFont(size=12, weight="bold"))
+        self.c_name_entry = make_entry("bold")
         self.c_name_entry.grid(row=1, column=0, padx=8, pady=(0, 10), sticky="ew")
 
         # Tagline
         ctk.CTkLabel(f, text="Tagline / Brand Subtitle:", font=ctk.CTkFont(size=11, weight="bold")).grid(row=0, column=1, padx=8, pady=(4, 2), sticky="w")
-        self.c_tagline_entry = ctk.CTkEntry(f, font=ctk.CTkFont(size=11))
+        self.c_tagline_entry = make_entry()
         self.c_tagline_entry.grid(row=1, column=1, padx=8, pady=(0, 10), sticky="ew")
 
         # Address Line 1
         ctk.CTkLabel(f, text="Showroom Address Line 1:", font=ctk.CTkFont(size=11, weight="bold")).grid(row=2, column=0, padx=8, pady=(4, 2), sticky="w")
-        self.c_addr1_entry = ctk.CTkEntry(f, font=ctk.CTkFont(size=11))
+        self.c_addr1_entry = make_entry()
         self.c_addr1_entry.grid(row=3, column=0, padx=8, pady=(0, 10), sticky="ew")
 
         # Address Line 2
         ctk.CTkLabel(f, text="Address Line 2 (City, Pincode, State):", font=ctk.CTkFont(size=11, weight="bold")).grid(row=2, column=1, padx=8, pady=(4, 2), sticky="w")
-        self.c_addr2_entry = ctk.CTkEntry(f, font=ctk.CTkFont(size=11))
+        self.c_addr2_entry = make_entry()
         self.c_addr2_entry.grid(row=3, column=1, padx=8, pady=(0, 10), sticky="ew")
 
         # Contact Phone
         ctk.CTkLabel(f, text="Contact Numbers (Phone / Landline):", font=ctk.CTkFont(size=11, weight="bold")).grid(row=4, column=0, padx=8, pady=(4, 2), sticky="w")
-        self.c_phone_entry = ctk.CTkEntry(f, font=ctk.CTkFont(size=11))
+        self.c_phone_entry = make_entry()
         self.c_phone_entry.grid(row=5, column=0, padx=8, pady=(0, 10), sticky="ew")
 
         # Email
         ctk.CTkLabel(f, text="Official Email Address:", font=ctk.CTkFont(size=11, weight="bold")).grid(row=4, column=1, padx=8, pady=(4, 2), sticky="w")
-        self.c_email_entry = ctk.CTkEntry(f, font=ctk.CTkFont(size=11))
+        self.c_email_entry = make_entry()
         self.c_email_entry.grid(row=5, column=1, padx=8, pady=(0, 10), sticky="ew")
 
         # Website
         ctk.CTkLabel(f, text="Website URL:", font=ctk.CTkFont(size=11, weight="bold")).grid(row=6, column=0, padx=8, pady=(4, 2), sticky="w")
-        self.c_web_entry = ctk.CTkEntry(f, font=ctk.CTkFont(size=11))
+        self.c_web_entry = make_entry()
         self.c_web_entry.grid(row=7, column=0, padx=8, pady=(0, 10), sticky="ew")
 
         # GSTIN Number
         ctk.CTkLabel(f, text="GSTIN Number:", font=ctk.CTkFont(size=11, weight="bold")).grid(row=6, column=1, padx=8, pady=(4, 2), sticky="w")
-        self.c_gst_entry = ctk.CTkEntry(f, font=ctk.CTkFont(size=11))
+        self.c_gst_entry = make_entry()
         self.c_gst_entry.grid(row=7, column=1, padx=8, pady=(0, 10), sticky="ew")
 
         # State & State Code
         ctk.CTkLabel(f, text="State & State Code:", font=ctk.CTkFont(size=11, weight="bold")).grid(row=8, column=0, padx=8, pady=(4, 2), sticky="w")
-        self.c_state_entry = ctk.CTkEntry(f, font=ctk.CTkFont(size=11))
+        self.c_state_entry = make_entry()
         self.c_state_entry.grid(row=9, column=0, padx=8, pady=(0, 10), sticky="ew")
 
     def build_logo_tab(self):
@@ -184,10 +202,10 @@ class CompanySettingsView(ctk.CTkFrame):
             f,
             width=320,
             height=140,
-            corner_radius=10,
-            fg_color=(Theme.PAPER, "#1E1C1A"),
-            border_width=1,
-            border_color=("#CBD5E1", "#334155")
+            corner_radius=Theme.RADIUS_CARD,
+            fg_color=Theme.INSET_BG,
+            border_width=Theme.BORDER_WIDTH_CARD,
+            border_color=Theme.INSET_BORDER
         )
         preview_card.pack(pady=(0, 14))
         preview_card.pack_propagate(False)
@@ -207,7 +225,11 @@ class CompanySettingsView(ctk.CTkFrame):
         self.logo_path_entry = ctk.CTkEntry(
             path_row,
             placeholder_text="Logo file path (e.g. C:/path/to/logo.png)",
-            height=32,
+            height=34,
+            corner_radius=Theme.RADIUS_INPUT,
+            fg_color=Theme.INSET_BG,
+            border_color=Theme.INSET_BORDER,
+            border_width=Theme.BORDER_WIDTH_INPUT,
             font=ctk.CTkFont(size=11)
         )
         self.logo_path_entry.pack(side="left", fill="x", expand=True, padx=(0, 8))
@@ -218,8 +240,11 @@ class CompanySettingsView(ctk.CTkFrame):
             font=ctk.CTkFont(size=11, weight="bold"),
             fg_color=Theme.PRIMARY,
             hover_color=Theme.PRIMARY_HOVER,
+            corner_radius=Theme.RADIUS_PILL,
+            border_width=Theme.BORDER_WIDTH_BUTTON,
+            border_color=Theme.BTN_PRIMARY_BORDER,
             command=self.browse_logo,
-            height=32
+            height=34
         )
         browse_btn.pack(side="left", padx=(0, 8))
 
@@ -227,11 +252,14 @@ class CompanySettingsView(ctk.CTkFrame):
             path_row,
             text="🗑️ Remove Logo",
             font=ctk.CTkFont(size=11, weight="bold"),
-            fg_color=(Theme.STONE, "#2B2824"),
+            fg_color=Theme.BTN_SECONDARY_BG,
             text_color=Theme.DANGER,
-            hover_color=("#FEE2E2", "#7F1D1D"),
+            hover_color=Theme.BTN_SECONDARY_HOVER,
+            corner_radius=Theme.RADIUS_PILL,
+            border_width=1,
+            border_color=Theme.BTN_DANGER_BORDER,
             command=self.remove_logo,
-            height=32
+            height=34
         )
         remove_btn.pack(side="left")
 
@@ -243,39 +271,58 @@ class CompanySettingsView(ctk.CTkFrame):
         f.pack(fill="x")
         f.grid_columnconfigure((0, 1), weight=1)
 
+        def make_bank_entry(font_weight="normal"):
+            return ctk.CTkEntry(
+                f,
+                height=34,
+                corner_radius=Theme.RADIUS_INPUT,
+                fg_color=Theme.INSET_BG,
+                border_color=Theme.INSET_BORDER,
+                border_width=Theme.BORDER_WIDTH_INPUT,
+                font=ctk.CTkFont(size=11, weight=font_weight)
+            )
+
         # Bank Name
         ctk.CTkLabel(f, text="Bank Name:", font=ctk.CTkFont(size=11, weight="bold")).grid(row=0, column=0, padx=8, pady=(4, 2), sticky="w")
-        self.bank_name_entry = ctk.CTkEntry(f, font=ctk.CTkFont(size=11))
+        self.bank_name_entry = make_bank_entry()
         self.bank_name_entry.grid(row=1, column=0, padx=8, pady=(0, 10), sticky="ew")
 
         # Account Name
         ctk.CTkLabel(f, text="Beneficiary / Account Name:", font=ctk.CTkFont(size=11, weight="bold")).grid(row=0, column=1, padx=8, pady=(4, 2), sticky="w")
-        self.bank_acc_name_entry = ctk.CTkEntry(f, font=ctk.CTkFont(size=11))
+        self.bank_acc_name_entry = make_bank_entry()
         self.bank_acc_name_entry.grid(row=1, column=1, padx=8, pady=(0, 10), sticky="ew")
 
         # Account Number
         ctk.CTkLabel(f, text="Account Number:", font=ctk.CTkFont(size=11, weight="bold")).grid(row=2, column=0, padx=8, pady=(4, 2), sticky="w")
-        self.bank_acc_num_entry = ctk.CTkEntry(f, font=ctk.CTkFont(size=12, weight="bold"))
+        self.bank_acc_num_entry = make_bank_entry("bold")
         self.bank_acc_num_entry.grid(row=3, column=0, padx=8, pady=(0, 10), sticky="ew")
 
         # IFSC Code
         ctk.CTkLabel(f, text="IFSC Code:", font=ctk.CTkFont(size=11, weight="bold")).grid(row=2, column=1, padx=8, pady=(4, 2), sticky="w")
-        self.bank_ifsc_entry = ctk.CTkEntry(f, font=ctk.CTkFont(size=11))
+        self.bank_ifsc_entry = make_bank_entry()
         self.bank_ifsc_entry.grid(row=3, column=1, padx=8, pady=(0, 10), sticky="ew")
 
         # Branch
         ctk.CTkLabel(f, text="Bank Branch Name:", font=ctk.CTkFont(size=11, weight="bold")).grid(row=4, column=0, padx=8, pady=(4, 2), sticky="w")
-        self.bank_branch_entry = ctk.CTkEntry(f, font=ctk.CTkFont(size=11))
+        self.bank_branch_entry = make_bank_entry()
         self.bank_branch_entry.grid(row=5, column=0, padx=8, pady=(0, 10), sticky="ew")
 
         # Account Type
         ctk.CTkLabel(f, text="Account Type (Current / Savings):", font=ctk.CTkFont(size=11, weight="bold")).grid(row=4, column=1, padx=8, pady=(4, 2), sticky="w")
-        self.bank_type_entry = ctk.CTkEntry(f, font=ctk.CTkFont(size=11))
+        self.bank_type_entry = make_bank_entry()
         self.bank_type_entry.grid(row=5, column=1, padx=8, pady=(0, 10), sticky="ew")
 
         # UPI / Digital Remittance notes
         ctk.CTkLabel(f, text="UPI / QR Code & Payment Instructions on PDF:", font=ctk.CTkFont(size=11, weight="bold")).grid(row=6, column=0, columnspan=2, padx=8, pady=(4, 2), sticky="w")
-        self.bank_upi_text = ctk.CTkTextbox(f, height=65, font=ctk.CTkFont(size=11))
+        self.bank_upi_text = ctk.CTkTextbox(
+            f,
+            height=65,
+            corner_radius=Theme.RADIUS_INPUT,
+            fg_color=Theme.INSET_BG,
+            border_color=Theme.INSET_BORDER,
+            border_width=Theme.BORDER_WIDTH_INPUT,
+            font=ctk.CTkFont(size=11)
+        )
         self.bank_upi_text.grid(row=7, column=0, columnspan=2, padx=8, pady=(0, 10), sticky="ew")
 
     def build_sigs_tab(self):
@@ -283,24 +330,35 @@ class CompanySettingsView(ctk.CTkFrame):
         f.pack(fill="both", expand=True, padx=20, pady=16)
         f.grid_columnconfigure((0, 1), weight=1)
 
+        def make_sig_entry():
+            return ctk.CTkEntry(
+                f,
+                height=34,
+                corner_radius=Theme.RADIUS_INPUT,
+                fg_color=Theme.INSET_BG,
+                border_color=Theme.INSET_BORDER,
+                border_width=Theme.BORDER_WIDTH_INPUT,
+                font=ctk.CTkFont(size=11)
+            )
+
         # Store Manager Title
         ctk.CTkLabel(f, text="Manager Signatory Title:", font=ctk.CTkFont(size=11, weight="bold")).grid(row=0, column=0, padx=8, pady=(4, 2), sticky="w")
-        self.mgr_title_entry = ctk.CTkEntry(f, font=ctk.CTkFont(size=11))
+        self.mgr_title_entry = make_sig_entry()
         self.mgr_title_entry.grid(row=1, column=0, padx=8, pady=(0, 12), sticky="ew")
 
         # Store Manager Name
         ctk.CTkLabel(f, text="Store Manager Name:", font=ctk.CTkFont(size=11, weight="bold")).grid(row=0, column=1, padx=8, pady=(4, 2), sticky="w")
-        self.mgr_name_entry = ctk.CTkEntry(f, font=ctk.CTkFont(size=11))
+        self.mgr_name_entry = make_sig_entry()
         self.mgr_name_entry.grid(row=1, column=1, padx=8, pady=(0, 12), sticky="ew")
 
         # Store Manager Phone
         ctk.CTkLabel(f, text="Store Manager Phone / Contact:", font=ctk.CTkFont(size=11, weight="bold")).grid(row=2, column=0, padx=8, pady=(4, 2), sticky="w")
-        self.mgr_phone_entry = ctk.CTkEntry(f, font=ctk.CTkFont(size=11))
+        self.mgr_phone_entry = make_sig_entry()
         self.mgr_phone_entry.grid(row=3, column=0, padx=8, pady=(0, 12), sticky="ew")
 
         # Sales Associate Title
         ctk.CTkLabel(f, text="Showroom Sales Associate Title:", font=ctk.CTkFont(size=11, weight="bold")).grid(row=2, column=1, padx=8, pady=(4, 2), sticky="w")
-        self.sales_title_entry = ctk.CTkEntry(f, font=ctk.CTkFont(size=11))
+        self.sales_title_entry = make_sig_entry()
         self.sales_title_entry.grid(row=3, column=1, padx=8, pady=(0, 12), sticky="ew")
 
     def build_terms_tab(self):
@@ -320,14 +378,26 @@ class CompanySettingsView(ctk.CTkFrame):
             t_header,
             text="↺ Reset to Standard 13-Point",
             font=ctk.CTkFont(size=10, weight="bold"),
-            fg_color=(Theme.STONE, "#2B2824"),
+            fg_color=Theme.BTN_SECONDARY_BG,
+            hover_color=Theme.BTN_SECONDARY_HOVER,
             text_color=(Theme.BLACK, Theme.PAPER),
+            corner_radius=Theme.RADIUS_PILL,
+            border_width=1,
+            border_color=Theme.BTN_SECONDARY_BORDER,
             command=self.reset_terms_defaults,
-            height=26
+            height=28
         )
         reset_terms_btn.pack(side="right")
 
-        self.terms_textbox = ctk.CTkTextbox(f, font=ctk.CTkFont(size=11), wrap="word")
+        self.terms_textbox = ctk.CTkTextbox(
+            f,
+            corner_radius=Theme.RADIUS_INPUT,
+            fg_color=Theme.INSET_BG,
+            border_color=Theme.INSET_BORDER,
+            border_width=Theme.BORDER_WIDTH_INPUT,
+            font=ctk.CTkFont(size=11),
+            wrap="word"
+        )
         self.terms_textbox.pack(fill="both", expand=True, pady=(4, 10))
 
     def load_settings(self):

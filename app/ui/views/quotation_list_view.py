@@ -56,8 +56,11 @@ class QuotationListView(ctk.CTkFrame):
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=12, weight="bold"),
             fg_color=Theme.PRIMARY,
             hover_color=Theme.PRIMARY_HOVER,
+            border_width=1,
+            border_color=Theme.BTN_PRIMARY_BORDER,
+            corner_radius=Theme.RADIUS_PILL,
             command=lambda: self.controller.show_view("quotation_editor", None),
-            height=34
+            height=36
         )
         new_btn.pack(side="right", padx=(8, 0))
 
@@ -72,6 +75,9 @@ class QuotationListView(ctk.CTkFrame):
             command=self.on_status_filter,
             selected_color=Theme.PRIMARY,
             selected_hover_color=Theme.PRIMARY_HOVER,
+            corner_radius=Theme.RADIUS_PILL,
+            border_width=Theme.BORDER_WIDTH_INPUT,
+            height=34,
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11, weight="bold")
         )
         self.status_segment.set("All")
@@ -85,7 +91,11 @@ class QuotationListView(ctk.CTkFrame):
             search_box,
             placeholder_text="Search quote #, customer, phone...",
             width=260,
-            height=32,
+            height=34,
+            corner_radius=Theme.RADIUS_PILL,
+            border_width=Theme.BORDER_WIDTH_INPUT,
+            fg_color=Theme.INSET_BG,
+            border_color=Theme.INSET_BORDER,
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11)
         )
         self.search_entry.pack(side="left", padx=(0, 6))
@@ -95,11 +105,14 @@ class QuotationListView(ctk.CTkFrame):
         search_btn = ctk.CTkButton(
             search_box,
             text="Search",
-            width=65,
-            height=32,
+            width=70,
+            height=34,
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11, weight="bold"),
-            fg_color=(Theme.STONE, "#2B2824"),
+            fg_color=Theme.BTN_SECONDARY_BG,
             text_color=(Theme.BLACK, Theme.PAPER),
+            border_width=1,
+            border_color=Theme.BTN_SECONDARY_BORDER,
+            corner_radius=Theme.RADIUS_PILL,
             hover_color=Theme.PRIMARY,
             command=self.on_search
         )
@@ -108,15 +121,15 @@ class QuotationListView(ctk.CTkFrame):
         # 3. Main Quotations Table Frame
         self.table_card = ctk.CTkFrame(
             self,
-            corner_radius=12,
+            corner_radius=Theme.RADIUS_CARD,
             fg_color=("#FFFFFF", "#201E1C"),
-            border_width=1,
+            border_width=Theme.BORDER_WIDTH_CARD,
             border_color=(Theme.STONE, "#38342E")
         )
         self.table_card.pack(fill="both", expand=True, padx=24, pady=(0, 20))
 
         # Table Header Row (Stone)
-        self.header_frame = ctk.CTkFrame(self.table_card, fg_color=(Theme.STONE, "#242220"), corner_radius=8, height=38)
+        self.header_frame = ctk.CTkFrame(self.table_card, fg_color=(Theme.STONE, "#242220"), corner_radius=12, height=38)
         self.header_frame.pack(fill="x", padx=12, pady=(12, 6))
         self.header_frame.grid_columnconfigure(0, weight=2)  # Quote No & Date
         self.header_frame.grid_columnconfigure(1, weight=3)  # Customer & Phone
@@ -268,8 +281,11 @@ class QuotationListView(ctk.CTkFrame):
             pdf_btn = ctk.CTkButton(
                 c6,
                 text="📄 PDF",
-                width=52,
-                height=26,
+                width=54,
+                height=28,
+                corner_radius=Theme.RADIUS_SM,
+                border_width=1,
+                border_color=Theme.BTN_PRIMARY_BORDER,
                 font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=10, weight="bold"),
                 fg_color=Theme.PRIMARY,
                 hover_color=Theme.PRIMARY_HOVER,
@@ -281,10 +297,13 @@ class QuotationListView(ctk.CTkFrame):
             edit_btn = ctk.CTkButton(
                 c6,
                 text="✏️ Edit",
-                width=50,
-                height=26,
+                width=52,
+                height=28,
+                corner_radius=Theme.RADIUS_SM,
+                border_width=1,
+                border_color=Theme.BTN_SECONDARY_BORDER,
                 font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=10, weight="bold"),
-                fg_color=(Theme.STONE, "#2B2824"),
+                fg_color=Theme.BTN_SECONDARY_BG,
                 text_color=(Theme.BLACK, Theme.PAPER),
                 hover_color=Theme.PRIMARY,
                 command=lambda qid=q.id: self.controller.show_view("quotation_editor", qid)
@@ -295,10 +314,13 @@ class QuotationListView(ctk.CTkFrame):
             pmt_btn = ctk.CTkButton(
                 c6,
                 text="💳 Pay",
-                width=50,
-                height=26,
+                width=52,
+                height=28,
+                corner_radius=Theme.RADIUS_SM,
+                border_width=1,
+                border_color=Theme.BTN_SECONDARY_BORDER,
                 font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=10, weight="bold"),
-                fg_color=(Theme.STONE, "#2B2824"),
+                fg_color=Theme.BTN_SECONDARY_BG,
                 text_color=(Theme.BLACK, Theme.PAPER),
                 hover_color=Theme.SUCCESS,
                 command=lambda qid=q.id: self.controller.show_view("payment_tracking", qid)
@@ -309,12 +331,13 @@ class QuotationListView(ctk.CTkFrame):
             status_menu = ctk.CTkOptionMenu(
                 c6,
                 values=["Open", "In-Review", "Won", "Lost"],
-                width=80,
-                height=26,
+                width=82,
+                height=28,
+                corner_radius=Theme.RADIUS_SM,
                 font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=10),
-                fg_color=("#F1F5F9", "#1F2937"),
+                fg_color=Theme.BTN_SECONDARY_BG,
                 text_color=(Theme.BLACK, Theme.PAPER),
-                button_color=("#CBD5E1", "#4B5563"),
+                button_color=Theme.PRIMARY,
                 command=lambda new_val, qid=q.id: self.change_status(qid, new_val)
             )
             status_menu.set(q.status)

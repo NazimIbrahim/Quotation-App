@@ -47,6 +47,33 @@ class Theme:
     DARK_CARD = "#211F1D"
     DARK_CARD_HOVER = "#2D2A27"
     DARK_BORDER = "#38342E"
+
+    # Neumorphic / Soft UI Shapes & Radius Tokens
+    RADIUS_PILL = 20            # Full pill/capsule for primary actions, segmented buttons, search
+    RADIUS_BUTTON = 18          # Standard pill buttons
+    RADIUS_CARD = 18            # Soft extruded card containers
+    RADIUS_INPUT = 14           # Sunken/inset well fields
+    RADIUS_SM = 13              # Compact table action pills & badges
+    RADIUS_ICON = 16            # Circular tactile icons
+    
+    # Tactile 3D Soft Bevel & Border Tokens
+    BORDER_WIDTH_CARD = 1.5
+    BORDER_WIDTH_BUTTON = 1.0
+    BORDER_WIDTH_INPUT = 1.5
+    
+    # Inset / Sunken Well (Inputs, Search, recessed containers)
+    INSET_BG = ("#F0ECE4", "#181615")
+    INSET_BORDER = ("#D6CFBF", "#34302A")
+    
+    # Raised Secondary / Neutral Tactile Button
+    BTN_SECONDARY_BG = ("#ECE7DF", "#23201D")
+    BTN_SECONDARY_HOVER = ("#DFD8CE", "#2F2B27")
+    BTN_SECONDARY_BORDER = ("#D5CEBF", "#38342E")
+    
+    # Tactile Button Borders
+    BTN_PRIMARY_BORDER = ("#FFA194", "#B83222")
+    BTN_SUCCESS_BORDER = ("#86EFAC", "#166534")
+    BTN_DANGER_BORDER = ("#FCA5A5", "#991B1B")
     
     # Typography Font Specs
     FONT_FAMILY = "Segoe UI"
@@ -65,4 +92,3 @@ class Theme:
             "Unpaid": (cls.DANGER, "#FEE2E2"),
         }
         return mapping.get(status, (cls.STONE_MUTED, "#F5F2EB"))
-

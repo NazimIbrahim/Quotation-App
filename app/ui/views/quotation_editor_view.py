@@ -717,10 +717,10 @@ class AreaSectionWidget(ctk.CTkFrame):
         default_tax_mode = kwargs.pop("default_tax_mode", "exclusive")
         super().__init__(
             master,
-            corner_radius=10,
+            corner_radius=Theme.RADIUS_CARD,
             fg_color=("#FFFFFF", "#201E1C"),
-            border_width=1,
-            border_color=("#CBD5E1", "#334155"),
+            border_width=Theme.BORDER_WIDTH_CARD,
+            border_color=(Theme.STONE, "#38342E"),
             **kwargs
         )
         self.default_tax_mode = default_tax_mode
@@ -730,7 +730,7 @@ class AreaSectionWidget(ctk.CTkFrame):
         self.item_widgets = []
 
         # 1. Area Section Header
-        self.header = ctk.CTkFrame(self, fg_color=("#0F172A", "#0B0F19"), corner_radius=8, height=36)
+        self.header = ctk.CTkFrame(self, fg_color=("#0F172A", "#0B0F19"), corner_radius=12, height=36)
         self.header.pack(fill="x", padx=6, pady=6)
 
         icon_lbl = ctk.CTkLabel(
@@ -745,7 +745,8 @@ class AreaSectionWidget(ctk.CTkFrame):
             self.header,
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=12, weight="bold"),
             width=260,
-            height=26,
+            height=28,
+            corner_radius=Theme.RADIUS_SM,
             fg_color=("#1E293B", "#1F2937"),
             text_color="white",
             border_color="#475569"
@@ -757,10 +758,13 @@ class AreaSectionWidget(ctk.CTkFrame):
             self.header,
             text="Remove Area 🗑️",
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=10, weight="bold"),
-            width=90,
-            height=24,
+            width=95,
+            height=26,
+            corner_radius=Theme.RADIUS_SM,
             fg_color="transparent",
             text_color=Theme.DANGER,
+            border_width=1,
+            border_color=Theme.BTN_DANGER_BORDER,
             hover_color=("#7F1D1D", "#450A0A"),
             command=self.remove_self
         )
@@ -816,8 +820,11 @@ class AreaSectionWidget(ctk.CTkFrame):
             bot_bar,
             text="+ Add Tile Item",
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11, weight="bold"),
-            width=110,
-            height=26,
+            width=120,
+            height=30,
+            corner_radius=Theme.RADIUS_BUTTON,
+            border_width=1,
+            border_color=Theme.BTN_PRIMARY_BORDER,
             fg_color=Theme.PRIMARY,
             hover_color=Theme.PRIMARY_HOVER,
             command=self.add_item
@@ -961,11 +968,14 @@ class QuotationEditorView(ctk.CTkFrame):
             btn_box,
             text="← Back to List",
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11, weight="bold"),
-            fg_color=(Theme.STONE, "#2B2824"),
+            fg_color=Theme.BTN_SECONDARY_BG,
             text_color=(Theme.BLACK, Theme.PAPER),
+            border_width=1,
+            border_color=Theme.BTN_SECONDARY_BORDER,
+            corner_radius=Theme.RADIUS_PILL,
             hover_color=Theme.PRIMARY,
             command=lambda: self.controller.show_view("quotations", None),
-            height=34
+            height=36
         )
         back_btn.pack(side="left", padx=4)
 
@@ -973,11 +983,14 @@ class QuotationEditorView(ctk.CTkFrame):
             btn_box,
             text="🏷️ Brands & Coverage",
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11, weight="bold"),
-            fg_color=("#1E293B", "#334155"),
-            text_color="#F8FAFC",
+            fg_color=Theme.BTN_SECONDARY_BG,
+            text_color=(Theme.BLACK, Theme.PAPER),
+            border_width=1,
+            border_color=Theme.BTN_SECONDARY_BORDER,
+            corner_radius=Theme.RADIUS_PILL,
             hover_color=Theme.PRIMARY,
             command=lambda: self.controller.show_view("brand_catalog"),
-            height=34
+            height=36
         )
         brand_cat_btn.pack(side="left", padx=4)
 
@@ -985,11 +998,14 @@ class QuotationEditorView(ctk.CTkFrame):
             btn_box,
             text="🔄 Sync Catalog",
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11, weight="bold"),
-            fg_color=("#334155", "#475569"),
-            text_color="#F8FAFC",
+            fg_color=Theme.BTN_SECONDARY_BG,
+            text_color=(Theme.BLACK, Theme.PAPER),
+            border_width=1,
+            border_color=Theme.BTN_SECONDARY_BORDER,
+            corner_radius=Theme.RADIUS_PILL,
             hover_color=Theme.PRIMARY,
             command=self.refresh_catalog_data,
-            height=34
+            height=36
         )
         sync_cat_btn.pack(side="left", padx=4)
 
@@ -997,10 +1013,13 @@ class QuotationEditorView(ctk.CTkFrame):
             btn_box,
             text="📄 Save & Export PDF",
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11, weight="bold"),
-            fg_color=Theme.ACCENT_GOLD,
-            hover_color=Theme.ACCENT_GOLD_HOVER,
+            fg_color=Theme.SUCCESS,
+            border_width=1,
+            border_color=Theme.BTN_SUCCESS_BORDER,
+            corner_radius=Theme.RADIUS_PILL,
+            hover_color=Theme.SUCCESS_HOVER,
             command=self.save_and_export_pdf,
-            height=34
+            height=36
         )
         save_pdf_btn.pack(side="left", padx=4)
 
@@ -1009,9 +1028,12 @@ class QuotationEditorView(ctk.CTkFrame):
             text="💾 Save Quotation",
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11, weight="bold"),
             fg_color=Theme.PRIMARY,
+            border_width=1,
+            border_color=Theme.BTN_PRIMARY_BORDER,
+            corner_radius=Theme.RADIUS_PILL,
             hover_color=Theme.PRIMARY_HOVER,
             command=self.save_quotation,
-            height=34
+            height=36
         )
         save_btn.pack(side="left", padx=4)
 
@@ -1022,9 +1044,9 @@ class QuotationEditorView(ctk.CTkFrame):
         # 2. Header Card (Customer, Quotation No, Date, Sales Rep)
         header_card = ctk.CTkFrame(
             self.scroll_body,
-            corner_radius=12,
+            corner_radius=Theme.RADIUS_CARD,
             fg_color=("#FFFFFF", "#201E1C"),
-            border_width=1,
+            border_width=Theme.BORDER_WIDTH_CARD,
             border_color=(Theme.STONE, "#2B2824")
         )
         header_card.pack(fill="x", pady=(0, 14))
@@ -1113,9 +1135,12 @@ class QuotationEditorView(ctk.CTkFrame):
             tax_mode_frame,
             text="Apply to All Items ⟳",
             font=ctk.CTkFont(size=10, weight="bold"),
-            width=125,
-            height=24,
-            fg_color=(Theme.STONE, "#2B2824"),
+            width=135,
+            height=28,
+            corner_radius=Theme.RADIUS_BUTTON,
+            border_width=1,
+            border_color=Theme.BTN_SECONDARY_BORDER,
+            fg_color=Theme.BTN_SECONDARY_BG,
             text_color=(Theme.BLACK, Theme.PAPER),
             hover_color=Theme.PRIMARY,
             command=self.apply_global_tax_to_all_items
@@ -1148,9 +1173,12 @@ class QuotationEditorView(ctk.CTkFrame):
             btn = ctk.CTkButton(
                 quick_areas_frame,
                 text=f"+ {a_suggest}",
-                font=ctk.CTkFont(size=10),
-                height=24,
-                fg_color=(Theme.STONE, "#2B2824"),
+                font=ctk.CTkFont(size=10, weight="bold"),
+                height=26,
+                corner_radius=Theme.RADIUS_SM,
+                border_width=1,
+                border_color=Theme.BTN_SECONDARY_BORDER,
+                fg_color=Theme.BTN_SECONDARY_BG,
                 text_color=(Theme.BLACK, Theme.PAPER),
                 hover_color=Theme.PRIMARY,
                 command=lambda name=a_suggest: self.add_area(name)
@@ -1166,22 +1194,23 @@ class QuotationEditorView(ctk.CTkFrame):
             self.scroll_body,
             text="+ Add Another Custom Area Section",
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=12, weight="bold"),
-            fg_color=("#F1F5F9", "#1E293B"),
+            fg_color=Theme.INSET_BG,
             text_color=Theme.PRIMARY,
-            hover_color=(Theme.STONE, "#2B2824"),
-            border_width=1,
+            hover_color=Theme.BTN_SECONDARY_HOVER,
+            corner_radius=Theme.RADIUS_PILL,
+            border_width=Theme.BORDER_WIDTH_CARD,
             border_color=Theme.PRIMARY,
             command=lambda: self.add_area("New Project Area"),
-            height=32
+            height=36
         )
         add_custom_area_btn.pack(fill="x", pady=(0, 14))
 
         # 5. Bottom Financial Summary & Status Card
         totals_card = ctk.CTkFrame(
             self.scroll_body,
-            corner_radius=12,
+            corner_radius=Theme.RADIUS_CARD,
             fg_color=("#FFFFFF", "#201E1C"),
-            border_width=1,
+            border_width=Theme.BORDER_WIDTH_CARD,
             border_color=(Theme.STONE, "#2B2824")
         )
         totals_card.pack(fill="x", pady=(0, 10))
@@ -1205,6 +1234,7 @@ class QuotationEditorView(ctk.CTkFrame):
             left_notes,
             values=["Open", "In-Review", "Won", "Lost"],
             font=ctk.CTkFont(size=12, weight="bold"),
+            corner_radius=Theme.RADIUS_BUTTON,
             width=200
         )
         self.status_combo.set("Open")
@@ -1216,11 +1246,11 @@ class QuotationEditorView(ctk.CTkFrame):
             font=ctk.CTkFont(size=12, weight="bold")
         ).pack(anchor="w", pady=(0, 4))
 
-        self.notes_entry = ctk.CTkTextbox(left_notes, height=75, font=ctk.CTkFont(size=11))
+        self.notes_entry = ctk.CTkTextbox(left_notes, height=75, font=ctk.CTkFont(size=11), corner_radius=Theme.RADIUS_INPUT, border_width=Theme.BORDER_WIDTH_INPUT, border_color=Theme.INSET_BORDER, fg_color=Theme.INSET_BG)
         self.notes_entry.pack(fill="x")
 
         # Right: Financial Totals Box
-        right_box = ctk.CTkFrame(t_layout, fg_color=(Theme.PAPER, "#1E1C1A"), corner_radius=10)
+        right_box = ctk.CTkFrame(t_layout, fg_color=Theme.INSET_BG, corner_radius=16, border_width=Theme.BORDER_WIDTH_CARD, border_color=Theme.INSET_BORDER)
         right_box.grid(row=0, column=1, sticky="nsew")
 
         r_grid = ctk.CTkFrame(right_box, fg_color="transparent")

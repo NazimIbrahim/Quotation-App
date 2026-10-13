@@ -49,8 +49,11 @@ class BrandCatalogView(ctk.CTkFrame):
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=12, weight="bold"),
             fg_color=Theme.PRIMARY,
             hover_color=Theme.PRIMARY_HOVER,
+            corner_radius=Theme.RADIUS_PILL,
+            border_width=Theme.BORDER_WIDTH_BUTTON,
+            border_color=Theme.BTN_PRIMARY_BORDER,
             command=self.open_brand_modal,
-            height=34
+            height=36
         )
         add_brand_btn.pack(side="right")
 
@@ -63,9 +66,9 @@ class BrandCatalogView(ctk.CTkFrame):
         # Left Column: Brands Directory Card
         left_card = ctk.CTkFrame(
             main_split,
-            corner_radius=12,
+            corner_radius=Theme.RADIUS_CARD,
             fg_color=("#FFFFFF", "#201E1C"),
-            border_width=1,
+            border_width=Theme.BORDER_WIDTH_CARD,
             border_color=(Theme.STONE, "#38342E")
         )
         left_card.grid(row=0, column=0, padx=(0, 8), sticky="nsew")
@@ -84,7 +87,11 @@ class BrandCatalogView(ctk.CTkFrame):
         self.search_entry = ctk.CTkEntry(
             left_card,
             placeholder_text="Search brands...",
-            height=30,
+            height=34,
+            corner_radius=Theme.RADIUS_PILL,
+            fg_color=Theme.INSET_BG,
+            border_color=Theme.INSET_BORDER,
+            border_width=Theme.BORDER_WIDTH_INPUT,
             font=ctk.CTkFont(size=11)
         )
         self.search_entry.pack(fill="x", padx=16, pady=(0, 10))
@@ -96,9 +103,9 @@ class BrandCatalogView(ctk.CTkFrame):
         # Right Column: Brand Sizes & Box Coverage Card
         self.right_card = ctk.CTkFrame(
             main_split,
-            corner_radius=12,
+            corner_radius=Theme.RADIUS_CARD,
             fg_color=("#FFFFFF", "#201E1C"),
-            border_width=1,
+            border_width=Theme.BORDER_WIDTH_CARD,
             border_color=(Theme.STONE, "#38342E")
         )
         self.right_card.grid(row=0, column=1, padx=(8, 0), sticky="nsew")
@@ -127,8 +134,9 @@ class BrandCatalogView(ctk.CTkFrame):
 
         for b in brands:
             is_active = self.selected_brand and self.selected_brand.id == b.id
-            card_bg = Theme.PRIMARY if is_active else (Theme.PAPER, "#242220")
+            card_bg = (Theme.PRIMARY, "#B83222") if is_active else Theme.BTN_SECONDARY_BG
             text_color = "white" if is_active else (Theme.BLACK, Theme.PAPER)
+            border_col = Theme.BTN_PRIMARY_BORDER if is_active else Theme.BTN_SECONDARY_BORDER
 
             sizes_count = b.size_coverages.count()
 
@@ -138,10 +146,12 @@ class BrandCatalogView(ctk.CTkFrame):
                 font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11, weight="bold"),
                 text_color=text_color,
                 fg_color=card_bg,
-                hover_color=Theme.PRIMARY_HOVER,
-                corner_radius=8,
+                hover_color=Theme.PRIMARY_HOVER if is_active else Theme.BTN_SECONDARY_HOVER,
+                corner_radius=Theme.RADIUS_BUTTON,
+                border_width=1,
+                border_color=border_col,
                 anchor="w",
-                height=46,
+                height=48,
                 command=lambda brand=b: self.select_brand(brand)
             )
             btn.pack(fill="x", pady=3)
@@ -194,8 +204,11 @@ class BrandCatalogView(ctk.CTkFrame):
             font=ctk.CTkFont(size=11, weight="bold"),
             fg_color=Theme.SUCCESS,
             hover_color=Theme.SUCCESS_HOVER,
+            corner_radius=Theme.RADIUS_PILL,
+            border_width=Theme.BORDER_WIDTH_BUTTON,
+            border_color=Theme.BTN_SUCCESS_BORDER,
             command=self.open_size_modal,
-            height=28
+            height=30
         )
         add_size_btn.pack(side="left", padx=4)
 
@@ -203,9 +216,13 @@ class BrandCatalogView(ctk.CTkFrame):
             act_box,
             text="✏️ Edit",
             font=ctk.CTkFont(size=11, weight="bold"),
-            width=60,
-            height=28,
-            fg_color=(Theme.STONE, "#2B2824"),
+            width=70,
+            height=30,
+            corner_radius=Theme.RADIUS_PILL,
+            fg_color=Theme.BTN_SECONDARY_BG,
+            hover_color=Theme.BTN_SECONDARY_HOVER,
+            border_width=Theme.BORDER_WIDTH_BUTTON,
+            border_color=Theme.BTN_SECONDARY_BORDER,
             text_color=(Theme.BLACK, Theme.PAPER),
             command=lambda: self.open_brand_modal(b)
         )
@@ -215,8 +232,11 @@ class BrandCatalogView(ctk.CTkFrame):
             act_box,
             text="🗑️",
             font=ctk.CTkFont(size=11),
-            width=32,
-            height=28,
+            width=34,
+            height=30,
+            corner_radius=Theme.RADIUS_PILL,
+            border_width=1,
+            border_color=Theme.BTN_DANGER_BORDER,
             fg_color="transparent",
             text_color=Theme.DANGER,
             command=lambda: self.delete_brand(b)
@@ -224,7 +244,7 @@ class BrandCatalogView(ctk.CTkFrame):
         del_b_btn.pack(side="left")
 
         # Table Header Row (Stone)
-        h_frame = ctk.CTkFrame(self.brand_detail_container, fg_color=(Theme.STONE, "#242220"), height=32, corner_radius=6)
+        h_frame = ctk.CTkFrame(self.brand_detail_container, fg_color=(Theme.STONE, "#242220"), height=32, corner_radius=Theme.RADIUS_SM)
         h_frame.pack(fill="x", pady=(6, 4))
         h_frame.grid_columnconfigure((0, 1, 2, 3, 4, 5), weight=1)
 
@@ -253,7 +273,7 @@ class BrandCatalogView(ctk.CTkFrame):
             return
 
         for sc in size_entries:
-            rf = ctk.CTkFrame(rows_scroll, fg_color=(Theme.PAPER, "#1E1C1A"), corner_radius=6)
+            rf = ctk.CTkFrame(rows_scroll, fg_color=(Theme.PAPER, "#1E1C1A"), corner_radius=Theme.RADIUS_SM)
             rf.pack(fill="x", pady=2)
             rf.grid_columnconfigure((0, 1, 2, 3, 4, 5), weight=1)
 
@@ -304,10 +324,14 @@ class BrandCatalogView(ctk.CTkFrame):
             ctk.CTkButton(
                 act_f,
                 text="Edit",
-                width=45,
-                height=22,
+                width=50,
+                height=24,
+                corner_radius=Theme.RADIUS_PILL,
                 font=ctk.CTkFont(size=9, weight="bold"),
-                fg_color=(Theme.STONE, "#2B2824"),
+                fg_color=Theme.BTN_SECONDARY_BG,
+                hover_color=Theme.BTN_SECONDARY_HOVER,
+                border_width=1,
+                border_color=Theme.BTN_SECONDARY_BORDER,
                 text_color=(Theme.BLACK, Theme.PAPER),
                 command=lambda item=sc: self.open_size_modal(item)
             ).pack(side="left", padx=2)
@@ -315,9 +339,12 @@ class BrandCatalogView(ctk.CTkFrame):
             ctk.CTkButton(
                 act_f,
                 text="✕",
-                width=24,
-                height=22,
+                width=26,
+                height=24,
+                corner_radius=Theme.RADIUS_PILL,
                 font=ctk.CTkFont(size=9),
+                border_width=1,
+                border_color=Theme.BTN_DANGER_BORDER,
                 fg_color="transparent",
                 text_color=Theme.DANGER,
                 command=lambda item=sc: self.delete_size(item)
@@ -326,23 +353,39 @@ class BrandCatalogView(ctk.CTkFrame):
     def open_brand_modal(self, brand=None):
         dialog = ctk.CTkToplevel(self)
         dialog.title("Edit Brand" if brand else "Add Tile Brand")
-        dialog.geometry("420x280")
+        dialog.geometry("440x300")
         dialog.transient(self.winfo_toplevel())
         dialog.grab_set()
 
-        ctk.CTkLabel(dialog, text="Tile Brand Master", font=ctk.CTkFont(size=16, weight="bold")).pack(pady=(16, 12))
+        ctk.CTkLabel(dialog, text="Tile Brand Master", font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=16, weight="bold")).pack(pady=(16, 12))
 
         f = ctk.CTkFrame(dialog, fg_color="transparent")
         f.pack(fill="both", expand=True, padx=24)
 
         ctk.CTkLabel(f, text="Brand Name:", font=ctk.CTkFont(size=11, weight="bold")).pack(anchor="w")
-        name_ent = ctk.CTkEntry(f, placeholder_text="e.g. Kajaria Eternity / Simpolo")
+        name_ent = ctk.CTkEntry(
+            f,
+            height=34,
+            corner_radius=Theme.RADIUS_INPUT,
+            fg_color=Theme.INSET_BG,
+            border_color=Theme.INSET_BORDER,
+            border_width=Theme.BORDER_WIDTH_INPUT,
+            placeholder_text="e.g. Kajaria Eternity / Simpolo"
+        )
         if brand:
             name_ent.insert(0, brand.name)
         name_ent.pack(fill="x", pady=(2, 8))
 
         ctk.CTkLabel(f, text="Brand Description / Grade:", font=ctk.CTkFont(size=11, weight="bold")).pack(anchor="w")
-        desc_ent = ctk.CTkEntry(f, placeholder_text="e.g. Premium Vitrified Slabs & Surfaces")
+        desc_ent = ctk.CTkEntry(
+            f,
+            height=34,
+            corner_radius=Theme.RADIUS_INPUT,
+            fg_color=Theme.INSET_BG,
+            border_color=Theme.INSET_BORDER,
+            border_width=Theme.BORDER_WIDTH_INPUT,
+            placeholder_text="e.g. Premium Vitrified Slabs & Surfaces"
+        )
         if brand and brand.description:
             desc_ent.insert(0, brand.description)
         desc_ent.pack(fill="x", pady=(2, 14))
@@ -374,6 +417,11 @@ class BrandCatalogView(ctk.CTkFrame):
             text="Save Brand",
             font=ctk.CTkFont(size=12, weight="bold"),
             fg_color=Theme.PRIMARY,
+            hover_color=Theme.PRIMARY_HOVER,
+            corner_radius=Theme.RADIUS_PILL,
+            border_width=Theme.BORDER_WIDTH_BUTTON,
+            border_color=Theme.BTN_PRIMARY_BORDER,
+            height=36,
             command=save_b
         ).pack(pady=(0, 20))
 
@@ -399,11 +447,11 @@ class BrandCatalogView(ctk.CTkFrame):
 
         dialog = ctk.CTkToplevel(self)
         dialog.title("Edit Size & Coverage" if size_entry else f"Add Size to {self.selected_brand.name}")
-        dialog.geometry("450x420")
+        dialog.geometry("460x460")
         dialog.transient(self.winfo_toplevel())
         dialog.grab_set()
 
-        ctk.CTkLabel(dialog, text="Tile Size & Box Coverage Spec", font=ctk.CTkFont(size=16, weight="bold")).pack(pady=(16, 12))
+        ctk.CTkLabel(dialog, text="Tile Size & Box Coverage Spec", font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=16, weight="bold")).pack(pady=(16, 12))
 
         f = ctk.CTkFrame(dialog, fg_color="transparent")
         f.pack(fill="both", expand=True, padx=24)
@@ -419,32 +467,69 @@ class BrandCatalogView(ctk.CTkFrame):
         except Exception:
             pass
         combined_sizes = all_existing_sizes + [s for s in COMMON_TILE_SIZES if s not in all_existing_sizes]
-        size_combo = ctk.CTkComboBox(f, values=combined_sizes)
+        size_combo = ctk.CTkComboBox(
+            f,
+            values=combined_sizes,
+            height=34,
+            corner_radius=Theme.RADIUS_INPUT
+        )
         if size_entry:
             size_combo.set(size_entry.size)
         size_combo.pack(fill="x", pady=(2, 6))
 
         # Pieces per box
         ctk.CTkLabel(f, text="Pieces Per Box:", font=ctk.CTkFont(size=11, weight="bold")).pack(anchor="w")
-        pcs_ent = ctk.CTkEntry(f, placeholder_text="e.g. 2")
+        pcs_ent = ctk.CTkEntry(
+            f,
+            height=34,
+            corner_radius=Theme.RADIUS_INPUT,
+            fg_color=Theme.INSET_BG,
+            border_color=Theme.INSET_BORDER,
+            border_width=Theme.BORDER_WIDTH_INPUT,
+            placeholder_text="e.g. 2"
+        )
         pcs_ent.insert(0, str(size_entry.pieces_per_box) if size_entry else "2")
         pcs_ent.pack(fill="x", pady=(2, 6))
 
         # Coverage Area in Sqft
         ctk.CTkLabel(f, text="Coverage Area in Sqft Per Box:", font=ctk.CTkFont(size=11, weight="bold")).pack(anchor="w")
-        cov_ent = ctk.CTkEntry(f, placeholder_text="e.g. 15.50 or 23.25")
+        cov_ent = ctk.CTkEntry(
+            f,
+            height=34,
+            corner_radius=Theme.RADIUS_INPUT,
+            fg_color=Theme.INSET_BG,
+            border_color=Theme.INSET_BORDER,
+            border_width=Theme.BORDER_WIDTH_INPUT,
+            placeholder_text="e.g. 15.50 or 23.25"
+        )
         cov_ent.insert(0, f"{size_entry.coverage_sqft:.2f}" if size_entry else "15.50")
         cov_ent.pack(fill="x", pady=(2, 6))
 
         # Default Rate per Sqft
         ctk.CTkLabel(f, text="Default Rate Per Sqft (₹):", font=ctk.CTkFont(size=11, weight="bold")).pack(anchor="w")
-        rate_sqft_ent = ctk.CTkEntry(f, placeholder_text="e.g. 110.00")
+        rate_sqft_ent = ctk.CTkEntry(
+            f,
+            height=34,
+            corner_radius=Theme.RADIUS_INPUT,
+            fg_color=Theme.INSET_BG,
+            border_color=Theme.INSET_BORDER,
+            border_width=Theme.BORDER_WIDTH_INPUT,
+            placeholder_text="e.g. 110.00"
+        )
         rate_sqft_ent.insert(0, f"{size_entry.default_rate_sqft:.2f}" if (size_entry and size_entry.default_rate_sqft > 0) else "")
         rate_sqft_ent.pack(fill="x", pady=(2, 6))
 
         # Default Box Price
         ctk.CTkLabel(f, text="Default Box Price (₹) (Auto-calculated):", font=ctk.CTkFont(size=11, weight="bold")).pack(anchor="w")
-        rate_box_ent = ctk.CTkEntry(f, placeholder_text="e.g. 1705.00")
+        rate_box_ent = ctk.CTkEntry(
+            f,
+            height=34,
+            corner_radius=Theme.RADIUS_INPUT,
+            fg_color=Theme.INSET_BG,
+            border_color=Theme.INSET_BORDER,
+            border_width=Theme.BORDER_WIDTH_INPUT,
+            placeholder_text="e.g. 1705.00"
+        )
         rate_box_ent.insert(0, f"{size_entry.default_rate_box:.2f}" if (size_entry and size_entry.default_rate_box > 0) else "")
         rate_box_ent.pack(fill="x", pady=(2, 12))
 
@@ -510,6 +595,11 @@ class BrandCatalogView(ctk.CTkFrame):
             text="Save Size & Coverage",
             font=ctk.CTkFont(size=12, weight="bold"),
             fg_color=Theme.PRIMARY,
+            hover_color=Theme.PRIMARY_HOVER,
+            corner_radius=Theme.RADIUS_PILL,
+            border_width=Theme.BORDER_WIDTH_BUTTON,
+            border_color=Theme.BTN_PRIMARY_BORDER,
+            height=36,
             command=save_sz
         ).pack(pady=(0, 20))
 

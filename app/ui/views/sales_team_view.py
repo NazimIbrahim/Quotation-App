@@ -53,8 +53,11 @@ class SalesTeamView(ctk.CTkFrame):
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11, weight="bold"),
             fg_color=Theme.PRIMARY,
             hover_color=Theme.PRIMARY_HOVER,
+            corner_radius=Theme.RADIUS_PILL,
+            border_width=Theme.BORDER_WIDTH_BUTTON,
+            border_color=Theme.BTN_PRIMARY_BORDER,
             command=self.open_alter_target_modal,
-            height=34
+            height=36
         )
         alter_target_btn.pack(side="left", padx=(0, 8))
 
@@ -64,8 +67,11 @@ class SalesTeamView(ctk.CTkFrame):
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11, weight="bold"),
             fg_color=Theme.SUCCESS,
             hover_color=Theme.SUCCESS_HOVER,
+            corner_radius=Theme.RADIUS_PILL,
+            border_width=Theme.BORDER_WIDTH_BUTTON,
+            border_color=Theme.BTN_SUCCESS_BORDER,
             command=self.export_target_archive_report,
-            height=34
+            height=36
         )
         export_archive_btn.pack(side="left", padx=(0, 8))
 
@@ -73,10 +79,14 @@ class SalesTeamView(ctk.CTkFrame):
             top_btn_box,
             text="+ Add Team Member",
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=12, weight="bold"),
-            fg_color=Theme.SECONDARY,
-            hover_color=Theme.PRIMARY_HOVER,
+            fg_color=Theme.BTN_SECONDARY_BG,
+            hover_color=Theme.BTN_SECONDARY_HOVER,
+            text_color=(Theme.BLACK, Theme.PAPER),
+            corner_radius=Theme.RADIUS_PILL,
+            border_width=Theme.BORDER_WIDTH_BUTTON,
+            border_color=Theme.BTN_SECONDARY_BORDER,
             command=self.open_member_modal,
-            height=34
+            height=36
         )
         add_rep_btn.pack(side="left")
 
@@ -87,10 +97,10 @@ class SalesTeamView(ctk.CTkFrame):
         # 2. Manager Approvals Queue (Highlighted if any quotes in-review)
         self.approval_card = ctk.CTkFrame(
             self.scroll_body,
-            corner_radius=12,
+            corner_radius=Theme.RADIUS_CARD,
             fg_color=("#FFFFFF", "#201E1C"),
-            border_width=1,
-            border_color=(Theme.STONE, "#2B2824")
+            border_width=Theme.BORDER_WIDTH_CARD,
+            border_color=(Theme.STONE, "#38342E")
         )
         self.approval_card.pack(fill="x", pady=(0, 16))
 
@@ -132,6 +142,8 @@ class SalesTeamView(ctk.CTkFrame):
             command=self.on_scope_changed,
             selected_color=Theme.PRIMARY,
             selected_hover_color=Theme.PRIMARY_HOVER,
+            corner_radius=Theme.RADIUS_PILL,
+            height=34,
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11, weight="bold")
         )
         self.scope_segment.set("This Month")
@@ -166,7 +178,7 @@ class SalesTeamView(ctk.CTkFrame):
             ).pack(anchor="w", pady=6)
         else:
             for q in in_review_quotes:
-                r = ctk.CTkFrame(self.approvals_container, fg_color=("#EDE9FE", "#1E1B4B"), corner_radius=8)
+                r = ctk.CTkFrame(self.approvals_container, fg_color=("#EDE9FE", "#1E1B4B"), corner_radius=Theme.RADIUS_SM)
                 r.pack(fill="x", pady=4)
 
                 info_box = ctk.CTkFrame(r, fg_color="transparent")
@@ -196,6 +208,9 @@ class SalesTeamView(ctk.CTkFrame):
                     font=ctk.CTkFont(size=11, weight="bold"),
                     fg_color=Theme.SUCCESS,
                     hover_color=Theme.SUCCESS_HOVER,
+                    corner_radius=Theme.RADIUS_PILL,
+                    border_width=1,
+                    border_color=Theme.BTN_SUCCESS_BORDER,
                     height=28,
                     command=lambda qid=q.id: self.approve_quote(qid, Quotation.STATUS_WON)
                 ).pack(side="left", padx=3)
@@ -206,6 +221,9 @@ class SalesTeamView(ctk.CTkFrame):
                     font=ctk.CTkFont(size=11, weight="bold"),
                     fg_color=Theme.DANGER,
                     hover_color=Theme.DANGER_HOVER,
+                    corner_radius=Theme.RADIUS_PILL,
+                    border_width=1,
+                    border_color=Theme.BTN_DANGER_BORDER,
                     height=28,
                     command=lambda qid=q.id: self.approve_quote(qid, Quotation.STATUS_LOST)
                 ).pack(side="left", padx=3)
@@ -233,10 +251,10 @@ class SalesTeamView(ctk.CTkFrame):
         for sp in members:
             card = ctk.CTkFrame(
                 self.team_cards_container,
-                corner_radius=12,
+                corner_radius=Theme.RADIUS_CARD,
                 fg_color=("#FFFFFF", "#201E1C"),
-                border_width=1,
-                border_color=(Theme.STONE, "#2B2824")
+                border_width=Theme.BORDER_WIDTH_CARD,
+                border_color=(Theme.STONE, "#38342E")
             )
             card.pack(fill="x", pady=6)
 
@@ -261,7 +279,7 @@ class SalesTeamView(ctk.CTkFrame):
                 font=ctk.CTkFont(size=10, weight="bold"),
                 text_color="white",
                 fg_color=role_bg,
-                corner_radius=4
+                corner_radius=Theme.RADIUS_SM
             ).pack(side="left", padx=8)
 
             ctk.CTkLabel(
@@ -278,8 +296,11 @@ class SalesTeamView(ctk.CTkFrame):
                 btn_box,
                 text="🎯 Alter Target",
                 font=ctk.CTkFont(size=10, weight="bold"),
-                width=95,
-                height=26,
+                width=100,
+                height=28,
+                corner_radius=Theme.RADIUS_PILL,
+                border_width=1,
+                border_color=Theme.BTN_PRIMARY_BORDER,
                 fg_color=Theme.PRIMARY,
                 hover_color=Theme.PRIMARY_HOVER,
                 command=lambda m=sp: self.open_alter_target_modal(m)
@@ -290,9 +311,13 @@ class SalesTeamView(ctk.CTkFrame):
                 btn_box,
                 text="Edit Info",
                 font=ctk.CTkFont(size=10),
-                width=75,
-                height=26,
-                fg_color=(Theme.STONE, "#2B2824"),
+                width=80,
+                height=28,
+                corner_radius=Theme.RADIUS_PILL,
+                border_width=1,
+                border_color=Theme.BTN_SECONDARY_BORDER,
+                fg_color=Theme.BTN_SECONDARY_BG,
+                hover_color=Theme.BTN_SECONDARY_HOVER,
                 text_color=(Theme.BLACK, Theme.PAPER),
                 command=lambda m=sp: self.open_member_modal(m)
             )
@@ -309,7 +334,7 @@ class SalesTeamView(ctk.CTkFrame):
             balance = max(0.0, round(target_val - achieved, 2))
             pct = (achieved / target_val * 100.0) if target_val > 0 else 0.0
 
-            metrics_grid = ctk.CTkFrame(card, fg_color=(Theme.PAPER, "#1E1C1A"), corner_radius=8)
+            metrics_grid = ctk.CTkFrame(card, fg_color=(Theme.PAPER, "#1E1C1A"), corner_radius=Theme.RADIUS_SM, border_width=1, border_color=(Theme.STONE, "#38342E"))
             metrics_grid.pack(fill="x", padx=16, pady=(0, 8))
             metrics_grid.grid_columnconfigure((0, 1, 2), weight=1)
 
@@ -429,7 +454,13 @@ class SalesTeamView(ctk.CTkFrame):
         ).pack(anchor="w", pady=(2, 0))
 
         # Member Selection Card
-        member_card = ctk.CTkFrame(scroll, corner_radius=10, fg_color=("#FFFFFF", "#201E1C"), border_width=1, border_color=(Theme.STONE, "#2B2824"))
+        member_card = ctk.CTkFrame(
+            scroll,
+            corner_radius=Theme.RADIUS_CARD,
+            fg_color=("#FFFFFF", "#201E1C"),
+            border_width=Theme.BORDER_WIDTH_CARD,
+            border_color=(Theme.STONE, "#38342E")
+        )
         member_card.pack(fill="x", pady=(0, 12), ipady=6)
 
         ctk.CTkLabel(
@@ -459,6 +490,8 @@ class SalesTeamView(ctk.CTkFrame):
             member_card,
             values=member_options,
             width=500,
+            height=34,
+            corner_radius=Theme.RADIUS_INPUT,
             font=ctk.CTkFont(size=12)
         )
         if default_str:
@@ -466,7 +499,13 @@ class SalesTeamView(ctk.CTkFrame):
         member_combo.pack(fill="x", padx=14, pady=(0, 10))
 
         # Target Type & Parameters Card
-        config_card = ctk.CTkFrame(scroll, corner_radius=10, fg_color=("#FFFFFF", "#201E1C"), border_width=1, border_color=(Theme.STONE, "#2B2824"))
+        config_card = ctk.CTkFrame(
+            scroll,
+            corner_radius=Theme.RADIUS_CARD,
+            fg_color=("#FFFFFF", "#201E1C"),
+            border_width=Theme.BORDER_WIDTH_CARD,
+            border_color=(Theme.STONE, "#38342E")
+        )
         config_card.pack(fill="x", pady=(0, 12), ipady=6)
 
         ctk.CTkLabel(
@@ -481,6 +520,8 @@ class SalesTeamView(ctk.CTkFrame):
             values=["📅 Specific Month", "📆 Weekly (7 Days)", "🎯 Custom Date Range"],
             selected_color=Theme.PRIMARY,
             selected_hover_color=Theme.PRIMARY_HOVER,
+            corner_radius=Theme.RADIUS_PILL,
+            height=32,
             font=ctk.CTkFont(size=11, weight="bold")
         )
         scope_segment.set("📅 Specific Month")
@@ -533,13 +574,13 @@ class SalesTeamView(ctk.CTkFrame):
                 m_row.pack(fill="x", pady=(0, 6))
 
                 cur_month_name = month_names[today.month - 1]
-                month_combo = ctk.CTkComboBox(m_row, values=month_names, width=180)
+                month_combo = ctk.CTkComboBox(m_row, values=month_names, width=180, height=34, corner_radius=Theme.RADIUS_INPUT)
                 month_combo.set(cur_month_name)
                 month_combo.pack(side="left", padx=(0, 8))
                 month_combo_ref[0] = month_combo
 
                 years = [str(today.year - 1), str(today.year), str(today.year + 1), str(today.year + 2)]
-                year_combo = ctk.CTkComboBox(m_row, values=years, width=120)
+                year_combo = ctk.CTkComboBox(m_row, values=years, width=120, height=34, corner_radius=Theme.RADIUS_INPUT)
                 year_combo.set(str(today.year))
                 year_combo.pack(side="left")
                 year_combo_ref[0] = year_combo
@@ -560,7 +601,15 @@ class SalesTeamView(ctk.CTkFrame):
                     font=ctk.CTkFont(size=11, weight="bold")
                 ).pack(anchor="w", pady=(0, 4))
 
-                w_ent = ctk.CTkEntry(fields_container, width=220)
+                w_ent = ctk.CTkEntry(
+                    fields_container,
+                    width=220,
+                    height=34,
+                    corner_radius=Theme.RADIUS_INPUT,
+                    fg_color=Theme.INSET_BG,
+                    border_color=Theme.INSET_BORDER,
+                    border_width=Theme.BORDER_WIDTH_INPUT
+                )
                 w_ent.insert(0, today.strftime("%Y-%m-%d"))
                 w_ent.pack(anchor="w", pady=(0, 4))
                 week_date_entry_ref[0] = w_ent
@@ -593,14 +642,30 @@ class SalesTeamView(ctk.CTkFrame):
                 d_row = ctk.CTkFrame(fields_container, fg_color="transparent")
                 d_row.pack(fill="x", pady=(0, 6))
 
-                s_ent = ctk.CTkEntry(d_row, width=150)
+                s_ent = ctk.CTkEntry(
+                    d_row,
+                    width=150,
+                    height=34,
+                    corner_radius=Theme.RADIUS_INPUT,
+                    fg_color=Theme.INSET_BG,
+                    border_color=Theme.INSET_BORDER,
+                    border_width=Theme.BORDER_WIDTH_INPUT
+                )
                 s_ent.insert(0, today.strftime("%Y-%m-%d"))
                 s_ent.pack(side="left", padx=(0, 8))
                 start_date_entry_ref[0] = s_ent
 
                 ctk.CTkLabel(d_row, text="to", font=ctk.CTkFont(size=11)).pack(side="left", padx=(0, 8))
 
-                e_ent = ctk.CTkEntry(d_row, width=150)
+                e_ent = ctk.CTkEntry(
+                    d_row,
+                    width=150,
+                    height=34,
+                    corner_radius=Theme.RADIUS_INPUT,
+                    fg_color=Theme.INSET_BG,
+                    border_color=Theme.INSET_BORDER,
+                    border_width=Theme.BORDER_WIDTH_INPUT
+                )
                 default_end = today + timedelta(days=14)
                 e_ent.insert(0, default_end.strftime("%Y-%m-%d"))
                 e_ent.pack(side="left")
@@ -612,7 +677,15 @@ class SalesTeamView(ctk.CTkFrame):
                     font=ctk.CTkFont(size=11, weight="bold")
                 ).pack(anchor="w", pady=(4, 2))
 
-                lbl_ent = ctk.CTkEntry(fields_container, placeholder_text="e.g. Diwali Mega Promotion, Q4 Surge")
+                lbl_ent = ctk.CTkEntry(
+                    fields_container,
+                    height=34,
+                    corner_radius=Theme.RADIUS_INPUT,
+                    fg_color=Theme.INSET_BG,
+                    border_color=Theme.INSET_BORDER,
+                    border_width=Theme.BORDER_WIDTH_INPUT,
+                    placeholder_text="e.g. Diwali Mega Promotion, Q4 Surge"
+                )
                 lbl_ent.pack(fill="x", pady=(0, 4))
                 custom_label_entry_ref[0] = lbl_ent
 
@@ -627,7 +700,13 @@ class SalesTeamView(ctk.CTkFrame):
         render_scope_fields("📅 Specific Month")
 
         # Amount & Notes Section
-        amount_card = ctk.CTkFrame(scroll, corner_radius=10, fg_color=("#FFFFFF", "#201E1C"), border_width=1, border_color=(Theme.STONE, "#2B2824"))
+        amount_card = ctk.CTkFrame(
+            scroll,
+            corner_radius=Theme.RADIUS_CARD,
+            fg_color=("#FFFFFF", "#201E1C"),
+            border_width=Theme.BORDER_WIDTH_CARD,
+            border_color=(Theme.STONE, "#38342E")
+        )
         amount_card.pack(fill="x", pady=(0, 12), ipady=6)
 
         ctk.CTkLabel(
@@ -638,14 +717,29 @@ class SalesTeamView(ctk.CTkFrame):
         ).pack(anchor="w", padx=14, pady=(10, 6))
 
         ctk.CTkLabel(amount_card, text="Target Amount (₹):", font=ctk.CTkFont(size=11, weight="bold")).pack(anchor="w", padx=14, pady=(0, 2))
-        amount_ent = ctk.CTkEntry(amount_card)
+        amount_ent = ctk.CTkEntry(
+            amount_card,
+            height=34,
+            corner_radius=Theme.RADIUS_INPUT,
+            fg_color=Theme.INSET_BG,
+            border_color=Theme.INSET_BORDER,
+            border_width=Theme.BORDER_WIDTH_INPUT
+        )
         cur_selected_sp = member_map.get(member_combo.get())
         default_amt = str(cur_selected_sp.monthly_target) if cur_selected_sp else "600000.0"
         amount_ent.insert(0, default_amt)
         amount_ent.pack(fill="x", padx=14, pady=(0, 6))
 
         ctk.CTkLabel(amount_card, text="Notes / Reason (Optional):", font=ctk.CTkFont(size=11, weight="bold")).pack(anchor="w", padx=14, pady=(0, 2))
-        notes_ent = ctk.CTkEntry(amount_card, placeholder_text="e.g. Festival Season Surge, S-Tier Incentive Sprint")
+        notes_ent = ctk.CTkEntry(
+            amount_card,
+            height=34,
+            corner_radius=Theme.RADIUS_INPUT,
+            fg_color=Theme.INSET_BG,
+            border_color=Theme.INSET_BORDER,
+            border_width=Theme.BORDER_WIDTH_INPUT,
+            placeholder_text="e.g. Festival Season Surge, S-Tier Incentive Sprint"
+        )
         notes_ent.pack(fill="x", padx=14, pady=(0, 10))
 
         # Save Button
@@ -705,13 +799,22 @@ class SalesTeamView(ctk.CTkFrame):
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=13, weight="bold"),
             fg_color=Theme.PRIMARY,
             hover_color=Theme.PRIMARY_HOVER,
+            corner_radius=Theme.RADIUS_PILL,
+            border_width=Theme.BORDER_WIDTH_BUTTON,
+            border_color=Theme.BTN_PRIMARY_BORDER,
             height=36,
             command=save_target
         )
         save_btn.pack(fill="x", pady=(0, 16))
 
         # Active Altered Targets List Container
-        active_targets_frame = ctk.CTkFrame(scroll, corner_radius=10, fg_color=("#FFFFFF", "#201E1C"), border_width=1, border_color=(Theme.STONE, "#2B2824"))
+        active_targets_frame = ctk.CTkFrame(
+            scroll,
+            corner_radius=Theme.RADIUS_CARD,
+            fg_color=("#FFFFFF", "#201E1C"),
+            border_width=Theme.BORDER_WIDTH_CARD,
+            border_color=(Theme.STONE, "#38342E")
+        )
         active_targets_frame.pack(fill="x", pady=(0, 16), ipady=6)
 
         targets_header_lbl = ctk.CTkLabel(
@@ -804,8 +907,11 @@ class SalesTeamView(ctk.CTkFrame):
                     font=ctk.CTkFont(size=10, weight="bold"),
                     fg_color=Theme.DANGER,
                     hover_color=Theme.DANGER_HOVER,
-                    width=70,
-                    height=24,
+                    corner_radius=Theme.RADIUS_PILL,
+                    border_width=1,
+                    border_color=Theme.BTN_DANGER_BORDER,
+                    width=75,
+                    height=26,
                     command=lambda tid=tgt.id: delete_target_record(tid)
                 )
                 del_btn.pack(side="right", padx=10)
@@ -832,35 +938,61 @@ class SalesTeamView(ctk.CTkFrame):
     def open_member_modal(self, member=None):
         dialog = ctk.CTkToplevel(self)
         dialog.title("Edit Team Member" if member else "Add Team Member")
-        dialog.geometry("460x420")
+        dialog.geometry("460x440")
         dialog.transient(self.winfo_toplevel())
         dialog.grab_set()
 
-        ctk.CTkLabel(dialog, text="Sales Team Member", font=ctk.CTkFont(size=16, weight="bold")).pack(pady=(16, 12))
+        ctk.CTkLabel(dialog, text="Sales Team Member", font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=16, weight="bold")).pack(pady=(16, 12))
 
         f = ctk.CTkFrame(dialog, fg_color="transparent")
         f.pack(fill="both", expand=True, padx=24)
 
         ctk.CTkLabel(f, text="Full Name:", font=ctk.CTkFont(size=11, weight="bold")).pack(anchor="w")
-        name_ent = ctk.CTkEntry(f)
+        name_ent = ctk.CTkEntry(
+            f,
+            height=34,
+            corner_radius=Theme.RADIUS_INPUT,
+            fg_color=Theme.INSET_BG,
+            border_color=Theme.INSET_BORDER,
+            border_width=Theme.BORDER_WIDTH_INPUT
+        )
         if member:
             name_ent.insert(0, member.name)
         name_ent.pack(fill="x", pady=(2, 6))
 
         ctk.CTkLabel(f, text="Contact Number:", font=ctk.CTkFont(size=11, weight="bold")).pack(anchor="w")
-        phone_ent = ctk.CTkEntry(f)
+        phone_ent = ctk.CTkEntry(
+            f,
+            height=34,
+            corner_radius=Theme.RADIUS_INPUT,
+            fg_color=Theme.INSET_BG,
+            border_color=Theme.INSET_BORDER,
+            border_width=Theme.BORDER_WIDTH_INPUT
+        )
         if member:
             phone_ent.insert(0, member.contact_number)
         phone_ent.pack(fill="x", pady=(2, 6))
 
         ctk.CTkLabel(f, text="Role:", font=ctk.CTkFont(size=11, weight="bold")).pack(anchor="w")
-        role_combo = ctk.CTkComboBox(f, values=[SalesPerson.ROLE_SALES, SalesPerson.ROLE_MANAGER])
+        role_combo = ctk.CTkComboBox(
+            f,
+            values=[SalesPerson.ROLE_SALES, SalesPerson.ROLE_MANAGER],
+            height=34,
+            corner_radius=Theme.RADIUS_INPUT
+        )
         if member:
             role_combo.set(member.role)
         role_combo.pack(fill="x", pady=(2, 6))
 
         ctk.CTkLabel(f, text="Monthly Sales Target (₹):", font=ctk.CTkFont(size=11, weight="bold")).pack(anchor="w")
-        target_ent = ctk.CTkEntry(f)
+        target_ent = ctk.CTkEntry(
+            f,
+            height=34,
+            corner_radius=Theme.RADIUS_INPUT,
+            fg_color=Theme.INSET_BG,
+            border_color=Theme.INSET_BORDER,
+            border_width=Theme.BORDER_WIDTH_INPUT
+        )
         if member:
             target_ent.insert(0, str(member.monthly_target))
         else:
@@ -897,6 +1029,11 @@ class SalesTeamView(ctk.CTkFrame):
             text="Save Member",
             font=ctk.CTkFont(size=12, weight="bold"),
             fg_color=Theme.PRIMARY,
+            hover_color=Theme.PRIMARY_HOVER,
+            corner_radius=Theme.RADIUS_PILL,
+            border_width=Theme.BORDER_WIDTH_BUTTON,
+            border_color=Theme.BTN_PRIMARY_BORDER,
+            height=36,
             command=save_m
         ).pack(pady=(0, 20))
 
