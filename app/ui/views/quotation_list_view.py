@@ -56,8 +56,7 @@ class QuotationListView(ctk.CTkFrame):
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=12, weight="bold"),
             fg_color=Theme.PRIMARY,
             hover_color=Theme.PRIMARY_HOVER,
-            border_width=1,
-            border_color=Theme.BTN_PRIMARY_BORDER,
+            border_width=Theme.BORDER_WIDTH_BUTTON,
             corner_radius=Theme.RADIUS_PILL,
             command=lambda: self.controller.show_view("quotation_editor", None),
             height=36
@@ -110,8 +109,7 @@ class QuotationListView(ctk.CTkFrame):
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11, weight="bold"),
             fg_color=Theme.BTN_SECONDARY_BG,
             text_color=(Theme.BLACK, Theme.PAPER),
-            border_width=1,
-            border_color=Theme.BTN_SECONDARY_BORDER,
+            border_width=Theme.BORDER_WIDTH_BUTTON,
             corner_radius=Theme.RADIUS_PILL,
             hover_color=Theme.PRIMARY,
             command=self.on_search
@@ -124,7 +122,7 @@ class QuotationListView(ctk.CTkFrame):
             corner_radius=Theme.RADIUS_CARD,
             fg_color=("#FFFFFF", "#201E1C"),
             border_width=Theme.BORDER_WIDTH_CARD,
-            border_color=(Theme.STONE, "#38342E")
+            border_color=Theme.LIGHT_BORDER
         )
         self.table_card.pack(fill="both", expand=True, padx=24, pady=(0, 20))
 
@@ -284,8 +282,7 @@ class QuotationListView(ctk.CTkFrame):
                 width=54,
                 height=28,
                 corner_radius=Theme.RADIUS_SM,
-                border_width=1,
-                border_color=Theme.BTN_PRIMARY_BORDER,
+                border_width=Theme.BORDER_WIDTH_BUTTON,
                 font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=10, weight="bold"),
                 fg_color=Theme.PRIMARY,
                 hover_color=Theme.PRIMARY_HOVER,
@@ -300,8 +297,7 @@ class QuotationListView(ctk.CTkFrame):
                 width=52,
                 height=28,
                 corner_radius=Theme.RADIUS_SM,
-                border_width=1,
-                border_color=Theme.BTN_SECONDARY_BORDER,
+                border_width=Theme.BORDER_WIDTH_BUTTON,
                 font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=10, weight="bold"),
                 fg_color=Theme.BTN_SECONDARY_BG,
                 text_color=(Theme.BLACK, Theme.PAPER),
@@ -317,8 +313,7 @@ class QuotationListView(ctk.CTkFrame):
                 width=52,
                 height=28,
                 corner_radius=Theme.RADIUS_SM,
-                border_width=1,
-                border_color=Theme.BTN_SECONDARY_BORDER,
+                border_width=Theme.BORDER_WIDTH_BUTTON,
                 font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=10, weight="bold"),
                 fg_color=Theme.BTN_SECONDARY_BG,
                 text_color=(Theme.BLACK, Theme.PAPER),

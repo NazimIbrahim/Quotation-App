@@ -235,8 +235,7 @@ class AppWindow(ctk.CTk):
             font=ctk.CTkFont(size=10, weight="bold"),
             fg_color=Theme.BTN_SECONDARY_BG,
             text_color=("#3D3A35", "#C4BEB2"),
-            border_width=1,
-            border_color=Theme.BTN_SECONDARY_BORDER,
+            border_width=Theme.BORDER_WIDTH_BUTTON,
             corner_radius=Theme.RADIUS_BUTTON,
             hover_color=Theme.DANGER,
             height=28,
@@ -304,8 +303,7 @@ class AppWindow(ctk.CTk):
             if vk == view_name or (view_name == "quotation_editor" and vk == "quotation_editor" and param is None):
                 btn.configure(
                     fg_color=Theme.PRIMARY,
-                    border_width=1,
-                    border_color=Theme.BTN_PRIMARY_BORDER,
+                    border_width=Theme.BORDER_WIDTH_BUTTON,
                     text_color="#FFFFFF"
                 )
             else:

@@ -104,7 +104,7 @@ class ReportsView(ctk.CTkFrame):
             corner_radius=Theme.RADIUS_CARD,
             fg_color=("#FFFFFF", "#201E1C"),
             border_width=Theme.BORDER_WIDTH_CARD,
-            border_color=(Theme.STONE, "#38342E")
+            border_color=Theme.LIGHT_BORDER
         )
         export_toolbar.pack(fill="x", pady=(0, 16))
 
@@ -125,8 +125,7 @@ class ReportsView(ctk.CTkFrame):
             fg_color=Theme.PRIMARY,
             hover_color=Theme.PRIMARY_HOVER,
             corner_radius=Theme.RADIUS_PILL,
-            border_width=1,
-            border_color=Theme.BTN_PRIMARY_BORDER,
+            border_width=Theme.BORDER_WIDTH_BUTTON,
             command=self.export_daily_pdf,
             height=30
         ).pack(side="left", padx=4)
@@ -139,8 +138,7 @@ class ReportsView(ctk.CTkFrame):
             hover_color=Theme.BTN_SECONDARY_HOVER,
             text_color=(Theme.BLACK, Theme.PAPER),
             corner_radius=Theme.RADIUS_PILL,
-            border_width=1,
-            border_color=Theme.BTN_SECONDARY_BORDER,
+            border_width=Theme.BORDER_WIDTH_BUTTON,
             command=self.export_monthly_pdf,
             height=30
         ).pack(side="left", padx=4)
@@ -152,8 +150,7 @@ class ReportsView(ctk.CTkFrame):
             fg_color=Theme.SUCCESS,
             hover_color=Theme.SUCCESS_HOVER,
             corner_radius=Theme.RADIUS_PILL,
-            border_width=1,
-            border_color=Theme.BTN_SUCCESS_BORDER,
+            border_width=Theme.BORDER_WIDTH_BUTTON,
             command=self.export_target_archive_pdf,
             height=30
         ).pack(side="left", padx=4)
@@ -166,8 +163,7 @@ class ReportsView(ctk.CTkFrame):
             text_color=(Theme.BLACK, Theme.PAPER),
             hover_color=Theme.BTN_SECONDARY_HOVER,
             corner_radius=Theme.RADIUS_PILL,
-            border_width=1,
-            border_color=Theme.BTN_SECONDARY_BORDER,
+            border_width=Theme.BORDER_WIDTH_BUTTON,
             command=self.export_target_archive_csv,
             height=30
         ).pack(side="left", padx=4)
@@ -192,7 +188,7 @@ class ReportsView(ctk.CTkFrame):
             corner_radius=Theme.RADIUS_CARD,
             fg_color=("#FFFFFF", "#201E1C"),
             border_width=Theme.BORDER_WIDTH_CARD,
-            border_color=(Theme.STONE, "#38342E")
+            border_color=Theme.LIGHT_BORDER
         )
         self.metrics_card.pack(fill="x", pady=(0, 16))
 
@@ -230,7 +226,7 @@ class ReportsView(ctk.CTkFrame):
             corner_radius=Theme.RADIUS_CARD,
             fg_color=("#FFFFFF", "#201E1C"),
             border_width=Theme.BORDER_WIDTH_CARD,
-            border_color=(Theme.STONE, "#38342E")
+            border_color=Theme.LIGHT_BORDER
         )
         self.team_card.grid(row=0, column=0, padx=(0, 8), sticky="nsew")
 
@@ -250,7 +246,7 @@ class ReportsView(ctk.CTkFrame):
             corner_radius=Theme.RADIUS_CARD,
             fg_color=("#FFFFFF", "#201E1C"),
             border_width=Theme.BORDER_WIDTH_CARD,
-            border_color=(Theme.STONE, "#38342E")
+            border_color=Theme.LIGHT_BORDER
         )
         self.clearance_card.grid(row=0, column=1, padx=(8, 0), sticky="nsew")
 
@@ -270,7 +266,7 @@ class ReportsView(ctk.CTkFrame):
             corner_radius=Theme.RADIUS_CARD,
             fg_color=("#FFFFFF", "#201E1C"),
             border_width=Theme.BORDER_WIDTH_CARD,
-            border_color=(Theme.STONE, "#38342E")
+            border_color=Theme.LIGHT_BORDER
         )
         self.status_card.pack(fill="x")
 
@@ -549,7 +545,7 @@ class ReportsView(ctk.CTkFrame):
             fg_color=("#FFFFFF", "#201E1C"),
             corner_radius=Theme.RADIUS_CARD,
             border_width=Theme.BORDER_WIDTH_CARD,
-            border_color=(Theme.STONE, "#38342E")
+            border_color=Theme.LIGHT_BORDER
         )
         scope_frame.pack(fill="x", pady=(0, 14), ipady=8)
 

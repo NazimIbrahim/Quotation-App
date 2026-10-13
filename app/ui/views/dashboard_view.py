@@ -68,8 +68,7 @@ class DashboardView(ctk.CTkFrame):
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=12, weight="bold"),
             fg_color=Theme.PRIMARY,
             hover_color=Theme.PRIMARY_HOVER,
-            border_width=1,
-            border_color=Theme.BTN_PRIMARY_BORDER,
+            border_width=Theme.BORDER_WIDTH_BUTTON,
             corner_radius=Theme.RADIUS_PILL,
             command=lambda: self.controller.show_view("quotation_editor", None),
             height=36
@@ -137,7 +136,7 @@ class DashboardView(ctk.CTkFrame):
             corner_radius=Theme.RADIUS_CARD,
             fg_color=("#FFFFFF", "#201E1C"),
             border_width=Theme.BORDER_WIDTH_CARD,
-            border_color=(Theme.STONE, "#38342E")
+            border_color=Theme.LIGHT_BORDER
         )
         self.target_card.grid(row=0, column=0, padx=(0, 8), sticky="nsew")
 
@@ -168,7 +167,7 @@ class DashboardView(ctk.CTkFrame):
             corner_radius=Theme.RADIUS_CARD,
             fg_color=("#FFFFFF", "#201E1C"),
             border_width=Theme.BORDER_WIDTH_CARD,
-            border_color=(Theme.STONE, "#38342E")
+            border_color=Theme.LIGHT_BORDER
         )
         self.receivables_card.grid(row=0, column=1, padx=(8, 0), sticky="nsew")
 
@@ -191,7 +190,7 @@ class DashboardView(ctk.CTkFrame):
             corner_radius=Theme.RADIUS_CARD,
             fg_color=("#FFFFFF", "#201E1C"),
             border_width=Theme.BORDER_WIDTH_CARD,
-            border_color=(Theme.STONE, "#38342E")
+            border_color=Theme.LIGHT_BORDER
         )
         recent_card.pack(fill="x", pady=(0, 10))
 

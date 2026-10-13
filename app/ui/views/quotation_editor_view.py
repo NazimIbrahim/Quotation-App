@@ -720,7 +720,7 @@ class AreaSectionWidget(ctk.CTkFrame):
             corner_radius=Theme.RADIUS_CARD,
             fg_color=("#FFFFFF", "#201E1C"),
             border_width=Theme.BORDER_WIDTH_CARD,
-            border_color=(Theme.STONE, "#38342E"),
+            border_color=Theme.LIGHT_BORDER,
             **kwargs
         )
         self.default_tax_mode = default_tax_mode
@@ -823,8 +823,7 @@ class AreaSectionWidget(ctk.CTkFrame):
             width=120,
             height=30,
             corner_radius=Theme.RADIUS_BUTTON,
-            border_width=1,
-            border_color=Theme.BTN_PRIMARY_BORDER,
+            border_width=Theme.BORDER_WIDTH_BUTTON,
             fg_color=Theme.PRIMARY,
             hover_color=Theme.PRIMARY_HOVER,
             command=self.add_item
@@ -970,8 +969,7 @@ class QuotationEditorView(ctk.CTkFrame):
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11, weight="bold"),
             fg_color=Theme.BTN_SECONDARY_BG,
             text_color=(Theme.BLACK, Theme.PAPER),
-            border_width=1,
-            border_color=Theme.BTN_SECONDARY_BORDER,
+            border_width=Theme.BORDER_WIDTH_BUTTON,
             corner_radius=Theme.RADIUS_PILL,
             hover_color=Theme.PRIMARY,
             command=lambda: self.controller.show_view("quotations", None),
@@ -985,8 +983,7 @@ class QuotationEditorView(ctk.CTkFrame):
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11, weight="bold"),
             fg_color=Theme.BTN_SECONDARY_BG,
             text_color=(Theme.BLACK, Theme.PAPER),
-            border_width=1,
-            border_color=Theme.BTN_SECONDARY_BORDER,
+            border_width=Theme.BORDER_WIDTH_BUTTON,
             corner_radius=Theme.RADIUS_PILL,
             hover_color=Theme.PRIMARY,
             command=lambda: self.controller.show_view("brand_catalog"),
@@ -1000,8 +997,7 @@ class QuotationEditorView(ctk.CTkFrame):
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11, weight="bold"),
             fg_color=Theme.BTN_SECONDARY_BG,
             text_color=(Theme.BLACK, Theme.PAPER),
-            border_width=1,
-            border_color=Theme.BTN_SECONDARY_BORDER,
+            border_width=Theme.BORDER_WIDTH_BUTTON,
             corner_radius=Theme.RADIUS_PILL,
             hover_color=Theme.PRIMARY,
             command=self.refresh_catalog_data,
@@ -1014,8 +1010,7 @@ class QuotationEditorView(ctk.CTkFrame):
             text="📄 Save & Export PDF",
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11, weight="bold"),
             fg_color=Theme.SUCCESS,
-            border_width=1,
-            border_color=Theme.BTN_SUCCESS_BORDER,
+            border_width=Theme.BORDER_WIDTH_BUTTON,
             corner_radius=Theme.RADIUS_PILL,
             hover_color=Theme.SUCCESS_HOVER,
             command=self.save_and_export_pdf,
@@ -1028,8 +1023,7 @@ class QuotationEditorView(ctk.CTkFrame):
             text="💾 Save Quotation",
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11, weight="bold"),
             fg_color=Theme.PRIMARY,
-            border_width=1,
-            border_color=Theme.BTN_PRIMARY_BORDER,
+            border_width=Theme.BORDER_WIDTH_BUTTON,
             corner_radius=Theme.RADIUS_PILL,
             hover_color=Theme.PRIMARY_HOVER,
             command=self.save_quotation,
@@ -1047,7 +1041,7 @@ class QuotationEditorView(ctk.CTkFrame):
             corner_radius=Theme.RADIUS_CARD,
             fg_color=("#FFFFFF", "#201E1C"),
             border_width=Theme.BORDER_WIDTH_CARD,
-            border_color=(Theme.STONE, "#2B2824")
+            border_color=Theme.LIGHT_BORDER
         )
         header_card.pack(fill="x", pady=(0, 14))
 
@@ -1138,8 +1132,7 @@ class QuotationEditorView(ctk.CTkFrame):
             width=135,
             height=28,
             corner_radius=Theme.RADIUS_BUTTON,
-            border_width=1,
-            border_color=Theme.BTN_SECONDARY_BORDER,
+            border_width=Theme.BORDER_WIDTH_BUTTON,
             fg_color=Theme.BTN_SECONDARY_BG,
             text_color=(Theme.BLACK, Theme.PAPER),
             hover_color=Theme.PRIMARY,
@@ -1176,8 +1169,7 @@ class QuotationEditorView(ctk.CTkFrame):
                 font=ctk.CTkFont(size=10, weight="bold"),
                 height=26,
                 corner_radius=Theme.RADIUS_SM,
-                border_width=1,
-                border_color=Theme.BTN_SECONDARY_BORDER,
+                border_width=Theme.BORDER_WIDTH_BUTTON,
                 fg_color=Theme.BTN_SECONDARY_BG,
                 text_color=(Theme.BLACK, Theme.PAPER),
                 hover_color=Theme.PRIMARY,
@@ -1211,7 +1203,7 @@ class QuotationEditorView(ctk.CTkFrame):
             corner_radius=Theme.RADIUS_CARD,
             fg_color=("#FFFFFF", "#201E1C"),
             border_width=Theme.BORDER_WIDTH_CARD,
-            border_color=(Theme.STONE, "#2B2824")
+            border_color=Theme.LIGHT_BORDER
         )
         totals_card.pack(fill="x", pady=(0, 10))
 

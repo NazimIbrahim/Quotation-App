@@ -100,7 +100,7 @@ class SalesTeamView(ctk.CTkFrame):
             corner_radius=Theme.RADIUS_CARD,
             fg_color=("#FFFFFF", "#201E1C"),
             border_width=Theme.BORDER_WIDTH_CARD,
-            border_color=(Theme.STONE, "#38342E")
+            border_color=Theme.LIGHT_BORDER
         )
         self.approval_card.pack(fill="x", pady=(0, 16))
 
@@ -209,8 +209,7 @@ class SalesTeamView(ctk.CTkFrame):
                     fg_color=Theme.SUCCESS,
                     hover_color=Theme.SUCCESS_HOVER,
                     corner_radius=Theme.RADIUS_PILL,
-                    border_width=1,
-                    border_color=Theme.BTN_SUCCESS_BORDER,
+                    border_width=Theme.BORDER_WIDTH_BUTTON,
                     height=28,
                     command=lambda qid=q.id: self.approve_quote(qid, Quotation.STATUS_WON)
                 ).pack(side="left", padx=3)
@@ -222,8 +221,7 @@ class SalesTeamView(ctk.CTkFrame):
                     fg_color=Theme.DANGER,
                     hover_color=Theme.DANGER_HOVER,
                     corner_radius=Theme.RADIUS_PILL,
-                    border_width=1,
-                    border_color=Theme.BTN_DANGER_BORDER,
+                    border_width=Theme.BORDER_WIDTH_BUTTON,
                     height=28,
                     command=lambda qid=q.id: self.approve_quote(qid, Quotation.STATUS_LOST)
                 ).pack(side="left", padx=3)
@@ -254,7 +252,7 @@ class SalesTeamView(ctk.CTkFrame):
                 corner_radius=Theme.RADIUS_CARD,
                 fg_color=("#FFFFFF", "#201E1C"),
                 border_width=Theme.BORDER_WIDTH_CARD,
-                border_color=(Theme.STONE, "#38342E")
+                border_color=Theme.LIGHT_BORDER
             )
             card.pack(fill="x", pady=6)
 
@@ -299,8 +297,7 @@ class SalesTeamView(ctk.CTkFrame):
                 width=100,
                 height=28,
                 corner_radius=Theme.RADIUS_PILL,
-                border_width=1,
-                border_color=Theme.BTN_PRIMARY_BORDER,
+                border_width=Theme.BORDER_WIDTH_BUTTON,
                 fg_color=Theme.PRIMARY,
                 hover_color=Theme.PRIMARY_HOVER,
                 command=lambda m=sp: self.open_alter_target_modal(m)
@@ -314,8 +311,7 @@ class SalesTeamView(ctk.CTkFrame):
                 width=80,
                 height=28,
                 corner_radius=Theme.RADIUS_PILL,
-                border_width=1,
-                border_color=Theme.BTN_SECONDARY_BORDER,
+                border_width=Theme.BORDER_WIDTH_BUTTON,
                 fg_color=Theme.BTN_SECONDARY_BG,
                 hover_color=Theme.BTN_SECONDARY_HOVER,
                 text_color=(Theme.BLACK, Theme.PAPER),
@@ -334,7 +330,7 @@ class SalesTeamView(ctk.CTkFrame):
             balance = max(0.0, round(target_val - achieved, 2))
             pct = (achieved / target_val * 100.0) if target_val > 0 else 0.0
 
-            metrics_grid = ctk.CTkFrame(card, fg_color=(Theme.PAPER, "#1E1C1A"), corner_radius=Theme.RADIUS_SM, border_width=1, border_color=(Theme.STONE, "#38342E"))
+            metrics_grid = ctk.CTkFrame(card, fg_color=(Theme.PAPER, "#1E1C1A"), corner_radius=Theme.RADIUS_SM, border_width=1, border_color=Theme.LIGHT_BORDER)
             metrics_grid.pack(fill="x", padx=16, pady=(0, 8))
             metrics_grid.grid_columnconfigure((0, 1, 2), weight=1)
 
@@ -459,7 +455,7 @@ class SalesTeamView(ctk.CTkFrame):
             corner_radius=Theme.RADIUS_CARD,
             fg_color=("#FFFFFF", "#201E1C"),
             border_width=Theme.BORDER_WIDTH_CARD,
-            border_color=(Theme.STONE, "#38342E")
+            border_color=Theme.LIGHT_BORDER
         )
         member_card.pack(fill="x", pady=(0, 12), ipady=6)
 
@@ -504,7 +500,7 @@ class SalesTeamView(ctk.CTkFrame):
             corner_radius=Theme.RADIUS_CARD,
             fg_color=("#FFFFFF", "#201E1C"),
             border_width=Theme.BORDER_WIDTH_CARD,
-            border_color=(Theme.STONE, "#38342E")
+            border_color=Theme.LIGHT_BORDER
         )
         config_card.pack(fill="x", pady=(0, 12), ipady=6)
 
@@ -705,7 +701,7 @@ class SalesTeamView(ctk.CTkFrame):
             corner_radius=Theme.RADIUS_CARD,
             fg_color=("#FFFFFF", "#201E1C"),
             border_width=Theme.BORDER_WIDTH_CARD,
-            border_color=(Theme.STONE, "#38342E")
+            border_color=Theme.LIGHT_BORDER
         )
         amount_card.pack(fill="x", pady=(0, 12), ipady=6)
 
@@ -813,7 +809,7 @@ class SalesTeamView(ctk.CTkFrame):
             corner_radius=Theme.RADIUS_CARD,
             fg_color=("#FFFFFF", "#201E1C"),
             border_width=Theme.BORDER_WIDTH_CARD,
-            border_color=(Theme.STONE, "#38342E")
+            border_color=Theme.LIGHT_BORDER
         )
         active_targets_frame.pack(fill="x", pady=(0, 16), ipady=6)
 

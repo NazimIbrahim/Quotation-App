@@ -256,8 +256,7 @@ class CompanySettingsView(ctk.CTkFrame):
             text_color=Theme.DANGER,
             hover_color=Theme.BTN_SECONDARY_HOVER,
             corner_radius=Theme.RADIUS_PILL,
-            border_width=1,
-            border_color=Theme.BTN_DANGER_BORDER,
+            border_width=Theme.BORDER_WIDTH_BUTTON,
             command=self.remove_logo,
             height=34
         )
@@ -382,8 +381,7 @@ class CompanySettingsView(ctk.CTkFrame):
             hover_color=Theme.BTN_SECONDARY_HOVER,
             text_color=(Theme.BLACK, Theme.PAPER),
             corner_radius=Theme.RADIUS_PILL,
-            border_width=1,
-            border_color=Theme.BTN_SECONDARY_BORDER,
+            border_width=Theme.BORDER_WIDTH_BUTTON,
             command=self.reset_terms_defaults,
             height=28
         )

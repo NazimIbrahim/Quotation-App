@@ -69,7 +69,7 @@ class CustomerManagementView(ctk.CTkFrame):
             corner_radius=Theme.RADIUS_CARD,
             fg_color=("#FFFFFF", "#201E1C"),
             border_width=Theme.BORDER_WIDTH_CARD,
-            border_color=(Theme.STONE, "#38342E")
+            border_color=Theme.LIGHT_BORDER
         )
         left_card.grid(row=0, column=0, padx=(0, 8), sticky="nsew")
 
@@ -106,7 +106,7 @@ class CustomerManagementView(ctk.CTkFrame):
             corner_radius=Theme.RADIUS_CARD,
             fg_color=("#FFFFFF", "#201E1C"),
             border_width=Theme.BORDER_WIDTH_CARD,
-            border_color=(Theme.STONE, "#38342E")
+            border_color=Theme.LIGHT_BORDER
         )
         self.right_card.grid(row=0, column=1, padx=(8, 0), sticky="nsew")
 
@@ -233,7 +233,7 @@ class CustomerManagementView(ctk.CTkFrame):
             fg_color=("#FFFFFF", "#201E1C"),
             corner_radius=Theme.RADIUS_CARD,
             border_width=Theme.BORDER_WIDTH_CARD,
-            border_color=(Theme.STONE, "#38342E")
+            border_color=Theme.LIGHT_BORDER
         )
         stats_frame.pack(fill="x", pady=(0, 12))
         stats_frame.grid_columnconfigure((0, 1, 2), weight=1)

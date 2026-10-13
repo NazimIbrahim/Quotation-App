@@ -55,7 +55,7 @@ class PaymentTrackingView(ctk.CTkFrame):
             corner_radius=Theme.RADIUS_CARD,
             fg_color=("#FFFFFF", "#201E1C"),
             border_width=Theme.BORDER_WIDTH_CARD,
-            border_color=(Theme.STONE, "#38342E")
+            border_color=Theme.LIGHT_BORDER
         )
         select_card.pack(fill="x", pady=(0, 14))
 
@@ -103,7 +103,7 @@ class PaymentTrackingView(ctk.CTkFrame):
             corner_radius=Theme.RADIUS_CARD,
             fg_color=("#FFFFFF", "#201E1C"),
             border_width=Theme.BORDER_WIDTH_CARD,
-            border_color=(Theme.STONE, "#38342E")
+            border_color=Theme.LIGHT_BORDER
         )
         record_card.grid(row=0, column=0, padx=(0, 8), sticky="nsew")
 
@@ -220,7 +220,7 @@ class PaymentTrackingView(ctk.CTkFrame):
             corner_radius=Theme.RADIUS_CARD,
             fg_color=("#FFFFFF", "#201E1C"),
             border_width=Theme.BORDER_WIDTH_CARD,
-            border_color=(Theme.STONE, "#38342E")
+            border_color=Theme.LIGHT_BORDER
         )
         history_card.grid(row=0, column=1, padx=(8, 0), sticky="nsew")
 
@@ -249,7 +249,7 @@ class PaymentTrackingView(ctk.CTkFrame):
             corner_radius=Theme.RADIUS_CARD,
             fg_color=("#FFFFFF", "#201E1C"),
             border_width=Theme.BORDER_WIDTH_CARD,
-            border_color=(Theme.STONE, "#38342E")
+            border_color=Theme.LIGHT_BORDER
         )
         pending_card.pack(fill="x", pady=(0, 10))
 
@@ -269,7 +269,7 @@ class PaymentTrackingView(ctk.CTkFrame):
             corner_radius=Theme.RADIUS_CARD,
             fg_color=("#FFFFFF", "#201E1C"),
             border_width=Theme.BORDER_WIDTH_CARD,
-            border_color=(Theme.STONE, "#38342E")
+            border_color=Theme.LIGHT_BORDER
         )
         card.grid(row=0, column=col_idx, padx=4, sticky="ew")
 
@@ -366,8 +366,7 @@ class PaymentTrackingView(ctk.CTkFrame):
                     width=58,
                     height=24,
                     corner_radius=Theme.RADIUS_PILL,
-                    border_width=1,
-                    border_color=Theme.BTN_SUCCESS_BORDER,
+                    border_width=Theme.BORDER_WIDTH_BUTTON,
                     font=ctk.CTkFont(size=9, weight="bold"),
                     fg_color=Theme.SUCCESS,
                     hover_color=Theme.SUCCESS_HOVER,
@@ -426,8 +425,7 @@ class PaymentTrackingView(ctk.CTkFrame):
                 fg_color=Theme.SUCCESS,
                 hover_color=Theme.SUCCESS_HOVER,
                 corner_radius=Theme.RADIUS_PILL,
-                border_width=1,
-                border_color=Theme.BTN_SUCCESS_BORDER,
+                border_width=Theme.BORDER_WIDTH_BUTTON,
                 width=100,
                 height=28,
                 command=lambda pid=p.id: self.toggle_status(pid, Payment.STATUS_CLEARED)

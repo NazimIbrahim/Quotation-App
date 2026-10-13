@@ -40,7 +40,7 @@ class Theme:
     LIGHT_SURFACE = "#FAF8F5"    # Soft Paper tint
     LIGHT_CARD = "#FFFFFF"      # Crisp White Card on Paper
     LIGHT_CARD_HOVER = "#F5F2EB"
-    LIGHT_BORDER = "#E4DED2"    # Stone Border
+    LIGHT_BORDER = ("#E5E0D5", "#2E2A26")    # Soft Stone Hairline Border
     
     DARK_BG = "#0D0D0D"         # Pitch Obsidian Black
     DARK_SURFACE = "#171615"
@@ -56,24 +56,24 @@ class Theme:
     RADIUS_SM = 13              # Compact table action pills & badges
     RADIUS_ICON = 16            # Circular tactile icons
     
-    # Tactile 3D Soft Bevel & Border Tokens
-    BORDER_WIDTH_CARD = 1.5
-    BORDER_WIDTH_BUTTON = 1.0
-    BORDER_WIDTH_INPUT = 1.5
+    # Hairline Crisp Border Tokens (0 for borderless solid pills, 1 for hairline cards)
+    BORDER_WIDTH_CARD = 1
+    BORDER_WIDTH_BUTTON = 0
+    BORDER_WIDTH_INPUT = 1
     
     # Inset / Sunken Well (Inputs, Search, recessed containers)
-    INSET_BG = ("#F0ECE4", "#181615")
-    INSET_BORDER = ("#D6CFBF", "#34302A")
+    INSET_BG = ("#F4F1EA", "#181615")
+    INSET_BORDER = ("#DFD8CC", "#34302A")
     
     # Raised Secondary / Neutral Tactile Button
-    BTN_SECONDARY_BG = ("#ECE7DF", "#23201D")
-    BTN_SECONDARY_HOVER = ("#DFD8CE", "#2F2B27")
-    BTN_SECONDARY_BORDER = ("#D5CEBF", "#38342E")
+    BTN_SECONDARY_BG = ("#EDE8DE", "#23201D")
+    BTN_SECONDARY_HOVER = ("#DFD9CD", "#2E2B27")
+    BTN_SECONDARY_BORDER = ("#DFD8CC", "#38342E")
     
-    # Tactile Button Borders
-    BTN_PRIMARY_BORDER = ("#FFA194", "#B83222")
-    BTN_SUCCESS_BORDER = ("#86EFAC", "#166534")
-    BTN_DANGER_BORDER = ("#FCA5A5", "#991B1B")
+    # Pill Button Borders (Matching fill for clean borderless silhouette)
+    BTN_PRIMARY_BORDER = ("#F95C4B", "#F95C4B")
+    BTN_SUCCESS_BORDER = ("#16A34A", "#16A34A")
+    BTN_DANGER_BORDER = ("#DC2626", "#DC2626")
     
     # Typography Font Specs
     FONT_FAMILY = "Segoe UI"

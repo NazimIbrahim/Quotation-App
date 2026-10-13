@@ -13,7 +13,7 @@ class StatCard(ctk.CTkFrame):
             corner_radius=Theme.RADIUS_CARD,
             fg_color=("#FFFFFF", "#201E1C"),
             border_width=Theme.BORDER_WIDTH_CARD,
-            border_color=(Theme.STONE, "#38342E"),
+            border_color=Theme.LIGHT_BORDER,
             **kwargs
         )
         self.accent_color = accent_color
