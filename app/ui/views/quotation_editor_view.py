@@ -914,6 +914,8 @@ class QuotationEditorView(ctk.CTkFrame):
         self.customers_cache = []
         self.salespersons_cache = []
         self.catalog_context = {}
+        self.matched_customer_id = None
+        self._current_cust_matches = []
 
         self.build_ui()
         self.load_data()
@@ -1049,16 +1051,16 @@ class QuotationEditorView(ctk.CTkFrame):
         self.date_entry.insert(0, str(date.today()))
         self.date_entry.grid(row=1, column=1, padx=6, pady=(0, 8), sticky="ew")
 
-        # Customer Selector + Quick Add
+        # Customer Selector + Quick Add + Clear
         cust_label_box = ctk.CTkFrame(form_grid, fg_color="transparent")
         cust_label_box.grid(row=0, column=2, padx=6, pady=(4, 2), sticky="ew")
         ctk.CTkLabel(cust_label_box, text="Customer:", font=ctk.CTkFont(size=11, weight="bold")).pack(side="left")
-        
+
         quick_cust_btn = ctk.CTkButton(
             cust_label_box,
             text="+ New Client",
             font=ctk.CTkFont(size=9, weight="bold"),
-            width=70,
+            width=68,
             height=18,
             fg_color="transparent",
             text_color=Theme.PRIMARY,
@@ -1066,30 +1068,70 @@ class QuotationEditorView(ctk.CTkFrame):
         )
         quick_cust_btn.pack(side="right")
 
+        clear_cust_btn = ctk.CTkButton(
+            cust_label_box,
+            text="Clear",
+            font=ctk.CTkFont(size=9),
+            width=38,
+            height=18,
+            fg_color="transparent",
+            text_color=("#615D56", "#A8A297"),
+            hover_color=("#E5E7EB", "#374151"),
+            command=self.clear_customer_fields
+        )
+        clear_cust_btn.pack(side="right", padx=(0, 4))
+
         self.customer_combo = ctk.CTkComboBox(form_grid, values=["Loading..."], font=ctk.CTkFont(size=11), command=self.on_customer_selected)
         self.customer_combo.grid(row=1, column=2, padx=6, pady=(0, 8), sticky="ew")
+        if hasattr(self.customer_combo, "_entry"):
+            self.customer_combo._entry.bind("<KeyRelease>", self._on_customer_key_release)
 
         # Sales Person Selector
         ctk.CTkLabel(form_grid, text="Sales Associate:", font=ctk.CTkFont(size=11, weight="bold")).grid(row=0, column=3, padx=6, pady=(4, 2), sticky="w")
         self.salesperson_combo = ctk.CTkComboBox(form_grid, values=["Loading..."], font=ctk.CTkFont(size=11))
         self.salesperson_combo.grid(row=1, column=3, padx=6, pady=(0, 8), sticky="ew")
 
-        # Row 2: Contact, Project Name, Delivery Address
-        ctk.CTkLabel(form_grid, text="Contact Phone:", font=ctk.CTkFont(size=11)).grid(row=2, column=0, padx=6, pady=(4, 2), sticky="w")
-        self.phone_entry = ctk.CTkEntry(form_grid, font=ctk.CTkFont(size=11))
-        self.phone_entry.grid(row=3, column=0, padx=6, pady=(0, 8), sticky="ew")
+        # Auto-popup suggestions panel for matched existing customers from database
+        self.cust_suggestions_card = ctk.CTkFrame(
+            form_grid,
+            fg_color=("#FFF7ED", "#221A16"),
+            border_width=2,
+            border_color=Theme.PRIMARY,
+            corner_radius=10
+        )
+        # Not placed on grid initially; shown dynamically when search matches exist
 
-        ctk.CTkLabel(form_grid, text="Project / Site Name:", font=ctk.CTkFont(size=11)).grid(row=2, column=1, padx=6, pady=(4, 2), sticky="w")
+        # Row 3: Contact, Project Name, Delivery Address
+        ctk.CTkLabel(form_grid, text="Contact Phone:", font=ctk.CTkFont(size=11, weight="bold")).grid(row=3, column=0, padx=6, pady=(4, 2), sticky="w")
+        self.phone_entry = ctk.CTkEntry(form_grid, font=ctk.CTkFont(size=11), placeholder_text="e.g. 98240 77889")
+        self.phone_entry.grid(row=4, column=0, padx=6, pady=(0, 4), sticky="ew")
+        self.phone_entry.bind("<KeyRelease>", self._on_phone_key_release)
+        self.phone_entry.bind("<Return>", self._on_phone_return)
+
+        ctk.CTkLabel(form_grid, text="Project / Site Name:", font=ctk.CTkFont(size=11)).grid(row=3, column=1, padx=6, pady=(4, 2), sticky="w")
         self.project_name_entry = ctk.CTkEntry(form_grid, font=ctk.CTkFont(size=11), placeholder_text="e.g. 4-BHK Villa / Bungalow")
-        self.project_name_entry.grid(row=3, column=1, padx=6, pady=(0, 8), sticky="ew")
+        self.project_name_entry.grid(row=4, column=1, padx=6, pady=(0, 4), sticky="ew")
 
-        ctk.CTkLabel(form_grid, text="Site / Delivery Address:", font=ctk.CTkFont(size=11)).grid(row=2, column=2, columnspan=2, padx=6, pady=(4, 2), sticky="w")
+        ctk.CTkLabel(form_grid, text="Site / Delivery Address:", font=ctk.CTkFont(size=11)).grid(row=3, column=2, columnspan=2, padx=6, pady=(4, 2), sticky="w")
         self.address_entry = ctk.CTkEntry(form_grid, font=ctk.CTkFont(size=11), placeholder_text="Full delivery address for logistics")
-        self.address_entry.grid(row=3, column=2, columnspan=2, padx=6, pady=(0, 8), sticky="ew")
+        self.address_entry.grid(row=4, column=2, columnspan=2, padx=6, pady=(0, 4), sticky="ew")
 
-        # Row 4: Default Tax Setting for Sqft Rates
+        # Row 5: Live Customer Database Status Badge
+        self.cust_status_frame = ctk.CTkFrame(form_grid, fg_color="transparent")
+        self.cust_status_frame.grid(row=5, column=0, columnspan=4, padx=6, pady=(2, 6), sticky="ew")
+
+        self.cust_status_lbl = ctk.CTkLabel(
+            self.cust_status_frame,
+            text="ℹ Enter mobile number or customer name to search database records",
+            font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11),
+            text_color=("#615D56", "#A8A297"),
+            anchor="w"
+        )
+        self.cust_status_lbl.pack(side="left")
+
+        # Row 6: Default Tax Setting for Sqft Rates
         tax_mode_frame = ctk.CTkFrame(form_grid, fg_color="transparent")
-        tax_mode_frame.grid(row=4, column=0, columnspan=4, padx=6, pady=(6, 4), sticky="ew")
+        tax_mode_frame.grid(row=6, column=0, columnspan=4, padx=6, pady=(6, 4), sticky="ew")
 
         ctk.CTkLabel(
             tax_mode_frame,
@@ -1357,8 +1399,9 @@ class QuotationEditorView(ctk.CTkFrame):
         cust_names = [f"{c.name} ({c.mobile_number})" for c in self.customers_cache]
         if cust_names:
             self.customer_combo.configure(values=cust_names)
-            self.customer_combo.set(cust_names[0])
-            self.on_customer_selected(cust_names[0])
+            if not self.quote_id:
+                self.customer_combo.set(cust_names[0])
+                self.apply_customer(self.customers_cache[0])
 
         self.salespersons_cache = list(SalesPerson.select().where(SalesPerson.is_active == True))
         sp_names = [f"{s.name} ({s.role})" for s in self.salespersons_cache]
@@ -1390,6 +1433,8 @@ class QuotationEditorView(ctk.CTkFrame):
                 for idx, c in enumerate(self.customers_cache):
                     if c.id == quote_data["customer_id"]:
                         self.customer_combo.set(cust_names[idx])
+                        self.matched_customer_id = c.id
+                        self.update_customer_status(f"✓ Existing Customer: {c.name} — Loaded from database", status_type="success")
                         break
 
                 # Select salesperson
@@ -1475,17 +1520,236 @@ class QuotationEditorView(ctk.CTkFrame):
                 area_widget.destroy()
                 self.recalculate_totals()
 
+    def apply_customer(self, c, update_combo=True):
+        if not c:
+            return
+        self.matched_customer_id = c.id
+        formatted_combo_str = f"{c.name} ({c.mobile_number})"
+        if update_combo:
+            current_vals = list(self.customer_combo.cget("values") or [])
+            if formatted_combo_str not in current_vals:
+                current_vals.insert(0, formatted_combo_str)
+                self.customer_combo.configure(values=current_vals)
+            self.customer_combo.set(formatted_combo_str)
+
+        self.phone_entry.delete(0, "end")
+        self.phone_entry.insert(0, c.mobile_number)
+
+        self.address_entry.delete(0, "end")
+        self.address_entry.insert(0, c.delivery_address or "")
+
+        if c.site_location:
+            self.project_name_entry.delete(0, "end")
+            self.project_name_entry.insert(0, c.site_location)
+
+        self.hide_customer_suggestions()
+        self.update_customer_status(
+            f"✓ Existing Customer: {c.name} — All details loaded from database",
+            status_type="success"
+        )
+
     def on_customer_selected(self, val):
         for c in self.customers_cache:
-            if f"{c.name} ({c.mobile_number})" == val:
-                self.phone_entry.delete(0, "end")
-                self.phone_entry.insert(0, c.mobile_number)
-                self.address_entry.delete(0, "end")
-                self.address_entry.insert(0, c.delivery_address)
-                if c.site_location and not self.project_name_entry.get():
-                    self.project_name_entry.delete(0, "end")
-                    self.project_name_entry.insert(0, c.site_location)
+            if f"{c.name} ({c.mobile_number})" == val or c.name.strip() == val.strip():
+                self.apply_customer(c, update_combo=False)
                 break
+
+    def search_customers(self, query: str):
+        query = (query or "").strip()
+        if not query:
+            return []
+        clean_digits = "".join(ch for ch in query if ch.isdigit())
+        q_lower = query.lower()
+
+        if not hasattr(self, "customers_cache") or not self.customers_cache:
+            self.customers_cache = list(Customer.select().order_by(Customer.name))
+
+        results = []
+        for c in self.customers_cache:
+            c_digits = "".join(ch for ch in (c.mobile_number or "") if ch.isdigit())
+            matched = False
+
+            # Match 1: Phone digits substring or exact 10 digits
+            if clean_digits and len(clean_digits) >= 3:
+                if clean_digits in c_digits or (len(clean_digits) >= 10 and clean_digits[-10:] in c_digits):
+                    matched = True
+
+            # Match 2: Name substring
+            if not matched and q_lower in (c.name or "").lower():
+                matched = True
+
+            # Match 3: Project / Site location
+            if not matched and c.site_location and q_lower in c.site_location.lower():
+                matched = True
+
+            # Match 4: Delivery address
+            if not matched and c.delivery_address and q_lower in c.delivery_address.lower():
+                matched = True
+
+            if matched:
+                results.append(c)
+        return results
+
+    def _on_phone_key_release(self, event=None):
+        if event and event.keysym in ("Return", "Tab", "Escape", "Up", "Down"):
+            if event.keysym == "Return":
+                if hasattr(self, "_current_cust_matches") and self._current_cust_matches:
+                    self.apply_customer(self._current_cust_matches[0])
+                    return
+            elif event.keysym == "Escape":
+                self.hide_customer_suggestions()
+                return
+            return
+
+        val = self.phone_entry.get().strip()
+        clean_digits = "".join(ch for ch in val if ch.isdigit())
+
+        if not val or len(clean_digits) < 3:
+            self.hide_customer_suggestions()
+            if not val:
+                self.update_customer_status("ℹ Enter mobile number or customer name to search database records", status_type="info")
+            return
+
+        matches = self.search_customers(val)
+        if matches:
+            # If exact 10-digit phone match, auto-fill immediately!
+            if len(clean_digits) >= 10:
+                for c in matches:
+                    c_digits = "".join(ch for ch in (c.mobile_number or "") if ch.isdigit())
+                    if clean_digits == c_digits or clean_digits[-10:] == c_digits[-10:]:
+                        self.apply_customer(c)
+                        return
+
+            self.show_customer_suggestions(matches, search_term=val)
+        else:
+            self.hide_customer_suggestions()
+            self.update_customer_status(f"✨ New Contact: '{val}' — Will be registered as new customer in database.", status_type="warning")
+
+    def _on_phone_return(self, event=None):
+        if hasattr(self, "_current_cust_matches") and self._current_cust_matches:
+            self.apply_customer(self._current_cust_matches[0])
+
+    def _on_customer_key_release(self, event=None):
+        if event and event.keysym in ("Return", "Tab", "Escape", "Up", "Down"):
+            if event.keysym == "Return":
+                if hasattr(self, "_current_cust_matches") and self._current_cust_matches:
+                    self.apply_customer(self._current_cust_matches[0])
+                    return
+            elif event.keysym == "Escape":
+                self.hide_customer_suggestions()
+                return
+            return
+
+        val = self.customer_combo.get().strip()
+        if not val or len(val) < 2:
+            self.hide_customer_suggestions()
+            return
+
+        matches = self.search_customers(val)
+        if matches:
+            for c in matches:
+                if c.name.strip().lower() == val.lower() or f"{c.name} ({c.mobile_number})".lower() == val.lower():
+                    self.apply_customer(c, update_combo=False)
+                    return
+            self.show_customer_suggestions(matches, search_term=val)
+        else:
+            self.hide_customer_suggestions()
+            self.update_customer_status(f"✨ New Customer Name: '{val}' — Will be registered in database upon quotation save.", status_type="warning")
+
+    def show_customer_suggestions(self, matches, search_term=""):
+        self._current_cust_matches = matches
+        for w in self.cust_suggestions_card.winfo_children():
+            w.destroy()
+
+        self.cust_suggestions_card.grid(row=2, column=0, columnspan=4, padx=6, pady=(4, 8), sticky="ew")
+
+        # Header bar of suggestions popup
+        h_row = ctk.CTkFrame(self.cust_suggestions_card, fg_color="transparent")
+        h_row.pack(fill="x", padx=10, pady=(8, 4))
+
+        ctk.CTkLabel(
+            h_row,
+            text=f"🔍 Found {len(matches)} Existing Customer(s) in Database matching '{search_term}':",
+            font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11, weight="bold"),
+            text_color=Theme.PRIMARY
+        ).pack(side="left")
+
+        close_btn = ctk.CTkButton(
+            h_row,
+            text="✕ Dismiss",
+            font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=9),
+            width=60,
+            height=20,
+            corner_radius=Theme.RADIUS_PILL,
+            fg_color="transparent",
+            text_color=("#615D56", "#A8A297"),
+            hover_color=("#E5E7EB", "#374151"),
+            command=self.hide_customer_suggestions
+        )
+        close_btn.pack(side="right")
+
+        # Results (up to 4 matches displayed)
+        for c in matches[:4]:
+            rf = ctk.CTkFrame(self.cust_suggestions_card, fg_color=("#FFFFFF", "#1E1C1A"), corner_radius=8, border_width=1, border_color=Theme.LIGHT_BORDER)
+            rf.pack(fill="x", padx=10, pady=3)
+
+            info_f = ctk.CTkFrame(rf, fg_color="transparent")
+            info_f.pack(side="left", padx=10, pady=6, fill="x", expand=True)
+
+            top_line = f"👤 {c.name}    •    📞 {c.mobile_number}"
+            ctk.CTkLabel(
+                info_f,
+                text=top_line,
+                font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11, weight="bold"),
+                text_color=(Theme.BLACK, Theme.PAPER),
+                anchor="w"
+            ).pack(anchor="w")
+
+            addr_text = f"📍 {c.delivery_address}" + (f"  |  🏗️ Site: {c.site_location}" if c.site_location else "")
+            ctk.CTkLabel(
+                info_f,
+                text=addr_text[:90] + ("..." if len(addr_text) > 90 else ""),
+                font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=10),
+                text_color=("#615D56", "#A8A297"),
+                anchor="w"
+            ).pack(anchor="w")
+
+            # Action Auto-fill button
+            fill_btn = ctk.CTkButton(
+                rf,
+                text="Auto-Fill Details ✓",
+                font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=10, weight="bold"),
+                fg_color=Theme.PRIMARY,
+                hover_color=Theme.PRIMARY_HOVER,
+                corner_radius=Theme.RADIUS_PILL,
+                width=130,
+                height=26,
+                command=lambda cust=c: self.apply_customer(cust)
+            )
+            fill_btn.pack(side="right", padx=10, pady=6)
+
+    def hide_customer_suggestions(self):
+        self._current_cust_matches = []
+        if hasattr(self, "cust_suggestions_card") and self.cust_suggestions_card.winfo_manager() == "grid":
+            self.cust_suggestions_card.grid_remove()
+
+    def clear_customer_fields(self):
+        self.matched_customer_id = None
+        self.customer_combo.set("")
+        self.phone_entry.delete(0, "end")
+        self.address_entry.delete(0, "end")
+        self.project_name_entry.delete(0, "end")
+        self.hide_customer_suggestions()
+        self.update_customer_status("ℹ Cleared. Start typing phone number or customer name to search database.", status_type="info")
+
+    def update_customer_status(self, text, status_type="info"):
+        color = Theme.SUCCESS if status_type == "success" else (Theme.WARNING if status_type == "warning" else ("#615D56", "#A8A297"))
+        self.cust_status_lbl.configure(text=text, text_color=color)
+
+    def refresh_customer_dropdown_options(self):
+        self.customers_cache = list(Customer.select().order_by(Customer.name))
+        cust_names = [f"{c.name} ({c.mobile_number})" for c in self.customers_cache]
+        self.customer_combo.configure(values=cust_names)
 
     def open_quick_customer_modal(self):
         # Quick modal dialog to add customer
@@ -1521,11 +1785,8 @@ class QuotationEditorView(ctk.CTkFrame):
                 return
             new_c = Customer.create(name=cname, mobile_number=cphone, delivery_address=caddr)
             self.customers_cache.append(new_c)
-            cust_names = [f"{c.name} ({c.mobile_number})" for c in self.customers_cache]
-            self.customer_combo.configure(values=cust_names)
-            selected_str = f"{new_c.name} ({new_c.mobile_number})"
-            self.customer_combo.set(selected_str)
-            self.on_customer_selected(selected_str)
+            self.refresh_customer_dropdown_options()
+            self.apply_customer(new_c)
             dialog.destroy()
 
         ctk.CTkButton(
@@ -1580,14 +1841,45 @@ class QuotationEditorView(ctk.CTkFrame):
 
     def collect_quotation_payload(self):
         # Validate customer
-        selected_cust_str = self.customer_combo.get()
+        selected_cust_str = self.customer_combo.get().strip()
         matched_cust = None
-        for c in self.customers_cache:
-            if f"{c.name} ({c.mobile_number})" == selected_cust_str:
-                matched_cust = c
-                break
+        if hasattr(self, "matched_customer_id") and self.matched_customer_id:
+            try:
+                matched_cust = Customer.get_by_id(self.matched_customer_id)
+            except Customer.DoesNotExist:
+                matched_cust = None
+
         if not matched_cust:
-            raise ValueError("Please select a valid customer.")
+            for c in self.customers_cache:
+                if f"{c.name} ({c.mobile_number})" == selected_cust_str or c.name.strip().lower() == selected_cust_str.lower():
+                    matched_cust = c
+                    break
+
+        phone_val = self.phone_entry.get().strip()
+        if not matched_cust and phone_val:
+            clean_digits = "".join(d for d in phone_val if d.isdigit())
+            for c in self.customers_cache:
+                c_digits = "".join(d for d in (c.mobile_number or "") if d.isdigit())
+                if clean_digits and (clean_digits == c_digits or (len(clean_digits) >= 10 and clean_digits[-10:] == c_digits[-10:])):
+                    matched_cust = c
+                    break
+
+        # If still not matched, auto-create the new customer in database!
+        if not matched_cust:
+            cust_name = selected_cust_str or "Valued Client"
+            if not phone_val:
+                raise ValueError("Please enter a customer contact phone number or select an existing customer.")
+            deliv_addr = self.address_entry.get().strip() or "Standard Site Delivery"
+            proj_name = self.project_name_entry.get().strip() or None
+            matched_cust = Customer.create(
+                name=cust_name,
+                mobile_number=phone_val,
+                delivery_address=deliv_addr,
+                site_location=proj_name
+            )
+            self.customers_cache.append(matched_cust)
+            self.refresh_customer_dropdown_options()
+            self.matched_customer_id = matched_cust.id
 
         # Validate salesperson
         selected_sp_str = self.salesperson_combo.get()
