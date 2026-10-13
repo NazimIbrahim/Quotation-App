@@ -127,15 +127,12 @@ class QuotationListView(ctk.CTkFrame):
         self.table_card.pack(fill="both", expand=True, padx=24, pady=(0, 20))
 
         # Table Header Row (Stone)
-        self.header_frame = ctk.CTkFrame(self.table_card, fg_color=(Theme.STONE, "#242220"), corner_radius=12, height=38)
-        self.header_frame.pack(fill="x", padx=12, pady=(12, 6))
-        self.header_frame.grid_columnconfigure(0, weight=2)  # Quote No & Date
-        self.header_frame.grid_columnconfigure(1, weight=3)  # Customer & Phone
-        self.header_frame.grid_columnconfigure(2, weight=2)  # Sales Person
-        self.header_frame.grid_columnconfigure(3, weight=2)  # Net Total
-        self.header_frame.grid_columnconfigure(4, weight=2)  # Balance
-        self.header_frame.grid_columnconfigure(5, weight=2)  # Status
-        self.header_frame.grid_columnconfigure(6, weight=4)  # Actions
+        self.header_frame = ctk.CTkFrame(self.table_card, fg_color=(Theme.STONE, "#242220"), corner_radius=10, height=36)
+        self.header_frame.pack(fill="x", padx=(18, 29), pady=(12, 6))
+
+        weights = [3, 3, 2, 2, 2, 2, 5]
+        for idx, w in enumerate(weights):
+            self.header_frame.grid_columnconfigure(idx, weight=w, uniform="quotelist")
 
         cols = ["QUOTATION # / DATE", "CUSTOMER / PHONE", "SALES REP", "NET TOTAL", "OUTSTANDING", "STATUS", "ACTIONS"]
         for idx, text in enumerate(cols):
@@ -183,16 +180,12 @@ class QuotationListView(ctk.CTkFrame):
             empty_lbl.pack(pady=40)
             return
 
+        weights = [3, 3, 2, 2, 2, 2, 5]
         for q in quotes:
-            row_frame = ctk.CTkFrame(self.rows_frame, fg_color=("#F8FAFC", "#111827"), corner_radius=8)
+            row_frame = ctk.CTkFrame(self.rows_frame, fg_color=("#FAF8F5", "#181615"), corner_radius=8)
             row_frame.pack(fill="x", pady=3)
-            row_frame.grid_columnconfigure(0, weight=2)
-            row_frame.grid_columnconfigure(1, weight=3)
-            row_frame.grid_columnconfigure(2, weight=2)
-            row_frame.grid_columnconfigure(3, weight=2)
-            row_frame.grid_columnconfigure(4, weight=2)
-            row_frame.grid_columnconfigure(5, weight=2)
-            row_frame.grid_columnconfigure(6, weight=4)
+            for idx, w in enumerate(weights):
+                row_frame.grid_columnconfigure(idx, weight=w, uniform="quotelist")
 
             # Col 0: Quote No & Date
             q_date = q.quotation_date.strftime("%d-%b-%Y") if hasattr(q.quotation_date, "strftime") else str(q.quotation_date)
@@ -243,15 +236,24 @@ class QuotationListView(ctk.CTkFrame):
                 text_color=(Theme.BLACK, Theme.PAPER)
             ).grid(row=0, column=3, padx=8, pady=8, sticky="w")
 
-            # Col 4: Outstanding Balance
+            # Col 4: Outstanding Balance & Payment State
             bal = q.get_outstanding_balance()
             bal_col = Theme.DANGER if bal > 0 else Theme.SUCCESS
+            c4 = ctk.CTkFrame(row_frame, fg_color="transparent")
+            c4.grid(row=0, column=4, padx=8, pady=8, sticky="w")
             ctk.CTkLabel(
-                row_frame,
+                c4,
                 text=f"₹ {bal:,.2f}",
                 font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11, weight="bold"),
                 text_color=bal_col
-            ).grid(row=0, column=4, padx=8, pady=8, sticky="w")
+            ).pack(anchor="w")
+            pmt_status = q.get_payment_status()
+            ctk.CTkLabel(
+                c4,
+                text=pmt_status,
+                font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=9),
+                text_color=("#615D56", "#A8A297")
+            ).pack(anchor="w")
 
             # Col 5: Status Badge
             status_col, _ = Theme.get_status_color(q.status)
@@ -263,24 +265,17 @@ class QuotationListView(ctk.CTkFrame):
                 font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11, weight="bold"),
                 text_color=status_col
             ).pack(anchor="w")
-            pmt_status = q.get_payment_status()
-            ctk.CTkLabel(
-                c5,
-                text=pmt_status,
-                font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=9),
-                text_color=("#615D56", "#A8A297")
-            ).pack(anchor="w")
 
             # Col 6: Action Buttons
             c6 = ctk.CTkFrame(row_frame, fg_color="transparent")
-            c6.grid(row=0, column=6, padx=8, pady=6, sticky="w")
+            c6.grid(row=0, column=6, padx=6, pady=6, sticky="w")
 
             # PDF Export & Open Button (Coral)
             pdf_btn = ctk.CTkButton(
                 c6,
                 text="📄 PDF",
-                width=54,
-                height=28,
+                width=48,
+                height=26,
                 corner_radius=Theme.RADIUS_SM,
                 border_width=Theme.BORDER_WIDTH_BUTTON,
                 font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=10, weight="bold"),
@@ -294,8 +289,8 @@ class QuotationListView(ctk.CTkFrame):
             edit_btn = ctk.CTkButton(
                 c6,
                 text="✏️ Edit",
-                width=52,
-                height=28,
+                width=48,
+                height=26,
                 corner_radius=Theme.RADIUS_SM,
                 border_width=Theme.BORDER_WIDTH_BUTTON,
                 font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=10, weight="bold"),
@@ -310,8 +305,8 @@ class QuotationListView(ctk.CTkFrame):
             pmt_btn = ctk.CTkButton(
                 c6,
                 text="💳 Pay",
-                width=52,
-                height=28,
+                width=46,
+                height=26,
                 corner_radius=Theme.RADIUS_SM,
                 border_width=Theme.BORDER_WIDTH_BUTTON,
                 font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=10, weight="bold"),
@@ -326,8 +321,8 @@ class QuotationListView(ctk.CTkFrame):
             status_menu = ctk.CTkOptionMenu(
                 c6,
                 values=["Open", "In-Review", "Won", "Lost"],
-                width=82,
-                height=28,
+                width=78,
+                height=26,
                 corner_radius=Theme.RADIUS_SM,
                 font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=10),
                 fg_color=Theme.BTN_SECONDARY_BG,
@@ -342,7 +337,7 @@ class QuotationListView(ctk.CTkFrame):
             del_btn = ctk.CTkButton(
                 c6,
                 text="🗑️",
-                width=28,
+                width=26,
                 height=26,
                 font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=10),
                 fg_color="transparent",

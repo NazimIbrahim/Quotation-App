@@ -372,25 +372,28 @@ class DashboardView(ctk.CTkFrame):
             return
 
         # Table Header (Stone)
-        h_row = ctk.CTkFrame(self.recent_table_frame, fg_color=(Theme.STONE, "#242220"), corner_radius=6)
+        h_row = ctk.CTkFrame(self.recent_table_frame, fg_color=(Theme.STONE, "#242220"), corner_radius=10, height=36)
         h_row.pack(fill="x", pady=(0, 4))
-        h_row.grid_columnconfigure((0, 1, 2, 3, 4, 5), weight=1)
+        weights = [3, 3, 2, 2, 2, 2]
+        for idx, w in enumerate(weights):
+            h_row.grid_columnconfigure(idx, weight=w, uniform="recent_quotes")
 
-        headers = ["Quote #", "Customer", "Date", "Net Total", "Status", "Action"]
+        headers = ["QUOTE #", "CUSTOMER", "DATE", "NET TOTAL", "STATUS", "ACTION"]
         for col_idx, h_text in enumerate(headers):
             ctk.CTkLabel(
                 h_row,
                 text=h_text,
-                font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11, weight="bold"),
+                font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=10, weight="bold"),
                 text_color=(Theme.BLACK, Theme.PAPER),
                 anchor="w"
-            ).grid(row=0, column=col_idx, padx=8, pady=6, sticky="w")
+            ).grid(row=0, column=col_idx, padx=10, pady=8, sticky="w")
 
         # Table Rows
         for q in quotes:
-            r_frame = ctk.CTkFrame(self.recent_table_frame, fg_color="transparent")
+            r_frame = ctk.CTkFrame(self.recent_table_frame, fg_color=("#FAF8F5", "#181615"), corner_radius=8)
             r_frame.pack(fill="x", pady=2)
-            r_frame.grid_columnconfigure((0, 1, 2, 3, 4, 5), weight=1)
+            for idx, w in enumerate(weights):
+                r_frame.grid_columnconfigure(idx, weight=w, uniform="recent_quotes")
 
             ctk.CTkLabel(
                 r_frame,
@@ -398,7 +401,7 @@ class DashboardView(ctk.CTkFrame):
                 font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11, weight="bold"),
                 text_color=Theme.PRIMARY,
                 anchor="w"
-            ).grid(row=0, column=0, padx=8, pady=4, sticky="w")
+            ).grid(row=0, column=0, padx=10, pady=6, sticky="w")
 
             ctk.CTkLabel(
                 r_frame,
@@ -406,7 +409,7 @@ class DashboardView(ctk.CTkFrame):
                 font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11),
                 text_color=(Theme.BLACK, Theme.PAPER),
                 anchor="w"
-            ).grid(row=0, column=1, padx=8, pady=4, sticky="w")
+            ).grid(row=0, column=1, padx=10, pady=6, sticky="w")
 
             q_d_str = q.quotation_date.strftime("%d-%b-%Y") if hasattr(q.quotation_date, "strftime") else str(q.quotation_date)
             ctk.CTkLabel(
@@ -415,7 +418,7 @@ class DashboardView(ctk.CTkFrame):
                 font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11),
                 text_color=("#615D56", "#A8A297"),
                 anchor="w"
-            ).grid(row=0, column=2, padx=8, pady=4, sticky="w")
+            ).grid(row=0, column=2, padx=10, pady=6, sticky="w")
 
             ctk.CTkLabel(
                 r_frame,
@@ -423,7 +426,7 @@ class DashboardView(ctk.CTkFrame):
                 font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11, weight="bold"),
                 text_color=(Theme.BLACK, Theme.PAPER),
                 anchor="w"
-            ).grid(row=0, column=3, padx=8, pady=4, sticky="w")
+            ).grid(row=0, column=3, padx=10, pady=6, sticky="w")
 
             # Status pill
             status_fg, _ = Theme.get_status_color(q.status)
@@ -433,18 +436,20 @@ class DashboardView(ctk.CTkFrame):
                 font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11, weight="bold"),
                 text_color=status_fg,
                 anchor="w"
-            ).grid(row=0, column=4, padx=8, pady=4, sticky="w")
+            ).grid(row=0, column=4, padx=10, pady=6, sticky="w")
 
             # Action button
             act_btn = ctk.CTkButton(
                 r_frame,
                 text="View / Edit",
                 font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=10, weight="bold"),
-                width=75,
-                height=24,
-                fg_color=(Theme.STONE, "#2B2824"),
+                width=80,
+                height=26,
+                fg_color=Theme.BTN_SECONDARY_BG,
                 text_color=(Theme.BLACK, Theme.PAPER),
                 hover_color=Theme.PRIMARY,
+                corner_radius=Theme.RADIUS_PILL,
+                border_width=Theme.BORDER_WIDTH_BUTTON,
                 command=lambda qid=q.id: self.controller.show_view("quotation_editor", qid)
             )
-            act_btn.grid(row=0, column=5, padx=8, pady=4, sticky="w")
+            act_btn.grid(row=0, column=5, padx=10, pady=6, sticky="w")

@@ -358,13 +358,21 @@ class ReportsView(ctk.CTkFrame):
         for widget in self.status_table_container.winfo_children():
             widget.destroy()
 
-        status_grid = ctk.CTkFrame(self.status_table_container, fg_color=(Theme.STONE, "#242220"), corner_radius=6)
-        status_grid.pack(fill="x")
-        status_grid.grid_columnconfigure((0, 1, 2, 3), weight=1)
+        status_grid = ctk.CTkFrame(self.status_table_container, fg_color=(Theme.STONE, "#242220"), corner_radius=10, height=36)
+        status_grid.pack(fill="x", pady=(0, 4))
+        weights = [3, 1, 2, 5]
+        for idx, w in enumerate(weights):
+            status_grid.grid_columnconfigure(idx, weight=w, uniform="status_breakdown")
 
-        headers = ["Status Category", "Count", "Percentage", "Category Definition"]
+        headers = ["STATUS CATEGORY", "COUNT", "PERCENTAGE", "CATEGORY DEFINITION"]
         for idx, h in enumerate(headers):
-            ctk.CTkLabel(status_grid, text=h, font=ctk.CTkFont(size=10, weight="bold"), text_color=(Theme.BLACK, Theme.PAPER)).grid(row=0, column=idx, padx=8, pady=6, sticky="w")
+            ctk.CTkLabel(
+                status_grid,
+                text=h,
+                font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=10, weight="bold"),
+                text_color=(Theme.BLACK, Theme.PAPER),
+                anchor="w"
+            ).grid(row=0, column=idx, padx=10, pady=8, sticky="w")
 
         total_q = max(1, m["total_quotes"])
         breakdown_rows = [
@@ -375,14 +383,15 @@ class ReportsView(ctk.CTkFrame):
         ]
 
         for r_idx, (s_name, count, pct, defn, color) in enumerate(breakdown_rows, start=1):
-            rf = ctk.CTkFrame(self.status_table_container, fg_color="transparent")
+            rf = ctk.CTkFrame(self.status_table_container, fg_color=("#FAF8F5", "#181615"), corner_radius=8)
             rf.pack(fill="x", pady=2)
-            rf.grid_columnconfigure((0, 1, 2, 3), weight=1)
+            for idx, w in enumerate(weights):
+                rf.grid_columnconfigure(idx, weight=w, uniform="status_breakdown")
 
-            ctk.CTkLabel(rf, text=f"● {s_name}", font=ctk.CTkFont(size=11, weight="bold"), text_color=color).grid(row=0, column=0, padx=8, pady=4, sticky="w")
-            ctk.CTkLabel(rf, text=str(count), font=ctk.CTkFont(size=11, weight="bold")).grid(row=0, column=1, padx=8, pady=4, sticky="w")
-            ctk.CTkLabel(rf, text=f"{pct}%", font=ctk.CTkFont(size=11)).grid(row=0, column=2, padx=8, pady=4, sticky="w")
-            ctk.CTkLabel(rf, text=defn, font=ctk.CTkFont(size=10), text_color=("#615D56", "#A8A297")).grid(row=0, column=3, padx=8, pady=4, sticky="w")
+            ctk.CTkLabel(rf, text=f"● {s_name}", font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11, weight="bold"), text_color=color, anchor="w").grid(row=0, column=0, padx=10, pady=6, sticky="w")
+            ctk.CTkLabel(rf, text=str(count), font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11, weight="bold"), anchor="w").grid(row=0, column=1, padx=10, pady=6, sticky="w")
+            ctk.CTkLabel(rf, text=f"{pct}%", font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11), anchor="w").grid(row=0, column=2, padx=10, pady=6, sticky="w")
+            ctk.CTkLabel(rf, text=defn, font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=10), text_color=("#615D56", "#A8A297"), anchor="w").grid(row=0, column=3, padx=10, pady=6, sticky="w")
 
     def export_csv(self):
         try:

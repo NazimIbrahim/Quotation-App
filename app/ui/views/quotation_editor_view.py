@@ -38,18 +38,9 @@ class ItemRowWidget(ctk.CTkFrame):
         # 9: Rate Box (weight 2)
         # 10: Total Amount (weight 2)
         # 11: Delete (weight 1)
-        self.grid_columnconfigure(0, weight=1)
-        self.grid_columnconfigure(1, weight=5)
-        self.grid_columnconfigure(2, weight=2)
-        self.grid_columnconfigure(3, weight=3)
-        self.grid_columnconfigure(4, weight=2)
-        self.grid_columnconfigure(5, weight=2)
-        self.grid_columnconfigure(6, weight=2)
-        self.grid_columnconfigure(7, weight=2)
-        self.grid_columnconfigure(8, weight=2)
-        self.grid_columnconfigure(9, weight=2)
-        self.grid_columnconfigure(10, weight=2)
-        self.grid_columnconfigure(11, weight=1)
+        item_col_weights = [1, 5, 2, 3, 2, 2, 2, 2, 2, 2, 2, 1]
+        for idx, w in enumerate(item_col_weights):
+            self.grid_columnconfigure(idx, weight=w, uniform="area_item_cols")
 
         # 0. Sl. No
         self.sl_label = ctk.CTkLabel(
@@ -771,20 +762,11 @@ class AreaSectionWidget(ctk.CTkFrame):
         del_area_btn.pack(side="right", padx=10)
 
         # 2. Table Column Titles (12 columns matching layout + Action button)
-        col_bar = ctk.CTkFrame(self, fg_color=("#F1F5F9", "#111827"), height=26)
+        col_bar = ctk.CTkFrame(self, fg_color=(Theme.STONE, "#242220"), height=30, corner_radius=Theme.RADIUS_SM)
         col_bar.pack(fill="x", padx=8, pady=(2, 4))
-        col_bar.grid_columnconfigure(0, weight=1)
-        col_bar.grid_columnconfigure(1, weight=5)
-        col_bar.grid_columnconfigure(2, weight=2)
-        col_bar.grid_columnconfigure(3, weight=3)
-        col_bar.grid_columnconfigure(4, weight=2)
-        col_bar.grid_columnconfigure(5, weight=2)
-        col_bar.grid_columnconfigure(6, weight=2)
-        col_bar.grid_columnconfigure(7, weight=2)
-        col_bar.grid_columnconfigure(8, weight=2)
-        col_bar.grid_columnconfigure(9, weight=2)
-        col_bar.grid_columnconfigure(10, weight=2)
-        col_bar.grid_columnconfigure(11, weight=1)
+        item_col_weights = [1, 5, 2, 3, 2, 2, 2, 2, 2, 2, 2, 1]
+        for idx, w in enumerate(item_col_weights):
+            col_bar.grid_columnconfigure(idx, weight=w, uniform="area_item_cols")
 
         cols = [
             "Sl.",
@@ -810,7 +792,7 @@ class AreaSectionWidget(ctk.CTkFrame):
 
         # 3. Items Container Frame
         self.items_container = ctk.CTkFrame(self, fg_color="transparent")
-        self.items_container.pack(fill="x", padx=6, pady=(0, 6))
+        self.items_container.pack(fill="x", padx=8, pady=(0, 6))
 
         # 4. Bottom Controls: "+ Add Item" & Area Subtotal
         bot_bar = ctk.CTkFrame(self, fg_color="transparent")

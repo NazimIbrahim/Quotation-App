@@ -279,6 +279,23 @@ class CustomerManagementView(ctk.CTkFrame):
             text_color=(Theme.BLACK, Theme.PAPER)
         ).pack(anchor="w", pady=(0, 6))
 
+        # Table Header Row
+        weights = [2, 2, 2, 2, 2]
+        h_frame = ctk.CTkFrame(self.profile_container, fg_color=(Theme.STONE, "#242220"), height=36, corner_radius=10)
+        h_frame.pack(fill="x", padx=(0, 16), pady=(0, 4))
+        for idx, w in enumerate(weights):
+            h_frame.grid_columnconfigure(idx, weight=w, uniform="cust_quotes")
+
+        headers = ["QUOTE #", "DATE", "NET TOTAL", "STATUS", "ACTIONS"]
+        for idx, h in enumerate(headers):
+            ctk.CTkLabel(
+                h_frame,
+                text=h,
+                font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=10, weight="bold"),
+                text_color=(Theme.BLACK, Theme.PAPER),
+                anchor="w"
+            ).grid(row=0, column=idx, padx=8, pady=8, sticky="w")
+
         history_scroll = ctk.CTkScrollableFrame(self.profile_container, fg_color="transparent", height=240)
         history_scroll.pack(fill="both", expand=True)
 
@@ -288,69 +305,72 @@ class CustomerManagementView(ctk.CTkFrame):
             return
 
         for q in quotes:
-            r = ctk.CTkFrame(history_scroll, fg_color=(Theme.PAPER, "#1E1C1A"), corner_radius=Theme.RADIUS_SM)
-            r.pack(fill="x", pady=3)
-            r.grid_columnconfigure((0, 1, 2, 3, 4), weight=1)
+            r = ctk.CTkFrame(history_scroll, fg_color=("#FAF8F5", "#181615"), corner_radius=8)
+            r.pack(fill="x", pady=2)
+            for idx, w in enumerate(weights):
+                r.grid_columnconfigure(idx, weight=w, uniform="cust_quotes")
 
             q_d_str = q.quotation_date.strftime("%d-%b-%Y") if hasattr(q.quotation_date, "strftime") else str(q.quotation_date)
 
             ctk.CTkLabel(
                 r,
                 text=q.quotation_number,
-                font=ctk.CTkFont(size=11, weight="bold"),
-                text_color=Theme.PRIMARY
+                font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11, weight="bold"),
+                text_color=Theme.PRIMARY,
+                anchor="w"
             ).grid(row=0, column=0, padx=8, pady=6, sticky="w")
 
             ctk.CTkLabel(
                 r,
                 text=q_d_str,
-                font=ctk.CTkFont(size=10),
-                text_color=("#615D56", "#A8A297")
+                font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=10),
+                text_color=("#615D56", "#A8A297"),
+                anchor="w"
             ).grid(row=0, column=1, padx=8, pady=6, sticky="w")
 
             ctk.CTkLabel(
                 r,
                 text=f"₹ {q.net_total:,.2f}",
-                font=ctk.CTkFont(size=11, weight="bold")
+                font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11, weight="bold"),
+                anchor="w"
             ).grid(row=0, column=2, padx=8, pady=6, sticky="w")
 
             status_col, _ = Theme.get_status_color(q.status)
             ctk.CTkLabel(
                 r,
                 text=f"● {q.status}",
-                font=ctk.CTkFont(size=10, weight="bold"),
-                text_color=status_col
+                font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=10, weight="bold"),
+                text_color=status_col,
+                anchor="w"
             ).grid(row=0, column=3, padx=8, pady=6, sticky="w")
 
             # Actions
             btn_box = ctk.CTkFrame(r, fg_color="transparent")
-            btn_box.grid(row=0, column=4, padx=8, pady=4, sticky="e")
+            btn_box.grid(row=0, column=4, padx=8, pady=4, sticky="w")
 
             ctk.CTkButton(
                 btn_box,
                 text="PDF",
-                width=50,
+                width=48,
                 height=26,
                 corner_radius=Theme.RADIUS_PILL,
-                font=ctk.CTkFont(size=9, weight="bold"),
+                font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=10, weight="bold"),
                 fg_color=Theme.ACCENT_GOLD,
                 hover_color=Theme.ACCENT_GOLD_HOVER,
-                border_width=1,
-                border_color=Theme.BTN_SECONDARY_BORDER,
+                border_width=Theme.BORDER_WIDTH_BUTTON,
                 command=lambda qid=q.id: self.export_pdf(qid)
             ).pack(side="left", padx=2)
 
             ctk.CTkButton(
                 btn_box,
                 text="Edit",
-                width=50,
+                width=48,
                 height=26,
                 corner_radius=Theme.RADIUS_PILL,
-                font=ctk.CTkFont(size=9, weight="bold"),
+                font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=10, weight="bold"),
                 fg_color=Theme.PRIMARY,
                 hover_color=Theme.PRIMARY_HOVER,
-                border_width=1,
-                border_color=Theme.BTN_PRIMARY_BORDER,
+                border_width=Theme.BORDER_WIDTH_BUTTON,
                 command=lambda qid=q.id: self.controller.show_view("quotation_editor", qid)
             ).pack(side="left", padx=2)
 

@@ -244,9 +244,11 @@ class BrandCatalogView(ctk.CTkFrame):
         del_b_btn.pack(side="left")
 
         # Table Header Row (Stone)
-        h_frame = ctk.CTkFrame(self.brand_detail_container, fg_color=(Theme.STONE, "#242220"), height=32, corner_radius=Theme.RADIUS_SM)
-        h_frame.pack(fill="x", pady=(6, 4))
-        h_frame.grid_columnconfigure((0, 1, 2, 3, 4, 5), weight=1)
+        h_frame = ctk.CTkFrame(self.brand_detail_container, fg_color=(Theme.STONE, "#242220"), height=36, corner_radius=10)
+        h_frame.pack(fill="x", padx=(6, 23), pady=(6, 4))
+        weights = [2, 3, 2, 2, 2, 2]
+        for idx, w in enumerate(weights):
+            h_frame.grid_columnconfigure(idx, weight=w, uniform="brand_sizes")
 
         cols = ["TILE SIZE", "COVERAGE (SQFT/BOX)", "PCS / BOX", "RATE / SQFT", "BOX PRICE (₹)", "ACTIONS"]
         for idx, text in enumerate(cols):
@@ -273,9 +275,10 @@ class BrandCatalogView(ctk.CTkFrame):
             return
 
         for sc in size_entries:
-            rf = ctk.CTkFrame(rows_scroll, fg_color=(Theme.PAPER, "#1E1C1A"), corner_radius=Theme.RADIUS_SM)
+            rf = ctk.CTkFrame(rows_scroll, fg_color=("#FAF8F5", "#181615"), corner_radius=8)
             rf.pack(fill="x", pady=2)
-            rf.grid_columnconfigure((0, 1, 2, 3, 4, 5), weight=1)
+            for idx, w in enumerate(weights):
+                rf.grid_columnconfigure(idx, weight=w, uniform="brand_sizes")
 
             # Col 0: Size
             ctk.CTkLabel(
@@ -324,14 +327,13 @@ class BrandCatalogView(ctk.CTkFrame):
             ctk.CTkButton(
                 act_f,
                 text="Edit",
-                width=50,
+                width=48,
                 height=24,
                 corner_radius=Theme.RADIUS_PILL,
-                font=ctk.CTkFont(size=9, weight="bold"),
+                font=ctk.CTkFont(size=10, weight="bold"),
                 fg_color=Theme.BTN_SECONDARY_BG,
                 hover_color=Theme.BTN_SECONDARY_HOVER,
-                border_width=1,
-                border_color=Theme.BTN_SECONDARY_BORDER,
+                border_width=Theme.BORDER_WIDTH_BUTTON,
                 text_color=(Theme.BLACK, Theme.PAPER),
                 command=lambda item=sc: self.open_size_modal(item)
             ).pack(side="left", padx=2)
@@ -342,13 +344,16 @@ class BrandCatalogView(ctk.CTkFrame):
                 width=26,
                 height=24,
                 corner_radius=Theme.RADIUS_PILL,
-                font=ctk.CTkFont(size=9),
-                border_width=1,
-                border_color=Theme.BTN_DANGER_BORDER,
-                fg_color="transparent",
+                font=ctk.CTkFont(size=10, weight="bold"),
+                border_width=Theme.BORDER_WIDTH_BUTTON,
+                fg_color=Theme.BTN_SECONDARY_BG,
+                hover_color=Theme.DANGER,
                 text_color=Theme.DANGER,
                 command=lambda item=sc: self.delete_size(item)
             ).pack(side="left", padx=2)
+
+        # Bottom spacer so last row is never cut off
+        ctk.CTkFrame(rows_scroll, height=14, fg_color="transparent").pack(fill="x")
 
     def open_brand_modal(self, brand=None):
         dialog = ctk.CTkToplevel(self)

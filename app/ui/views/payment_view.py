@@ -232,13 +232,21 @@ class PaymentTrackingView(ctk.CTkFrame):
         ).pack(anchor="w", padx=16, pady=(14, 10))
 
         # Table Header
-        h_frame = ctk.CTkFrame(history_card, fg_color=(Theme.STONE, "#242220"), height=30, corner_radius=Theme.RADIUS_SM)
+        h_frame = ctk.CTkFrame(history_card, fg_color=(Theme.STONE, "#242220"), height=36, corner_radius=10)
         h_frame.pack(fill="x", padx=12, pady=(0, 4))
-        h_frame.grid_columnconfigure((0, 1, 2, 3, 4), weight=1)
+        weights = [2, 2, 3, 2, 2]
+        for idx, w in enumerate(weights):
+            h_frame.grid_columnconfigure(idx, weight=w, uniform="pmt_history")
 
-        cols = ["Date", "Amount", "Mode & Ref", "Status", "Actions"]
+        cols = ["DATE", "AMOUNT", "MODE & REF", "STATUS", "ACTIONS"]
         for i, c in enumerate(cols):
-            ctk.CTkLabel(h_frame, text=c, font=ctk.CTkFont(size=10, weight="bold"), text_color=(Theme.BLACK, Theme.PAPER)).grid(row=0, column=i, padx=4, pady=4, sticky="w")
+            ctk.CTkLabel(
+                h_frame,
+                text=c,
+                font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=10, weight="bold"),
+                text_color=(Theme.BLACK, Theme.PAPER),
+                anchor="w"
+            ).grid(row=0, column=i, padx=8, pady=8, sticky="w")
 
         self.history_rows_frame = ctk.CTkFrame(history_card, fg_color="transparent")
         self.history_rows_frame.pack(fill="both", expand=True, padx=12, pady=(0, 14))
@@ -340,24 +348,26 @@ class PaymentTrackingView(ctk.CTkFrame):
             ctk.CTkLabel(self.history_rows_frame, text="No payments recorded yet for this quotation.").pack(pady=15)
             return
 
+        weights = [2, 2, 3, 2, 2]
         for p in payments:
-            r = ctk.CTkFrame(self.history_rows_frame, fg_color=("#F8FAFC", "#111827"), corner_radius=Theme.RADIUS_SM)
+            r = ctk.CTkFrame(self.history_rows_frame, fg_color=("#FAF8F5", "#181615"), corner_radius=8)
             r.pack(fill="x", pady=2)
-            r.grid_columnconfigure((0, 1, 2, 3, 4), weight=1)
+            for idx, w in enumerate(weights):
+                r.grid_columnconfigure(idx, weight=w, uniform="pmt_history")
 
             p_date_str = p.payment_date.strftime("%d-%b-%Y") if hasattr(p.payment_date, "strftime") else str(p.payment_date)
-            ctk.CTkLabel(r, text=p_date_str, font=ctk.CTkFont(size=10)).grid(row=0, column=0, padx=4, pady=4, sticky="w")
-            ctk.CTkLabel(r, text=f"₹ {p.amount:,.2f}", font=ctk.CTkFont(size=11, weight="bold")).grid(row=0, column=1, padx=4, pady=4, sticky="w")
+            ctk.CTkLabel(r, text=p_date_str, font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11), text_color=(Theme.BLACK, Theme.PAPER), anchor="w").grid(row=0, column=0, padx=8, pady=6, sticky="w")
+            ctk.CTkLabel(r, text=f"₹ {p.amount:,.2f}", font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11, weight="bold"), text_color=(Theme.BLACK, Theme.PAPER), anchor="w").grid(row=0, column=1, padx=8, pady=6, sticky="w")
 
             ref_str = f"{p.payment_mode}" + (f" ({p.reference_number})" if p.reference_number else "")
-            ctk.CTkLabel(r, text=ref_str[:22], font=ctk.CTkFont(size=10), text_color=("#615D56", "#A8A297")).grid(row=0, column=2, padx=4, pady=4, sticky="w")
+            ctk.CTkLabel(r, text=ref_str[:22], font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=10), text_color=("#615D56", "#A8A297"), anchor="w").grid(row=0, column=2, padx=8, pady=6, sticky="w")
 
             status_col = Theme.SUCCESS if p.status == Payment.STATUS_CLEARED else Theme.WARNING
-            ctk.CTkLabel(r, text=f"● {p.status}", font=ctk.CTkFont(size=10, weight="bold"), text_color=status_col).grid(row=0, column=3, padx=4, pady=4, sticky="w")
+            ctk.CTkLabel(r, text=f"● {p.status}", font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=10, weight="bold"), text_color=status_col, anchor="w").grid(row=0, column=3, padx=8, pady=6, sticky="w")
 
             # Action: Toggle Clearance or Delete
             act_box = ctk.CTkFrame(r, fg_color="transparent")
-            act_box.grid(row=0, column=4, padx=4, pady=2, sticky="w")
+            act_box.grid(row=0, column=4, padx=8, pady=4, sticky="w")
 
             if p.status == Payment.STATUS_PENDING:
                 toggle_btn = ctk.CTkButton(
@@ -367,7 +377,7 @@ class PaymentTrackingView(ctk.CTkFrame):
                     height=24,
                     corner_radius=Theme.RADIUS_PILL,
                     border_width=Theme.BORDER_WIDTH_BUTTON,
-                    font=ctk.CTkFont(size=9, weight="bold"),
+                    font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=9, weight="bold"),
                     fg_color=Theme.SUCCESS,
                     hover_color=Theme.SUCCESS_HOVER,
                     command=lambda pid=p.id: self.toggle_status(pid, Payment.STATUS_CLEARED)
@@ -380,9 +390,9 @@ class PaymentTrackingView(ctk.CTkFrame):
                 width=26,
                 height=24,
                 corner_radius=Theme.RADIUS_PILL,
-                border_width=1,
-                border_color=Theme.BTN_DANGER_BORDER,
-                fg_color="transparent",
+                border_width=Theme.BORDER_WIDTH_BUTTON,
+                fg_color=Theme.BTN_SECONDARY_BG,
+                hover_color=Theme.DANGER,
                 text_color=Theme.DANGER,
                 command=lambda pid=p.id: self.delete_pmt(pid)
             )
