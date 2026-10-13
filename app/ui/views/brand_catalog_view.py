@@ -31,7 +31,7 @@ class BrandCatalogView(ctk.CTkFrame):
             title_box,
             text="Tile Brands & Box Coverage Catalog",
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=24, weight="bold"),
-            text_color=("#0F172A", "#F8FAFC"),
+            text_color=(Theme.BLACK, Theme.PAPER),
         )
         title.pack(anchor="w")
 
@@ -39,7 +39,7 @@ class BrandCatalogView(ctk.CTkFrame):
             title_box,
             text="Define brands, tile sizes & exact Sqft coverage per box for automated quotation math",
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=12),
-            text_color=("#64748B", "#94A3B8"),
+            text_color=("#615D56", "#A8A297"),
         )
         subtitle.pack(anchor="w")
 
@@ -64,9 +64,9 @@ class BrandCatalogView(ctk.CTkFrame):
         left_card = ctk.CTkFrame(
             main_split,
             corner_radius=12,
-            fg_color=("white", "#1E293B"),
+            fg_color=("#FFFFFF", "#201E1C"),
             border_width=1,
-            border_color=("#E2E8F0", "#334155")
+            border_color=(Theme.STONE, "#38342E")
         )
         left_card.grid(row=0, column=0, padx=(0, 8), sticky="nsew")
 
@@ -77,7 +77,7 @@ class BrandCatalogView(ctk.CTkFrame):
             left_header,
             text="🏷️ Brands Master",
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=15, weight="bold"),
-            text_color=("#0F172A", "#F8FAFC")
+            text_color=(Theme.BLACK, Theme.PAPER)
         ).pack(side="left")
 
         # Search Bar
@@ -97,9 +97,9 @@ class BrandCatalogView(ctk.CTkFrame):
         self.right_card = ctk.CTkFrame(
             main_split,
             corner_radius=12,
-            fg_color=("white", "#1E293B"),
+            fg_color=("#FFFFFF", "#201E1C"),
             border_width=1,
-            border_color=("#E2E8F0", "#334155")
+            border_color=(Theme.STONE, "#38342E")
         )
         self.right_card.grid(row=0, column=1, padx=(8, 0), sticky="nsew")
 
@@ -127,8 +127,8 @@ class BrandCatalogView(ctk.CTkFrame):
 
         for b in brands:
             is_active = self.selected_brand and self.selected_brand.id == b.id
-            card_bg = (Theme.PRIMARY, "#0284C7") if is_active else ("#F8FAFC", "#0F172A")
-            text_color = "white" if is_active else ("#0F172A", "#F8FAFC")
+            card_bg = Theme.PRIMARY if is_active else (Theme.PAPER, "#242220")
+            text_color = "white" if is_active else (Theme.BLACK, Theme.PAPER)
 
             sizes_count = b.size_coverages.count()
 
@@ -182,7 +182,7 @@ class BrandCatalogView(ctk.CTkFrame):
             title_box,
             text=desc_txt,
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11),
-            text_color=("#64748B", "#94A3B8")
+            text_color=("#615D56", "#A8A297")
         ).pack(anchor="w")
 
         act_box = ctk.CTkFrame(header_row, fg_color="transparent")
@@ -205,8 +205,8 @@ class BrandCatalogView(ctk.CTkFrame):
             font=ctk.CTkFont(size=11, weight="bold"),
             width=60,
             height=28,
-            fg_color=("#E2E8F0", "#334155"),
-            text_color=("#0F172A", "#F8FAFC"),
+            fg_color=(Theme.STONE, "#2B2824"),
+            text_color=(Theme.BLACK, Theme.PAPER),
             command=lambda: self.open_brand_modal(b)
         )
         edit_b_btn.pack(side="left", padx=4)
@@ -223,8 +223,8 @@ class BrandCatalogView(ctk.CTkFrame):
         )
         del_b_btn.pack(side="left")
 
-        # Table Header Row
-        h_frame = ctk.CTkFrame(self.brand_detail_container, fg_color=("#F1F5F9", "#0F172A"), height=32, corner_radius=6)
+        # Table Header Row (Stone)
+        h_frame = ctk.CTkFrame(self.brand_detail_container, fg_color=(Theme.STONE, "#242220"), height=32, corner_radius=6)
         h_frame.pack(fill="x", pady=(6, 4))
         h_frame.grid_columnconfigure((0, 1, 2, 3, 4, 5), weight=1)
 
@@ -234,7 +234,7 @@ class BrandCatalogView(ctk.CTkFrame):
                 h_frame,
                 text=text,
                 font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=10, weight="bold"),
-                text_color=("#475569", "#94A3B8"),
+                text_color=(Theme.BLACK, Theme.PAPER),
                 anchor="w"
             ).grid(row=0, column=idx, padx=8, pady=6, sticky="w")
 
@@ -248,12 +248,12 @@ class BrandCatalogView(ctk.CTkFrame):
                 rows_scroll,
                 text="No sizes configured for this brand yet. Click '+ Add Size & Coverage' to configure.",
                 font=ctk.CTkFont(size=12),
-                text_color=("#64748B", "#94A3B8")
+                text_color=("#615D56", "#A8A297")
             ).pack(pady=30)
             return
 
         for sc in size_entries:
-            rf = ctk.CTkFrame(rows_scroll, fg_color=("#F8FAFC", "#0F172A"), corner_radius=6)
+            rf = ctk.CTkFrame(rows_scroll, fg_color=(Theme.PAPER, "#1E1C1A"), corner_radius=6)
             rf.pack(fill="x", pady=2)
             rf.grid_columnconfigure((0, 1, 2, 3, 4, 5), weight=1)
 
@@ -262,7 +262,7 @@ class BrandCatalogView(ctk.CTkFrame):
                 rf,
                 text=sc.size,
                 font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=12, weight="bold"),
-                text_color=("#0F172A", "#F8FAFC")
+                text_color=(Theme.BLACK, Theme.PAPER)
             ).grid(row=0, column=0, padx=8, pady=6, sticky="w")
 
             # Col 1: Coverage
@@ -270,7 +270,7 @@ class BrandCatalogView(ctk.CTkFrame):
                 rf,
                 text=f"{sc.coverage_sqft:.2f} Sqft",
                 font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=12, weight="bold"),
-                text_color=Theme.ACCENT_GOLD
+                text_color=Theme.PRIMARY
             ).grid(row=0, column=1, padx=8, pady=6, sticky="w")
 
             # Col 2: Pcs / box
@@ -278,14 +278,15 @@ class BrandCatalogView(ctk.CTkFrame):
                 rf,
                 text=f"{sc.pieces_per_box} pcs",
                 font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11),
-                text_color=("#64748B", "#94A3B8")
+                text_color=("#615D56", "#A8A297")
             ).grid(row=0, column=2, padx=8, pady=6, sticky="w")
 
             # Col 3: Rate per Sqft
             ctk.CTkLabel(
                 rf,
                 text=f"₹ {sc.default_rate_sqft:,.2f}" if sc.default_rate_sqft > 0 else "-",
-                font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11)
+                font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11),
+                text_color=(Theme.BLACK, Theme.PAPER)
             ).grid(row=0, column=3, padx=8, pady=6, sticky="w")
 
             # Col 4: Box Price
@@ -306,8 +307,8 @@ class BrandCatalogView(ctk.CTkFrame):
                 width=45,
                 height=22,
                 font=ctk.CTkFont(size=9, weight="bold"),
-                fg_color=("#E2E8F0", "#334155"),
-                text_color=("#0F172A", "#F8FAFC"),
+                fg_color=(Theme.STONE, "#2B2824"),
+                text_color=(Theme.BLACK, Theme.PAPER),
                 command=lambda item=sc: self.open_size_modal(item)
             ).pack(side="left", padx=2)
 

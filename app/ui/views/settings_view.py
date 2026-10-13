@@ -45,7 +45,7 @@ class CompanySettingsView(ctk.CTkFrame):
             title_box,
             text="Company & PDF Settings",
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=24, weight="bold"),
-            text_color=("#0F172A", "#F8FAFC"),
+            text_color=(Theme.BLACK, Theme.PAPER),
         )
         title.pack(anchor="w")
 
@@ -53,7 +53,7 @@ class CompanySettingsView(ctk.CTkFrame):
             title_box,
             text="Configure company branding, logo, GSTIN, bank details & quotation terms in PDF",
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=12),
-            text_color=("#64748B", "#94A3B8"),
+            text_color=("#615D56", "#A8A297"),
         )
         subtitle.pack(anchor="w")
 
@@ -64,8 +64,8 @@ class CompanySettingsView(ctk.CTkFrame):
             btn_box,
             text="📄 Preview PDF",
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11, weight="bold"),
-            fg_color=("#E2E8F0", "#334155"),
-            text_color=("#0F172A", "#F8FAFC"),
+            fg_color=(Theme.STONE, "#2B2824"),
+            text_color=(Theme.BLACK, Theme.PAPER),
             hover_color=Theme.PRIMARY,
             command=self.preview_sample_pdf,
             height=34
@@ -87,7 +87,7 @@ class CompanySettingsView(ctk.CTkFrame):
         self.tabview = ctk.CTkTabview(
             self,
             corner_radius=12,
-            fg_color=("white", "#1E293B"),
+            fg_color=("#FFFFFF", "#201E1C"),
             segmented_button_selected_color=Theme.PRIMARY,
             segmented_button_selected_hover_color=Theme.PRIMARY_HOVER,
         )
@@ -173,7 +173,7 @@ class CompanySettingsView(ctk.CTkFrame):
             f,
             text="Upload your company logo in PNG, JPG, or JPEG format. It will be printed at the top-left of every generated PDF quotation.",
             font=ctk.CTkFont(size=11),
-            text_color=("#64748B", "#94A3B8"),
+            text_color=("#615D56", "#A8A297"),
             wraplength=650,
             justify="left"
         )
@@ -185,7 +185,7 @@ class CompanySettingsView(ctk.CTkFrame):
             width=320,
             height=140,
             corner_radius=10,
-            fg_color=("#F8FAFC", "#0F172A"),
+            fg_color=(Theme.PAPER, "#1E1C1A"),
             border_width=1,
             border_color=("#CBD5E1", "#334155")
         )
@@ -196,7 +196,7 @@ class CompanySettingsView(ctk.CTkFrame):
             preview_card,
             text="No Logo Selected",
             font=ctk.CTkFont(size=12, weight="bold"),
-            text_color=("#64748B", "#94A3B8")
+            text_color=("#615D56", "#A8A297")
         )
         self.logo_preview_lbl.pack(expand=True)
 
@@ -227,7 +227,7 @@ class CompanySettingsView(ctk.CTkFrame):
             path_row,
             text="🗑️ Remove Logo",
             font=ctk.CTkFont(size=11, weight="bold"),
-            fg_color=("#E2E8F0", "#334155"),
+            fg_color=(Theme.STONE, "#2B2824"),
             text_color=Theme.DANGER,
             hover_color=("#FEE2E2", "#7F1D1D"),
             command=self.remove_logo,
@@ -320,8 +320,8 @@ class CompanySettingsView(ctk.CTkFrame):
             t_header,
             text="↺ Reset to Standard 13-Point",
             font=ctk.CTkFont(size=10, weight="bold"),
-            fg_color=("#E2E8F0", "#334155"),
-            text_color=("#0F172A", "#F8FAFC"),
+            fg_color=(Theme.STONE, "#2B2824"),
+            text_color=(Theme.BLACK, Theme.PAPER),
             command=self.reset_terms_defaults,
             height=26
         )

@@ -39,8 +39,15 @@ class AppWindow(ctk.CTk):
                 pass
 
         # Configure CustomTkinter Appearance
-        ctk.set_appearance_mode("Dark")  # Default to Dark mode
-        ctk.set_default_color_theme("blue")
+        ctk.set_appearance_mode("Light")  # Default to architectural Paper & Stone Light mode
+        coral_theme_path = ASSETS_DIR / "coral_theme.json"
+        if coral_theme_path.exists():
+            try:
+                ctk.set_default_color_theme(str(coral_theme_path))
+            except Exception:
+                ctk.set_default_color_theme("blue")
+        else:
+            ctk.set_default_color_theme("blue")
 
         # Active User State
         self.active_user = None
@@ -78,13 +85,13 @@ class AppWindow(ctk.CTk):
         self.grid_columnconfigure(1, weight=1)
 
         # -----------------------------------------------------------------
-        # Left Sidebar
+        # Left Sidebar (Stone in Light, Deep Black in Dark)
         # -----------------------------------------------------------------
         self.sidebar = ctk.CTkFrame(
             self,
             width=260,
             corner_radius=0,
-            fg_color=("#0F172A", "#0B0F19"),  # Dark Navy Slate
+            fg_color=(Theme.STONE, "#121110"),
             border_width=0
         )
         self.sidebar.grid(row=0, column=0, sticky="nsew")
@@ -99,7 +106,7 @@ class AppWindow(ctk.CTk):
             brand_box,
             text=f"✦ {setting.company_name}",
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=16, weight="bold"),
-            text_color=Theme.ACCENT_GOLD,
+            text_color=(Theme.BLACK, Theme.CORAL),
             anchor="w"
         )
         self.logo_title.pack(fill="x")
@@ -108,21 +115,27 @@ class AppWindow(ctk.CTk):
             brand_box,
             text=f"{setting.tagline}\nGSTIN: {setting.gstin}",
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=9),
-            text_color="#94A3B8",
+            text_color=("#5A554D", "#A49E92"),
             anchor="w",
             justify="left"
         )
         self.logo_sub.pack(fill="x", pady=(2, 0))
 
         # 2. Active User Switcher Box
-        user_box = ctk.CTkFrame(self.sidebar, fg_color=("#1E293B", "#111827"), corner_radius=10)
+        user_box = ctk.CTkFrame(
+            self.sidebar,
+            fg_color=("#FAF8F5", "#1E1C1A"),
+            corner_radius=10,
+            border_width=1,
+            border_color=("#D4CDBC", "#332F28")
+        )
         user_box.pack(fill="x", padx=14, pady=(0, 16))
 
         ctk.CTkLabel(
             user_box,
             text="CURRENT ACTIVE ROLE:",
             font=ctk.CTkFont(size=9, weight="bold"),
-            text_color="#94A3B8"
+            text_color=("#6B665E", "#A49E92")
         ).pack(anchor="w", padx=12, pady=(10, 2))
 
         self.user_dropdown = ctk.CTkOptionMenu(
@@ -142,7 +155,7 @@ class AppWindow(ctk.CTk):
             user_box,
             text=f"Role: {self.active_user.role if self.active_user else 'Sales Person'}",
             font=ctk.CTkFont(size=10, weight="bold"),
-            text_color=Theme.SUCCESS
+            text_color=Theme.PRIMARY
         )
         self.role_badge_lbl.pack(anchor="w", padx=12, pady=(0, 10))
 
@@ -171,8 +184,8 @@ class AppWindow(ctk.CTk):
                 height=38,
                 corner_radius=8,
                 fg_color="transparent",
-                text_color="#CBD5E1",
-                hover_color=("#1E293B", "#1F2937"),
+                text_color=("#2E2B27", "#D5CFC3"),
+                hover_color=("#D4CDBC", "#22201D"),
                 command=lambda vk=view_key: self.show_view(vk)
             )
             btn.pack(fill="x", pady=2)
@@ -190,7 +203,7 @@ class AppWindow(ctk.CTk):
             text_color=Theme.SUCCESS
         ).pack(anchor="w", pady=(0, 8))
 
-        # Theme Selector (Dark / Light)
+        # Theme Selector (Light / Dark)
         theme_row = ctk.CTkFrame(bottom_box, fg_color="transparent")
         theme_row.pack(fill="x", pady=(0, 8))
 
@@ -198,17 +211,18 @@ class AppWindow(ctk.CTk):
             theme_row,
             text="Mode:",
             font=ctk.CTkFont(size=10),
-            text_color="#94A3B8"
+            text_color=("#6B665E", "#A49E92")
         ).pack(side="left")
 
         self.theme_segment = ctk.CTkSegmentedButton(
             theme_row,
-            values=["Dark", "Light"],
+            values=["Light", "Dark"],
             command=self.toggle_theme,
+            selected_color=Theme.PRIMARY,
             height=24,
             font=ctk.CTkFont(size=10)
         )
-        self.theme_segment.set("Dark")
+        self.theme_segment.set("Light")
         self.theme_segment.pack(side="right")
 
         # Reset Sample Seed Data Button
@@ -216,8 +230,8 @@ class AppWindow(ctk.CTk):
             bottom_box,
             text="↺ Reset Demo Seed Data",
             font=ctk.CTkFont(size=10),
-            fg_color=("#1E293B", "#111827"),
-            text_color="#94A3B8",
+            fg_color=("#DCD6CA", "#1E1C1A"),
+            text_color=("#3D3A35", "#C4BEB2"),
             hover_color=Theme.DANGER,
             height=26,
             command=self.reset_seed_data
@@ -225,12 +239,12 @@ class AppWindow(ctk.CTk):
         reset_btn.pack(fill="x")
 
         # -----------------------------------------------------------------
-        # Right Main Content Container
+        # Right Main Content Container (Paper in Light, Black in Dark)
         # -----------------------------------------------------------------
         self.main_container = ctk.CTkFrame(
             self,
             corner_radius=0,
-            fg_color=("#F8FAFC", "#0F172A")  # Modern light or deep background
+            fg_color=(Theme.PAPER, Theme.DARK_BG)
         )
         self.main_container.grid(row=0, column=1, sticky="nsew")
 
@@ -261,6 +275,9 @@ class AppWindow(ctk.CTk):
 
     def toggle_theme(self, mode):
         ctk.set_appearance_mode(mode)
+        # Re-apply nav button colors to maintain theme contrast
+        if hasattr(self, "current_view_key"):
+            self.show_view(self.current_view_key)
 
     def reset_seed_data(self):
         confirm = msgbox.askyesno(
@@ -275,17 +292,18 @@ class AppWindow(ctk.CTk):
 
     def show_view(self, view_name: str, param=None):
         """Switches the active view in the main container."""
+        self.current_view_key = view_name
         # Update Nav Highlight
         for vk, btn in self.nav_buttons.items():
             if vk == view_name or (view_name == "quotation_editor" and vk == "quotation_editor" and param is None):
                 btn.configure(
                     fg_color=Theme.PRIMARY,
-                    text_color="white"
+                    text_color="#FFFFFF"
                 )
             else:
                 btn.configure(
                     fg_color="transparent",
-                    text_color="#CBD5E1"
+                    text_color=("#2E2B27", "#D5CFC3")
                 )
 
         # Destroy old view

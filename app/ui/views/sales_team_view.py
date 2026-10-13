@@ -32,7 +32,7 @@ class SalesTeamView(ctk.CTkFrame):
             title_box,
             text="Sales Team & Manager Approvals",
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=24, weight="bold"),
-            text_color=("#0F172A", "#F8FAFC"),
+            text_color=(Theme.BLACK, Theme.PAPER),
         )
         title.pack(anchor="w")
 
@@ -40,7 +40,7 @@ class SalesTeamView(ctk.CTkFrame):
             title_box,
             text="Monthly targets, sales performance tracking & discount approval workflows",
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=12),
-            text_color=("#64748B", "#94A3B8"),
+            text_color=("#615D56", "#A8A297"),
         )
         subtitle.pack(anchor="w")
 
@@ -88,9 +88,9 @@ class SalesTeamView(ctk.CTkFrame):
         self.approval_card = ctk.CTkFrame(
             self.scroll_body,
             corner_radius=12,
-            fg_color=("white", "#1E293B"),
+            fg_color=("#FFFFFF", "#201E1C"),
             border_width=1,
-            border_color=("#E2E8F0", "#334155")
+            border_color=(Theme.STONE, "#2B2824")
         )
         self.approval_card.pack(fill="x", pady=(0, 16))
 
@@ -123,7 +123,7 @@ class SalesTeamView(ctk.CTkFrame):
             target_toolbar,
             text="🎯 Salesperson Performance & Target Tracking",
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=15, weight="bold"),
-            text_color=("#0F172A", "#F8FAFC")
+            text_color=(Theme.BLACK, Theme.PAPER)
         ).pack(side="left")
 
         self.scope_segment = ctk.CTkSegmentedButton(
@@ -234,9 +234,9 @@ class SalesTeamView(ctk.CTkFrame):
             card = ctk.CTkFrame(
                 self.team_cards_container,
                 corner_radius=12,
-                fg_color=("white", "#1E293B"),
+                fg_color=("#FFFFFF", "#201E1C"),
                 border_width=1,
-                border_color=("#E2E8F0", "#334155")
+                border_color=(Theme.STONE, "#2B2824")
             )
             card.pack(fill="x", pady=6)
 
@@ -251,7 +251,7 @@ class SalesTeamView(ctk.CTkFrame):
                 name_box,
                 text=sp.name,
                 font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=15, weight="bold"),
-                text_color=("#0F172A", "#F8FAFC")
+                text_color=(Theme.BLACK, Theme.PAPER)
             ).pack(side="left")
 
             role_bg = Theme.INFO if sp.role == SalesPerson.ROLE_MANAGER else Theme.PRIMARY
@@ -268,7 +268,7 @@ class SalesTeamView(ctk.CTkFrame):
                 name_box,
                 text=f"📞 {sp.contact_number}  |  ✉ {sp.email or 'N/A'}",
                 font=ctk.CTkFont(size=11),
-                text_color=("#64748B", "#94A3B8")
+                text_color=("#615D56", "#A8A297")
             ).pack(side="left", padx=8)
 
             btn_box = ctk.CTkFrame(top_r, fg_color="transparent")
@@ -292,8 +292,8 @@ class SalesTeamView(ctk.CTkFrame):
                 font=ctk.CTkFont(size=10),
                 width=75,
                 height=26,
-                fg_color=("#E2E8F0", "#334155"),
-                text_color=("#0F172A", "#F8FAFC"),
+                fg_color=(Theme.STONE, "#2B2824"),
+                text_color=(Theme.BLACK, Theme.PAPER),
                 command=lambda m=sp: self.open_member_modal(m)
             )
             edit_btn.pack(side="left")
@@ -309,7 +309,7 @@ class SalesTeamView(ctk.CTkFrame):
             balance = max(0.0, round(target_val - achieved, 2))
             pct = (achieved / target_val * 100.0) if target_val > 0 else 0.0
 
-            metrics_grid = ctk.CTkFrame(card, fg_color=("#F8FAFC", "#0F172A"), corner_radius=8)
+            metrics_grid = ctk.CTkFrame(card, fg_color=(Theme.PAPER, "#1E1C1A"), corner_radius=8)
             metrics_grid.pack(fill="x", padx=16, pady=(0, 8))
             metrics_grid.grid_columnconfigure((0, 1, 2), weight=1)
 
@@ -331,7 +331,7 @@ class SalesTeamView(ctk.CTkFrame):
                     tags_row,
                     text="Altered Targets:",
                     font=ctk.CTkFont(size=9, weight="bold"),
-                    text_color=("#64748B", "#94A3B8")
+                    text_color=("#615D56", "#A8A297")
                 ).pack(side="left", padx=(0, 6))
 
                 for st in configured_targets:
@@ -357,7 +357,7 @@ class SalesTeamView(ctk.CTkFrame):
                 height=10,
                 corner_radius=4,
                 progress_color=bar_color,
-                fg_color=("#E2E8F0", "#334155")
+                fg_color=(Theme.STONE, "#2B2824")
             )
             p_bar.set(min(1.0, pct / 100.0))
             p_bar.pack(side="left", fill="x", expand=True, padx=(0, 12))
@@ -374,7 +374,7 @@ class SalesTeamView(ctk.CTkFrame):
     def create_metric_cell(self, parent, col, title, val, color):
         f = ctk.CTkFrame(parent, fg_color="transparent")
         f.grid(row=0, column=col, padx=12, pady=8, sticky="w")
-        ctk.CTkLabel(f, text=title, font=ctk.CTkFont(size=9, weight="bold"), text_color=("#64748B", "#94A3B8")).pack(anchor="w")
+        ctk.CTkLabel(f, text=title, font=ctk.CTkFont(size=9, weight="bold"), text_color=("#615D56", "#A8A297")).pack(anchor="w")
         ctk.CTkLabel(f, text=val, font=ctk.CTkFont(size=14, weight="bold"), text_color=color).pack(anchor="w")
 
     def approve_quote(self, quote_id: int, new_status: str):
@@ -418,18 +418,18 @@ class SalesTeamView(ctk.CTkFrame):
             header_frame,
             text="🎯 Set & Alter Salesperson Targets",
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=18, weight="bold"),
-            text_color=("#0F172A", "#F8FAFC")
+            text_color=(Theme.BLACK, Theme.PAPER)
         ).pack(anchor="w")
 
         ctk.CTkLabel(
             header_frame,
             text="Override targets for an individual month, a 7-day sprint, or custom campaign dates.",
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11),
-            text_color=("#64748B", "#94A3B8")
+            text_color=("#615D56", "#A8A297")
         ).pack(anchor="w", pady=(2, 0))
 
         # Member Selection Card
-        member_card = ctk.CTkFrame(scroll, corner_radius=10, fg_color=("white", "#1E293B"), border_width=1, border_color=("#E2E8F0", "#334155"))
+        member_card = ctk.CTkFrame(scroll, corner_radius=10, fg_color=("#FFFFFF", "#201E1C"), border_width=1, border_color=(Theme.STONE, "#2B2824"))
         member_card.pack(fill="x", pady=(0, 12), ipady=6)
 
         ctk.CTkLabel(
@@ -466,7 +466,7 @@ class SalesTeamView(ctk.CTkFrame):
         member_combo.pack(fill="x", padx=14, pady=(0, 10))
 
         # Target Type & Parameters Card
-        config_card = ctk.CTkFrame(scroll, corner_radius=10, fg_color=("white", "#1E293B"), border_width=1, border_color=("#E2E8F0", "#334155"))
+        config_card = ctk.CTkFrame(scroll, corner_radius=10, fg_color=("#FFFFFF", "#201E1C"), border_width=1, border_color=(Theme.STONE, "#2B2824"))
         config_card.pack(fill="x", pady=(0, 12), ipady=6)
 
         ctk.CTkLabel(
@@ -548,7 +548,7 @@ class SalesTeamView(ctk.CTkFrame):
                     fields_container,
                     text="ℹ️ Overrides target ONLY for this chosen month. Other months automatically retain default base targets.",
                     font=ctk.CTkFont(size=10),
-                    text_color=("#64748B", "#94A3B8"),
+                    text_color=("#615D56", "#A8A297"),
                     wraplength=520,
                     justify="left"
                 ).pack(anchor="w", pady=(2, 0))
@@ -580,7 +580,7 @@ class SalesTeamView(ctk.CTkFrame):
                     fields_container,
                     text="ℹ️ Automatically calculates the Monday to Sunday 7-day sprint containing this date.",
                     font=ctk.CTkFont(size=10),
-                    text_color=("#64748B", "#94A3B8")
+                    text_color=("#615D56", "#A8A297")
                 ).pack(anchor="w")
 
             else:  # "🎯 Custom Date Range"
@@ -620,14 +620,14 @@ class SalesTeamView(ctk.CTkFrame):
                     fields_container,
                     text="ℹ️ Target will be applied strictly between Start Date and End Date.",
                     font=ctk.CTkFont(size=10),
-                    text_color=("#64748B", "#94A3B8")
+                    text_color=("#615D56", "#A8A297")
                 ).pack(anchor="w")
 
         scope_segment.configure(command=render_scope_fields)
         render_scope_fields("📅 Specific Month")
 
         # Amount & Notes Section
-        amount_card = ctk.CTkFrame(scroll, corner_radius=10, fg_color=("white", "#1E293B"), border_width=1, border_color=("#E2E8F0", "#334155"))
+        amount_card = ctk.CTkFrame(scroll, corner_radius=10, fg_color=("#FFFFFF", "#201E1C"), border_width=1, border_color=(Theme.STONE, "#2B2824"))
         amount_card.pack(fill="x", pady=(0, 12), ipady=6)
 
         ctk.CTkLabel(
@@ -711,7 +711,7 @@ class SalesTeamView(ctk.CTkFrame):
         save_btn.pack(fill="x", pady=(0, 16))
 
         # Active Altered Targets List Container
-        active_targets_frame = ctk.CTkFrame(scroll, corner_radius=10, fg_color=("white", "#1E293B"), border_width=1, border_color=("#E2E8F0", "#334155"))
+        active_targets_frame = ctk.CTkFrame(scroll, corner_radius=10, fg_color=("#FFFFFF", "#201E1C"), border_width=1, border_color=(Theme.STONE, "#2B2824"))
         active_targets_frame.pack(fill="x", pady=(0, 16), ipady=6)
 
         targets_header_lbl = ctk.CTkLabel(
@@ -726,7 +726,7 @@ class SalesTeamView(ctk.CTkFrame):
             active_targets_frame,
             text="Configured target overrides for the selected salesperson:",
             font=ctk.CTkFont(size=10),
-            text_color=("#64748B", "#94A3B8")
+            text_color=("#615D56", "#A8A297")
         )
         targets_sub_lbl.pack(anchor="w", padx=14, pady=(0, 8))
 
@@ -762,7 +762,7 @@ class SalesTeamView(ctk.CTkFrame):
                 return
 
             for tgt in configured:
-                row_card = ctk.CTkFrame(targets_items_box, fg_color=("#F8FAFC", "#0F172A"), corner_radius=6)
+                row_card = ctk.CTkFrame(targets_items_box, fg_color=(Theme.PAPER, "#1E1C1A"), corner_radius=6)
                 row_card.pack(fill="x", pady=3)
 
                 info_f = ctk.CTkFrame(row_card, fg_color="transparent")
@@ -787,7 +787,7 @@ class SalesTeamView(ctk.CTkFrame):
                     badge_row,
                     text=tgt.period_label,
                     font=ctk.CTkFont(size=11, weight="bold"),
-                    text_color=("#0F172A", "#F8FAFC")
+                    text_color=(Theme.BLACK, Theme.PAPER)
                 ).pack(side="left")
 
                 notes_txt = f"  •  {tgt.notes}" if tgt.notes else ""
@@ -795,7 +795,7 @@ class SalesTeamView(ctk.CTkFrame):
                     info_f,
                     text=f"Target: ₹ {tgt.target_amount:,.2f}  ({tgt.start_date} to {tgt.end_date}){notes_txt}",
                     font=ctk.CTkFont(size=10),
-                    text_color=("#64748B", "#94A3B8")
+                    text_color=("#615D56", "#A8A297")
                 ).pack(anchor="w", pady=(2, 0))
 
                 del_btn = ctk.CTkButton(

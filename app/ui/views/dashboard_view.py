@@ -32,7 +32,7 @@ class DashboardView(ctk.CTkFrame):
             title_box,
             text="Sales & Quotation Dashboard",
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=24, weight="bold"),
-            text_color=("#0F172A", "#F8FAFC"),
+            text_color=(Theme.BLACK, Theme.PAPER),
         )
         title.pack(anchor="w")
 
@@ -40,7 +40,7 @@ class DashboardView(ctk.CTkFrame):
             title_box,
             text="AMA Ceramics Pvt Ltd • Real-time targets, pipelines & receivables",
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=12),
-            text_color=("#64748B", "#94A3B8"),
+            text_color=("#615D56", "#A8A297"),
         )
         subtitle.pack(anchor="w")
 
@@ -63,8 +63,8 @@ class DashboardView(ctk.CTkFrame):
             filter_box,
             text="+ New Quotation",
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=12, weight="bold"),
-            fg_color=Theme.ACCENT_GOLD,
-            hover_color=Theme.ACCENT_GOLD_HOVER,
+            fg_color=Theme.PRIMARY,
+            hover_color=Theme.PRIMARY_HOVER,
             command=lambda: self.controller.show_view("quotation_editor", None),
             height=34
         )
@@ -129,9 +129,9 @@ class DashboardView(ctk.CTkFrame):
         self.target_card = ctk.CTkFrame(
             middle_row,
             corner_radius=12,
-            fg_color=("white", "#1E293B"),
+            fg_color=("#FFFFFF", "#201E1C"),
             border_width=1,
-            border_color=("#E2E8F0", "#334155")
+            border_color=(Theme.STONE, "#38342E")
         )
         self.target_card.grid(row=0, column=0, padx=(0, 8), sticky="nsew")
 
@@ -142,7 +142,7 @@ class DashboardView(ctk.CTkFrame):
             target_header,
             text="🎯 Salesperson Target vs. Achievement",
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=15, weight="bold"),
-            text_color=("#0F172A", "#F8FAFC")
+            text_color=(Theme.BLACK, Theme.PAPER)
         ).pack(side="left")
 
         self.team_target_summary_lbl = ctk.CTkLabel(
@@ -160,9 +160,9 @@ class DashboardView(ctk.CTkFrame):
         self.receivables_card = ctk.CTkFrame(
             middle_row,
             corner_radius=12,
-            fg_color=("white", "#1E293B"),
+            fg_color=("#FFFFFF", "#201E1C"),
             border_width=1,
-            border_color=("#E2E8F0", "#334155")
+            border_color=(Theme.STONE, "#38342E")
         )
         self.receivables_card.grid(row=0, column=1, padx=(8, 0), sticky="nsew")
 
@@ -173,7 +173,7 @@ class DashboardView(ctk.CTkFrame):
             rec_header,
             text="💰 Payment Clearance & Receivables",
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=15, weight="bold"),
-            text_color=("#0F172A", "#F8FAFC")
+            text_color=(Theme.BLACK, Theme.PAPER)
         ).pack(side="left")
 
         self.rec_details_frame = ctk.CTkFrame(self.receivables_card, fg_color="transparent")
@@ -183,9 +183,9 @@ class DashboardView(ctk.CTkFrame):
         recent_card = ctk.CTkFrame(
             self.scroll_body,
             corner_radius=12,
-            fg_color=("white", "#1E293B"),
+            fg_color=("#FFFFFF", "#201E1C"),
             border_width=1,
-            border_color=("#E2E8F0", "#334155")
+            border_color=(Theme.STONE, "#38342E")
         )
         recent_card.pack(fill="x", pady=(0, 10))
 
@@ -196,7 +196,7 @@ class DashboardView(ctk.CTkFrame):
             recent_header,
             text="📑 Recent Quotations",
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=15, weight="bold"),
-            text_color=("#0F172A", "#F8FAFC")
+            text_color=(Theme.BLACK, Theme.PAPER)
         ).pack(side="left")
 
         ctk.CTkButton(
@@ -205,7 +205,7 @@ class DashboardView(ctk.CTkFrame):
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11, weight="bold"),
             fg_color="transparent",
             text_color=Theme.PRIMARY,
-            hover_color=("#F1F5F9", "#0F172A"),
+            hover_color=(Theme.STONE, "#242220"),
             command=lambda: self.controller.show_view("quotations", None),
             height=26
         ).pack(side="right")
@@ -248,7 +248,7 @@ class DashboardView(ctk.CTkFrame):
         )
 
         for person in perf["individuals"]:
-            p_frame = ctk.CTkFrame(self.targets_list_frame, fg_color=("#F8FAFC", "#0F172A"), corner_radius=8)
+            p_frame = ctk.CTkFrame(self.targets_list_frame, fg_color=(Theme.PAPER, "#1E1C1A"), corner_radius=8)
             p_frame.pack(fill="x", pady=4, padx=2)
 
             info_row = ctk.CTkFrame(p_frame, fg_color="transparent")
@@ -258,7 +258,7 @@ class DashboardView(ctk.CTkFrame):
                 info_row,
                 text=f"{person['name']}  ({person['role']})",
                 font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=12, weight="bold"),
-                text_color=("#0F172A", "#F8FAFC")
+                text_color=(Theme.BLACK, Theme.PAPER)
             )
             name_lbl.pack(side="left")
 
@@ -266,7 +266,7 @@ class DashboardView(ctk.CTkFrame):
                 info_row,
                 text=f"Achieved: ₹ {person['achieved']:,.0f} / Target: ₹ {person['target']:,.0f}  •  Bal: ₹ {person['balance']:,.0f}",
                 font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11),
-                text_color=("#64748B", "#94A3B8")
+                text_color=("#615D56", "#A8A297")
             )
             stat_lbl.pack(side="right")
 
@@ -282,7 +282,7 @@ class DashboardView(ctk.CTkFrame):
                 height=9,
                 corner_radius=4,
                 progress_color=bar_color,
-                fg_color=("#E2E8F0", "#334155")
+                fg_color=(Theme.STONE, "#2B2824")
             )
             p_bar.set(progress_val)
             p_bar.pack(side="left", fill="x", expand=True, padx=(0, 10))
@@ -308,7 +308,7 @@ class DashboardView(ctk.CTkFrame):
         cleared_pct = round((cleared_amt / total_rec_base) * 100, 1)
 
         # Metric breakdown rows
-        rec_box = ctk.CTkFrame(self.rec_details_frame, fg_color=("#F8FAFC", "#0F172A"), corner_radius=8)
+        rec_box = ctk.CTkFrame(self.rec_details_frame, fg_color=(Theme.PAPER, "#1E1C1A"), corner_radius=8)
         rec_box.pack(fill="both", expand=True, pady=4)
 
         items = [
@@ -324,7 +324,7 @@ class DashboardView(ctk.CTkFrame):
                 row,
                 text=lbl,
                 font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11),
-                text_color=("#475569", "#94A3B8")
+                text_color=(Theme.BLACK, Theme.PAPER)
             ).pack(side="left")
             ctk.CTkLabel(
                 row,
@@ -349,7 +349,7 @@ class DashboardView(ctk.CTkFrame):
             height=10,
             corner_radius=4,
             progress_color=Theme.SUCCESS,
-            fg_color=("#E2E8F0", "#334155")
+            fg_color=(Theme.STONE, "#2B2824")
         )
         c_bar.set(min(1.0, cleared_pct / 100.0))
         c_bar.pack(fill="x")
@@ -363,8 +363,8 @@ class DashboardView(ctk.CTkFrame):
             ctk.CTkLabel(self.recent_table_frame, text="No quotations created yet.").pack(pady=10)
             return
 
-        # Table Header
-        h_row = ctk.CTkFrame(self.recent_table_frame, fg_color=("#F1F5F9", "#0F172A"), corner_radius=6)
+        # Table Header (Stone)
+        h_row = ctk.CTkFrame(self.recent_table_frame, fg_color=(Theme.STONE, "#242220"), corner_radius=6)
         h_row.pack(fill="x", pady=(0, 4))
         h_row.grid_columnconfigure((0, 1, 2, 3, 4, 5), weight=1)
 
@@ -374,7 +374,7 @@ class DashboardView(ctk.CTkFrame):
                 h_row,
                 text=h_text,
                 font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11, weight="bold"),
-                text_color=("#475569", "#94A3B8"),
+                text_color=(Theme.BLACK, Theme.PAPER),
                 anchor="w"
             ).grid(row=0, column=col_idx, padx=8, pady=6, sticky="w")
 
@@ -396,6 +396,7 @@ class DashboardView(ctk.CTkFrame):
                 r_frame,
                 text=q.customer_name[:24],
                 font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11),
+                text_color=(Theme.BLACK, Theme.PAPER),
                 anchor="w"
             ).grid(row=0, column=1, padx=8, pady=4, sticky="w")
 
@@ -404,7 +405,7 @@ class DashboardView(ctk.CTkFrame):
                 r_frame,
                 text=q_d_str,
                 font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11),
-                text_color=("#64748B", "#94A3B8"),
+                text_color=("#615D56", "#A8A297"),
                 anchor="w"
             ).grid(row=0, column=2, padx=8, pady=4, sticky="w")
 
@@ -412,6 +413,7 @@ class DashboardView(ctk.CTkFrame):
                 r_frame,
                 text=f"₹ {q.net_total:,.2f}",
                 font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11, weight="bold"),
+                text_color=(Theme.BLACK, Theme.PAPER),
                 anchor="w"
             ).grid(row=0, column=3, padx=8, pady=4, sticky="w")
 
@@ -432,8 +434,8 @@ class DashboardView(ctk.CTkFrame):
                 font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=10, weight="bold"),
                 width=75,
                 height=24,
-                fg_color=("#E2E8F0", "#334155"),
-                text_color=("#0F172A", "#F8FAFC"),
+                fg_color=(Theme.STONE, "#2B2824"),
+                text_color=(Theme.BLACK, Theme.PAPER),
                 hover_color=Theme.PRIMARY,
                 command=lambda qid=q.id: self.controller.show_view("quotation_editor", qid)
             )

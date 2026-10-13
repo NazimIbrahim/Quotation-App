@@ -33,7 +33,7 @@ class PaymentTrackingView(ctk.CTkFrame):
             title_box,
             text="Payment Tracking & Receivables",
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=24, weight="bold"),
-            text_color=("#0F172A", "#F8FAFC"),
+            text_color=(Theme.BLACK, Theme.PAPER),
         )
         title.pack(anchor="w")
 
@@ -41,7 +41,7 @@ class PaymentTrackingView(ctk.CTkFrame):
             title_box,
             text="Record client advances, track GPay/PhonePe/Bank/Cheques, and monitor balances",
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=12),
-            text_color=("#64748B", "#94A3B8"),
+            text_color=("#615D56", "#A8A297"),
         )
         subtitle.pack(anchor="w")
 
@@ -53,9 +53,9 @@ class PaymentTrackingView(ctk.CTkFrame):
         select_card = ctk.CTkFrame(
             self.scroll_body,
             corner_radius=12,
-            fg_color=("white", "#1E293B"),
+            fg_color=("#FFFFFF", "#201E1C"),
             border_width=1,
-            border_color=("#E2E8F0", "#334155")
+            border_color=(Theme.STONE, "#2B2824")
         )
         select_card.pack(fill="x", pady=(0, 14))
 
@@ -66,7 +66,7 @@ class PaymentTrackingView(ctk.CTkFrame):
             s_bar,
             text="Select Quotation to Manage Payments:",
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=13, weight="bold"),
-            text_color=("#0F172A", "#F8FAFC")
+            text_color=(Theme.BLACK, Theme.PAPER)
         ).pack(side="left", padx=(0, 10))
 
         self.quote_selector = ctk.CTkComboBox(
@@ -99,9 +99,9 @@ class PaymentTrackingView(ctk.CTkFrame):
         record_card = ctk.CTkFrame(
             split_frame,
             corner_radius=12,
-            fg_color=("white", "#1E293B"),
+            fg_color=("#FFFFFF", "#201E1C"),
             border_width=1,
-            border_color=("#E2E8F0", "#334155")
+            border_color=(Theme.STONE, "#2B2824")
         )
         record_card.grid(row=0, column=0, padx=(0, 8), sticky="nsew")
 
@@ -109,7 +109,7 @@ class PaymentTrackingView(ctk.CTkFrame):
             record_card,
             text="➕ Record New Payment",
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=14, weight="bold"),
-            text_color=("#0F172A", "#F8FAFC")
+            text_color=(Theme.BLACK, Theme.PAPER)
         ).pack(anchor="w", padx=16, pady=(14, 10))
 
         form = ctk.CTkFrame(record_card, fg_color="transparent")
@@ -174,9 +174,9 @@ class PaymentTrackingView(ctk.CTkFrame):
         history_card = ctk.CTkFrame(
             split_frame,
             corner_radius=12,
-            fg_color=("white", "#1E293B"),
+            fg_color=("#FFFFFF", "#201E1C"),
             border_width=1,
-            border_color=("#E2E8F0", "#334155")
+            border_color=(Theme.STONE, "#2B2824")
         )
         history_card.grid(row=0, column=1, padx=(8, 0), sticky="nsew")
 
@@ -184,17 +184,17 @@ class PaymentTrackingView(ctk.CTkFrame):
             history_card,
             text="📜 Payments Recorded for This Quotation",
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=14, weight="bold"),
-            text_color=("#0F172A", "#F8FAFC")
+            text_color=(Theme.BLACK, Theme.PAPER)
         ).pack(anchor="w", padx=16, pady=(14, 10))
 
         # Table Header
-        h_frame = ctk.CTkFrame(history_card, fg_color=("#F1F5F9", "#0F172A"), height=30)
+        h_frame = ctk.CTkFrame(history_card, fg_color=(Theme.STONE, "#242220"), height=30)
         h_frame.pack(fill="x", padx=12, pady=(0, 4))
         h_frame.grid_columnconfigure((0, 1, 2, 3, 4), weight=1)
 
         cols = ["Date", "Amount", "Mode & Ref", "Status", "Actions"]
         for i, c in enumerate(cols):
-            ctk.CTkLabel(h_frame, text=c, font=ctk.CTkFont(size=10, weight="bold"), text_color=("#475569", "#94A3B8")).grid(row=0, column=i, padx=4, pady=4, sticky="w")
+            ctk.CTkLabel(h_frame, text=c, font=ctk.CTkFont(size=10, weight="bold"), text_color=(Theme.BLACK, Theme.PAPER)).grid(row=0, column=i, padx=4, pady=4, sticky="w")
 
         self.history_rows_frame = ctk.CTkFrame(history_card, fg_color="transparent")
         self.history_rows_frame.pack(fill="both", expand=True, padx=12, pady=(0, 14))
@@ -203,9 +203,9 @@ class PaymentTrackingView(ctk.CTkFrame):
         pending_card = ctk.CTkFrame(
             self.scroll_body,
             corner_radius=12,
-            fg_color=("white", "#1E293B"),
+            fg_color=("#FFFFFF", "#201E1C"),
             border_width=1,
-            border_color=("#E2E8F0", "#334155")
+            border_color=(Theme.STONE, "#2B2824")
         )
         pending_card.pack(fill="x", pady=(0, 10))
 
@@ -223,9 +223,9 @@ class PaymentTrackingView(ctk.CTkFrame):
         card = ctk.CTkFrame(
             parent,
             corner_radius=10,
-            fg_color=("white", "#1E293B"),
+            fg_color=("#FFFFFF", "#201E1C"),
             border_width=1,
-            border_color=("#E2E8F0", "#334155")
+            border_color=(Theme.STONE, "#2B2824")
         )
         card.grid(row=0, column=col_idx, padx=4, sticky="ew")
 
@@ -233,7 +233,7 @@ class PaymentTrackingView(ctk.CTkFrame):
             card,
             text=title,
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=10, weight="bold"),
-            text_color=("#64748B", "#94A3B8")
+            text_color=("#615D56", "#A8A297")
         ).pack(anchor="w", padx=12, pady=(10, 2))
 
         val_lbl = ctk.CTkLabel(
@@ -306,7 +306,7 @@ class PaymentTrackingView(ctk.CTkFrame):
             ctk.CTkLabel(r, text=f"₹ {p.amount:,.2f}", font=ctk.CTkFont(size=11, weight="bold")).grid(row=0, column=1, padx=4, pady=4, sticky="w")
 
             ref_str = f"{p.payment_mode}" + (f" ({p.reference_number})" if p.reference_number else "")
-            ctk.CTkLabel(r, text=ref_str[:22], font=ctk.CTkFont(size=10), text_color=("#64748B", "#94A3B8")).grid(row=0, column=2, padx=4, pady=4, sticky="w")
+            ctk.CTkLabel(r, text=ref_str[:22], font=ctk.CTkFont(size=10), text_color=("#615D56", "#A8A297")).grid(row=0, column=2, padx=4, pady=4, sticky="w")
 
             status_col = Theme.SUCCESS if p.status == Payment.STATUS_CLEARED else Theme.WARNING
             ctk.CTkLabel(r, text=f"● {p.status}", font=ctk.CTkFont(size=10, weight="bold"), text_color=status_col).grid(row=0, column=3, padx=4, pady=4, sticky="w")

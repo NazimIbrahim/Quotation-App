@@ -11,9 +11,9 @@ class StatCard(ctk.CTkFrame):
         super().__init__(
             master,
             corner_radius=12,
-            fg_color=("white", "#1E293B"),
+            fg_color=("#FFFFFF", "#201E1C"),
             border_width=1,
-            border_color=("#E2E8F0", "#334155"),
+            border_color=(Theme.STONE, "#38342E"),
             **kwargs
         )
         self.accent_color = accent_color
@@ -39,7 +39,7 @@ class StatCard(ctk.CTkFrame):
             header_row,
             text=title.upper(),
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11, weight="bold"),
-            text_color=("#64748B", "#94A3B8"),
+            text_color=("#615D56", "#A8A297"),
             anchor="w"
         )
         self.title_label.pack(side="left")
@@ -52,7 +52,7 @@ class StatCard(ctk.CTkFrame):
             width=24,
             height=24,
             corner_radius=6,
-            fg_color=("#F1F5F9", "#0F172A")
+            fg_color=(Theme.PAPER, "#171615")
         )
         self.icon_badge.pack(side="right")
 
@@ -61,7 +61,7 @@ class StatCard(ctk.CTkFrame):
             content,
             text=value,
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=22, weight="bold"),
-            text_color=("#0F172A", "#F8FAFC"),
+            text_color=(Theme.BLACK, Theme.PAPER),
             anchor="w"
         )
         self.value_label.pack(fill="x", pady=(6, 2))
@@ -72,7 +72,7 @@ class StatCard(ctk.CTkFrame):
                 content,
                 text=subtitle,
                 font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11),
-                text_color=("#64748B", "#94A3B8"),
+                text_color=("#615D56", "#A8A297"),
                 anchor="w"
             )
             self.subtitle_label.pack(fill="x")

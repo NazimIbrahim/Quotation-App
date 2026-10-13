@@ -667,7 +667,7 @@ class AreaSectionWidget(ctk.CTkFrame):
         super().__init__(
             master,
             corner_radius=10,
-            fg_color=("white", "#1E293B"),
+            fg_color=("#FFFFFF", "#201E1C"),
             border_width=1,
             border_color=("#CBD5E1", "#334155"),
             **kwargs
@@ -747,7 +747,7 @@ class AreaSectionWidget(ctk.CTkFrame):
                 col_bar,
                 text=c,
                 font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=10, weight="bold"),
-                text_color=("#475569", "#94A3B8")
+                text_color=(Theme.BLACK, Theme.PAPER)
             ).grid(row=0, column=i, padx=2, pady=2, sticky="ew")
 
         # 3. Items Container Frame
@@ -862,7 +862,7 @@ class QuotationEditorView(ctk.CTkFrame):
             title_box,
             text="Quotation Builder",
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=24, weight="bold"),
-            text_color=("#0F172A", "#F8FAFC"),
+            text_color=(Theme.BLACK, Theme.PAPER),
         )
         self.title_lbl.pack(anchor="w")
 
@@ -870,7 +870,7 @@ class QuotationEditorView(ctk.CTkFrame):
             title_box,
             text="Configure customer details, area groupings, sqft/box rates & live totals",
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=12),
-            text_color=("#64748B", "#94A3B8"),
+            text_color=("#615D56", "#A8A297"),
         )
         subtitle.pack(anchor="w")
 
@@ -881,8 +881,8 @@ class QuotationEditorView(ctk.CTkFrame):
             btn_box,
             text="← Back to List",
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11, weight="bold"),
-            fg_color=("#E2E8F0", "#334155"),
-            text_color=("#0F172A", "#F8FAFC"),
+            fg_color=(Theme.STONE, "#2B2824"),
+            text_color=(Theme.BLACK, Theme.PAPER),
             hover_color=Theme.PRIMARY,
             command=lambda: self.controller.show_view("quotations", None),
             height=34
@@ -943,9 +943,9 @@ class QuotationEditorView(ctk.CTkFrame):
         header_card = ctk.CTkFrame(
             self.scroll_body,
             corner_radius=12,
-            fg_color=("white", "#1E293B"),
+            fg_color=("#FFFFFF", "#201E1C"),
             border_width=1,
-            border_color=("#E2E8F0", "#334155")
+            border_color=(Theme.STONE, "#2B2824")
         )
         header_card.pack(fill="x", pady=(0, 14))
 
@@ -953,7 +953,7 @@ class QuotationEditorView(ctk.CTkFrame):
             header_card,
             text="📋 Quotation Header & Client Information",
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=14, weight="bold"),
-            text_color=("#0F172A", "#F8FAFC")
+            text_color=(Theme.BLACK, Theme.PAPER)
         ).pack(anchor="w", padx=16, pady=(12, 8))
 
         form_grid = ctk.CTkFrame(header_card, fg_color="transparent")
@@ -1017,7 +1017,7 @@ class QuotationEditorView(ctk.CTkFrame):
             area_control_card,
             text="🏷️ Project Areas & Tile Specifications",
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=15, weight="bold"),
-            text_color=("#0F172A", "#F8FAFC")
+            text_color=(Theme.BLACK, Theme.PAPER)
         ).pack(side="left")
 
         # Quick Area Buttons
@@ -1028,7 +1028,7 @@ class QuotationEditorView(ctk.CTkFrame):
             quick_areas_frame,
             text="Quick Add Area:",
             font=ctk.CTkFont(size=11),
-            text_color=("#64748B", "#94A3B8")
+            text_color=("#615D56", "#A8A297")
         ).pack(side="left", padx=4)
 
         for a_suggest in ["Kids Bathroom", "Ground Floor", "Master Bathroom", "Balcony", "Bar Counter"]:
@@ -1037,8 +1037,8 @@ class QuotationEditorView(ctk.CTkFrame):
                 text=f"+ {a_suggest}",
                 font=ctk.CTkFont(size=10),
                 height=24,
-                fg_color=("#E2E8F0", "#334155"),
-                text_color=("#0F172A", "#F8FAFC"),
+                fg_color=(Theme.STONE, "#2B2824"),
+                text_color=(Theme.BLACK, Theme.PAPER),
                 hover_color=Theme.PRIMARY,
                 command=lambda name=a_suggest: self.add_area(name)
             )
@@ -1055,7 +1055,7 @@ class QuotationEditorView(ctk.CTkFrame):
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=12, weight="bold"),
             fg_color=("#F1F5F9", "#1E293B"),
             text_color=Theme.PRIMARY,
-            hover_color=("#E2E8F0", "#334155"),
+            hover_color=(Theme.STONE, "#2B2824"),
             border_width=1,
             border_color=Theme.PRIMARY,
             command=lambda: self.add_area("New Project Area"),
@@ -1067,9 +1067,9 @@ class QuotationEditorView(ctk.CTkFrame):
         totals_card = ctk.CTkFrame(
             self.scroll_body,
             corner_radius=12,
-            fg_color=("white", "#1E293B"),
+            fg_color=("#FFFFFF", "#201E1C"),
             border_width=1,
-            border_color=("#E2E8F0", "#334155")
+            border_color=(Theme.STONE, "#2B2824")
         )
         totals_card.pack(fill="x", pady=(0, 10))
 
@@ -1107,7 +1107,7 @@ class QuotationEditorView(ctk.CTkFrame):
         self.notes_entry.pack(fill="x")
 
         # Right: Financial Totals Box
-        right_box = ctk.CTkFrame(t_layout, fg_color=("#F8FAFC", "#0F172A"), corner_radius=10)
+        right_box = ctk.CTkFrame(t_layout, fg_color=(Theme.PAPER, "#1E1C1A"), corner_radius=10)
         right_box.grid(row=0, column=1, sticky="nsew")
 
         r_grid = ctk.CTkFrame(right_box, fg_color="transparent")
@@ -1132,7 +1132,7 @@ class QuotationEditorView(ctk.CTkFrame):
             r_grid,
             text="NET PAYABLE TOTAL:",
             font=ctk.CTkFont(size=13, weight="bold"),
-            text_color=("#0F172A", "#F8FAFC")
+            text_color=(Theme.BLACK, Theme.PAPER)
         ).grid(row=2, column=0, pady=(8, 4), sticky="w")
 
         self.net_total_lbl = ctk.CTkLabel(

@@ -36,7 +36,7 @@ class ReportsView(ctk.CTkFrame):
             title_box,
             text="Executive Reports & Analytics",
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=24, weight="bold"),
-            text_color=("#0F172A", "#F8FAFC"),
+            text_color=(Theme.BLACK, Theme.PAPER),
         )
         title.pack(anchor="w")
 
@@ -44,7 +44,7 @@ class ReportsView(ctk.CTkFrame):
             title_box,
             text="Periodic sales audits, realization velocities & pipeline conversions",
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=12),
-            text_color=("#64748B", "#94A3B8"),
+            text_color=("#615D56", "#A8A297"),
         )
         subtitle.pack(anchor="w")
 
@@ -78,8 +78,8 @@ class ReportsView(ctk.CTkFrame):
             btn_box,
             text="Export CSV 📥",
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11, weight="bold"),
-            fg_color=("#E2E8F0", "#334155"),
-            text_color=("#0F172A", "#F8FAFC"),
+            fg_color=(Theme.STONE, "#2B2824"),
+            text_color=(Theme.BLACK, Theme.PAPER),
             hover_color=Theme.SUCCESS,
             command=self.export_csv,
             height=32
@@ -94,9 +94,9 @@ class ReportsView(ctk.CTkFrame):
         export_toolbar = ctk.CTkFrame(
             self.scroll_body,
             corner_radius=12,
-            fg_color=("white", "#1E293B"),
+            fg_color=("#FFFFFF", "#201E1C"),
             border_width=1,
-            border_color=("#E2E8F0", "#334155")
+            border_color=(Theme.STONE, "#2B2824")
         )
         export_toolbar.pack(fill="x", pady=(0, 16))
 
@@ -107,7 +107,7 @@ class ReportsView(ctk.CTkFrame):
             tb_box,
             text="📑 Executive Exports:",
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=12, weight="bold"),
-            text_color=("#0F172A", "#F8FAFC")
+            text_color=(Theme.BLACK, Theme.PAPER)
         ).pack(side="left", padx=(0, 10))
 
         ctk.CTkButton(
@@ -144,8 +144,8 @@ class ReportsView(ctk.CTkFrame):
             tb_box,
             text="📊 Target Archive (CSV)",
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11, weight="bold"),
-            fg_color=("#E2E8F0", "#334155"),
-            text_color=("#0F172A", "#F8FAFC"),
+            fg_color=(Theme.STONE, "#2B2824"),
+            text_color=(Theme.BLACK, Theme.PAPER),
             hover_color=Theme.SUCCESS,
             command=self.export_target_archive_csv,
             height=30
@@ -166,9 +166,9 @@ class ReportsView(ctk.CTkFrame):
         self.metrics_card = ctk.CTkFrame(
             self.scroll_body,
             corner_radius=12,
-            fg_color=("white", "#1E293B"),
+            fg_color=("#FFFFFF", "#201E1C"),
             border_width=1,
-            border_color=("#E2E8F0", "#334155")
+            border_color=(Theme.STONE, "#2B2824")
         )
         self.metrics_card.pack(fill="x", pady=(0, 16))
 
@@ -179,14 +179,14 @@ class ReportsView(ctk.CTkFrame):
             m_header,
             text="📊 Sales Performance & Conversion Metrics",
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=15, weight="bold"),
-            text_color=("#0F172A", "#F8FAFC")
+            text_color=(Theme.BLACK, Theme.PAPER)
         ).pack(side="left")
 
         self.date_range_lbl = ctk.CTkLabel(
             m_header,
             text="",
             font=ctk.CTkFont(size=11),
-            text_color=("#64748B", "#94A3B8")
+            text_color=("#615D56", "#A8A297")
         )
         self.date_range_lbl.pack(side="right")
 
@@ -204,9 +204,9 @@ class ReportsView(ctk.CTkFrame):
         self.team_card = ctk.CTkFrame(
             mid_row,
             corner_radius=12,
-            fg_color=("white", "#1E293B"),
+            fg_color=("#FFFFFF", "#201E1C"),
             border_width=1,
-            border_color=("#E2E8F0", "#334155")
+            border_color=(Theme.STONE, "#2B2824")
         )
         self.team_card.grid(row=0, column=0, padx=(0, 8), sticky="nsew")
 
@@ -214,7 +214,7 @@ class ReportsView(ctk.CTkFrame):
             self.team_card,
             text="🎯 Sales Representative Progress in Timeframe",
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=14, weight="bold"),
-            text_color=("#0F172A", "#F8FAFC")
+            text_color=(Theme.BLACK, Theme.PAPER)
         ).pack(anchor="w", padx=16, pady=(14, 10))
 
         self.team_progress_container = ctk.CTkFrame(self.team_card, fg_color="transparent")
@@ -224,9 +224,9 @@ class ReportsView(ctk.CTkFrame):
         self.clearance_card = ctk.CTkFrame(
             mid_row,
             corner_radius=12,
-            fg_color=("white", "#1E293B"),
+            fg_color=("#FFFFFF", "#201E1C"),
             border_width=1,
-            border_color=("#E2E8F0", "#334155")
+            border_color=(Theme.STONE, "#2B2824")
         )
         self.clearance_card.grid(row=0, column=1, padx=(8, 0), sticky="nsew")
 
@@ -234,7 +234,7 @@ class ReportsView(ctk.CTkFrame):
             self.clearance_card,
             text="💳 Payment Realization Breakdown",
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=14, weight="bold"),
-            text_color=("#0F172A", "#F8FAFC")
+            text_color=(Theme.BLACK, Theme.PAPER)
         ).pack(anchor="w", padx=16, pady=(14, 10))
 
         self.clearance_container = ctk.CTkFrame(self.clearance_card, fg_color="transparent")
@@ -244,9 +244,9 @@ class ReportsView(ctk.CTkFrame):
         self.status_card = ctk.CTkFrame(
             self.scroll_body,
             corner_radius=12,
-            fg_color=("white", "#1E293B"),
+            fg_color=("#FFFFFF", "#201E1C"),
             border_width=1,
-            border_color=("#E2E8F0", "#334155")
+            border_color=(Theme.STONE, "#2B2824")
         )
         self.status_card.pack(fill="x")
 
@@ -254,7 +254,7 @@ class ReportsView(ctk.CTkFrame):
             self.status_card,
             text="📑 Quotations Status Breakdown (Selected Period)",
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=14, weight="bold"),
-            text_color=("#0F172A", "#F8FAFC")
+            text_color=(Theme.BLACK, Theme.PAPER)
         ).pack(anchor="w", padx=16, pady=(14, 8))
 
         self.status_table_container = ctk.CTkFrame(self.status_card, fg_color="transparent")
@@ -284,19 +284,19 @@ class ReportsView(ctk.CTkFrame):
         ]
 
         for idx, (title, val, sub, col) in enumerate(cells):
-            f = ctk.CTkFrame(self.metrics_grid, fg_color=("#F8FAFC", "#0F172A"), corner_radius=8)
+            f = ctk.CTkFrame(self.metrics_grid, fg_color=(Theme.PAPER, "#1E1C1A"), corner_radius=8)
             f.grid(row=0, column=idx, padx=6, pady=4, sticky="nsew")
 
-            ctk.CTkLabel(f, text=title, font=ctk.CTkFont(size=9, weight="bold"), text_color=("#64748B", "#94A3B8")).pack(anchor="w", padx=12, pady=(10, 2))
+            ctk.CTkLabel(f, text=title, font=ctk.CTkFont(size=9, weight="bold"), text_color=("#615D56", "#A8A297")).pack(anchor="w", padx=12, pady=(10, 2))
             ctk.CTkLabel(f, text=val, font=ctk.CTkFont(size=18, weight="bold"), text_color=col).pack(anchor="w", padx=12, pady=(0, 2))
-            ctk.CTkLabel(f, text=sub, font=ctk.CTkFont(size=10), text_color=("#64748B", "#94A3B8")).pack(anchor="w", padx=12, pady=(0, 10))
+            ctk.CTkLabel(f, text=sub, font=ctk.CTkFont(size=10), text_color=("#615D56", "#A8A297")).pack(anchor="w", padx=12, pady=(0, 10))
 
         # 2. Populate Sales Team Progress
         for widget in self.team_progress_container.winfo_children():
             widget.destroy()
 
         for person in p["individuals"]:
-            pf = ctk.CTkFrame(self.team_progress_container, fg_color=("#F8FAFC", "#0F172A"), corner_radius=8)
+            pf = ctk.CTkFrame(self.team_progress_container, fg_color=(Theme.PAPER, "#1E1C1A"), corner_radius=8)
             pf.pack(fill="x", pady=3)
 
             r1 = ctk.CTkFrame(pf, fg_color="transparent")
@@ -319,7 +319,7 @@ class ReportsView(ctk.CTkFrame):
         for widget in self.clearance_container.winfo_children():
             widget.destroy()
 
-        c_box = ctk.CTkFrame(self.clearance_container, fg_color=("#F8FAFC", "#0F172A"), corner_radius=8)
+        c_box = ctk.CTkFrame(self.clearance_container, fg_color=(Theme.PAPER, "#1E1C1A"), corner_radius=8)
         c_box.pack(fill="both", expand=True, pady=2)
 
         c_rows = [
@@ -338,13 +338,13 @@ class ReportsView(ctk.CTkFrame):
         for widget in self.status_table_container.winfo_children():
             widget.destroy()
 
-        status_grid = ctk.CTkFrame(self.status_table_container, fg_color=("#F1F5F9", "#0F172A"), corner_radius=6)
+        status_grid = ctk.CTkFrame(self.status_table_container, fg_color=(Theme.STONE, "#242220"), corner_radius=6)
         status_grid.pack(fill="x")
         status_grid.grid_columnconfigure((0, 1, 2, 3), weight=1)
 
         headers = ["Status Category", "Count", "Percentage", "Category Definition"]
         for idx, h in enumerate(headers):
-            ctk.CTkLabel(status_grid, text=h, font=ctk.CTkFont(size=10, weight="bold"), text_color=("#475569", "#94A3B8")).grid(row=0, column=idx, padx=8, pady=6, sticky="w")
+            ctk.CTkLabel(status_grid, text=h, font=ctk.CTkFont(size=10, weight="bold"), text_color=(Theme.BLACK, Theme.PAPER)).grid(row=0, column=idx, padx=8, pady=6, sticky="w")
 
         total_q = max(1, m["total_quotes"])
         breakdown_rows = [
@@ -362,7 +362,7 @@ class ReportsView(ctk.CTkFrame):
             ctk.CTkLabel(rf, text=f"● {s_name}", font=ctk.CTkFont(size=11, weight="bold"), text_color=color).grid(row=0, column=0, padx=8, pady=4, sticky="w")
             ctk.CTkLabel(rf, text=str(count), font=ctk.CTkFont(size=11, weight="bold")).grid(row=0, column=1, padx=8, pady=4, sticky="w")
             ctk.CTkLabel(rf, text=f"{pct}%", font=ctk.CTkFont(size=11)).grid(row=0, column=2, padx=8, pady=4, sticky="w")
-            ctk.CTkLabel(rf, text=defn, font=ctk.CTkFont(size=10), text_color=("#64748B", "#94A3B8")).grid(row=0, column=3, padx=8, pady=4, sticky="w")
+            ctk.CTkLabel(rf, text=defn, font=ctk.CTkFont(size=10), text_color=("#615D56", "#A8A297")).grid(row=0, column=3, padx=8, pady=4, sticky="w")
 
     def export_csv(self):
         try:
@@ -526,7 +526,7 @@ class ReportsView(ctk.CTkFrame):
             scope_frame,
             text="Report Parameters / Date Scope:",
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11, weight="bold"),
-            text_color=("#64748B", "#94A3B8")
+            text_color=("#615D56", "#A8A297")
         )
         scope_lbl.pack(anchor="w", padx=12, pady=(6, 4))
 
@@ -649,7 +649,7 @@ class ReportsView(ctk.CTkFrame):
             text="Cancel",
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=12),
             fg_color="transparent",
-            text_color=("#64748B", "#94A3B8"),
+            text_color=("#615D56", "#A8A297"),
             hover_color=("#F1F5F9", "#334155"),
             command=modal.destroy,
             height=36

@@ -35,7 +35,7 @@ class QuotationListView(ctk.CTkFrame):
             title_box,
             text="Quotations Management",
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=24, weight="bold"),
-            text_color=("#0F172A", "#F8FAFC"),
+            text_color=(Theme.BLACK, Theme.PAPER),
         )
         title.pack(anchor="w")
 
@@ -43,7 +43,7 @@ class QuotationListView(ctk.CTkFrame):
             title_box,
             text="View, filter, manage approvals, and export printable ceramic quotations",
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=12),
-            text_color=("#64748B", "#94A3B8"),
+            text_color=("#615D56", "#A8A297"),
         )
         subtitle.pack(anchor="w")
 
@@ -98,8 +98,8 @@ class QuotationListView(ctk.CTkFrame):
             width=65,
             height=32,
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11, weight="bold"),
-            fg_color=("#E2E8F0", "#334155"),
-            text_color=("#0F172A", "#F8FAFC"),
+            fg_color=(Theme.STONE, "#2B2824"),
+            text_color=(Theme.BLACK, Theme.PAPER),
             hover_color=Theme.PRIMARY,
             command=self.on_search
         )
@@ -109,14 +109,14 @@ class QuotationListView(ctk.CTkFrame):
         self.table_card = ctk.CTkFrame(
             self,
             corner_radius=12,
-            fg_color=("white", "#1E293B"),
+            fg_color=("#FFFFFF", "#201E1C"),
             border_width=1,
-            border_color=("#E2E8F0", "#334155")
+            border_color=(Theme.STONE, "#38342E")
         )
         self.table_card.pack(fill="both", expand=True, padx=24, pady=(0, 20))
 
-        # Table Header Row
-        self.header_frame = ctk.CTkFrame(self.table_card, fg_color=("#F1F5F9", "#0F172A"), corner_radius=8, height=38)
+        # Table Header Row (Stone)
+        self.header_frame = ctk.CTkFrame(self.table_card, fg_color=(Theme.STONE, "#242220"), corner_radius=8, height=38)
         self.header_frame.pack(fill="x", padx=12, pady=(12, 6))
         self.header_frame.grid_columnconfigure(0, weight=2)  # Quote No & Date
         self.header_frame.grid_columnconfigure(1, weight=3)  # Customer & Phone
@@ -132,7 +132,7 @@ class QuotationListView(ctk.CTkFrame):
                 self.header_frame,
                 text=text,
                 font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=10, weight="bold"),
-                text_color=("#475569", "#94A3B8"),
+                text_color=(Theme.BLACK, Theme.PAPER),
                 anchor="w"
             ).grid(row=0, column=idx, padx=8, pady=8, sticky="w")
 
@@ -167,7 +167,7 @@ class QuotationListView(ctk.CTkFrame):
                 self.rows_frame,
                 text="No quotations found matching criteria.",
                 font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=13),
-                text_color=("#64748B", "#94A3B8")
+                text_color=("#615D56", "#A8A297")
             )
             empty_lbl.pack(pady=40)
             return
@@ -197,7 +197,7 @@ class QuotationListView(ctk.CTkFrame):
                 c0,
                 text=q_date,
                 font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=10),
-                text_color=("#64748B", "#94A3B8")
+                text_color=("#615D56", "#A8A297")
             ).pack(anchor="w")
 
             # Col 1: Customer & Phone
@@ -207,13 +207,13 @@ class QuotationListView(ctk.CTkFrame):
                 c1,
                 text=q.customer_name[:26],
                 font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11, weight="bold"),
-                text_color=("#0F172A", "#F8FAFC")
+                text_color=(Theme.BLACK, Theme.PAPER)
             ).pack(anchor="w")
             ctk.CTkLabel(
                 c1,
                 text=q.customer_phone,
                 font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=10),
-                text_color=("#64748B", "#94A3B8")
+                text_color=("#615D56", "#A8A297")
             ).pack(anchor="w")
 
             # Col 2: Sales Person
@@ -221,7 +221,7 @@ class QuotationListView(ctk.CTkFrame):
                 row_frame,
                 text=q.sales_person_name,
                 font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11),
-                text_color=("#0F172A", "#F8FAFC")
+                text_color=(Theme.BLACK, Theme.PAPER)
             ).grid(row=0, column=2, padx=8, pady=8, sticky="w")
 
             # Col 3: Net Total
@@ -229,7 +229,7 @@ class QuotationListView(ctk.CTkFrame):
                 row_frame,
                 text=f"₹ {q.net_total:,.2f}",
                 font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11, weight="bold"),
-                text_color=("#0F172A", "#F8FAFC")
+                text_color=(Theme.BLACK, Theme.PAPER)
             ).grid(row=0, column=3, padx=8, pady=8, sticky="w")
 
             # Col 4: Outstanding Balance
@@ -257,22 +257,22 @@ class QuotationListView(ctk.CTkFrame):
                 c5,
                 text=pmt_status,
                 font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=9),
-                text_color=("#64748B", "#94A3B8")
+                text_color=("#615D56", "#A8A297")
             ).pack(anchor="w")
 
             # Col 6: Action Buttons
             c6 = ctk.CTkFrame(row_frame, fg_color="transparent")
             c6.grid(row=0, column=6, padx=8, pady=6, sticky="w")
 
-            # PDF Export & Open Button
+            # PDF Export & Open Button (Coral)
             pdf_btn = ctk.CTkButton(
                 c6,
                 text="📄 PDF",
                 width=52,
                 height=26,
                 font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=10, weight="bold"),
-                fg_color=Theme.ACCENT_GOLD,
-                hover_color=Theme.ACCENT_GOLD_HOVER,
+                fg_color=Theme.PRIMARY,
+                hover_color=Theme.PRIMARY_HOVER,
                 command=lambda qid=q.id: self.export_pdf(qid)
             )
             pdf_btn.pack(side="left", padx=2)
@@ -284,8 +284,9 @@ class QuotationListView(ctk.CTkFrame):
                 width=50,
                 height=26,
                 font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=10, weight="bold"),
-                fg_color=Theme.PRIMARY,
-                hover_color=Theme.PRIMARY_HOVER,
+                fg_color=(Theme.STONE, "#2B2824"),
+                text_color=(Theme.BLACK, Theme.PAPER),
+                hover_color=Theme.PRIMARY,
                 command=lambda qid=q.id: self.controller.show_view("quotation_editor", qid)
             )
             edit_btn.pack(side="left", padx=2)
@@ -297,8 +298,8 @@ class QuotationListView(ctk.CTkFrame):
                 width=50,
                 height=26,
                 font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=10, weight="bold"),
-                fg_color=("#E2E8F0", "#334155"),
-                text_color=("#0F172A", "#F8FAFC"),
+                fg_color=(Theme.STONE, "#2B2824"),
+                text_color=(Theme.BLACK, Theme.PAPER),
                 hover_color=Theme.SUCCESS,
                 command=lambda qid=q.id: self.controller.show_view("payment_tracking", qid)
             )
@@ -312,7 +313,7 @@ class QuotationListView(ctk.CTkFrame):
                 height=26,
                 font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=10),
                 fg_color=("#F1F5F9", "#1F2937"),
-                text_color=("#0F172A", "#F8FAFC"),
+                text_color=(Theme.BLACK, Theme.PAPER),
                 button_color=("#CBD5E1", "#4B5563"),
                 command=lambda new_val, qid=q.id: self.change_status(qid, new_val)
             )

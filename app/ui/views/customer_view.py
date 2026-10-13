@@ -31,7 +31,7 @@ class CustomerManagementView(ctk.CTkFrame):
             title_box,
             text="Customer & Client Management",
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=24, weight="bold"),
-            text_color=("#0F172A", "#F8FAFC"),
+            text_color=(Theme.BLACK, Theme.PAPER),
         )
         title.pack(anchor="w")
 
@@ -39,7 +39,7 @@ class CustomerManagementView(ctk.CTkFrame):
             title_box,
             text="Architects, builders, home owners directory & quotation history",
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=12),
-            text_color=("#64748B", "#94A3B8"),
+            text_color=("#615D56", "#A8A297"),
         )
         subtitle.pack(anchor="w")
 
@@ -64,9 +64,9 @@ class CustomerManagementView(ctk.CTkFrame):
         left_card = ctk.CTkFrame(
             main_split,
             corner_radius=12,
-            fg_color=("white", "#1E293B"),
+            fg_color=("#FFFFFF", "#201E1C"),
             border_width=1,
-            border_color=("#E2E8F0", "#334155")
+            border_color=(Theme.STONE, "#2B2824")
         )
         left_card.grid(row=0, column=0, padx=(0, 8), sticky="nsew")
 
@@ -77,7 +77,7 @@ class CustomerManagementView(ctk.CTkFrame):
             left_header,
             text="👥 Customer Directory",
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=15, weight="bold"),
-            text_color=("#0F172A", "#F8FAFC")
+            text_color=(Theme.BLACK, Theme.PAPER)
         ).pack(side="left")
 
         # Search Bar
@@ -97,9 +97,9 @@ class CustomerManagementView(ctk.CTkFrame):
         self.right_card = ctk.CTkFrame(
             main_split,
             corner_radius=12,
-            fg_color=("white", "#1E293B"),
+            fg_color=("#FFFFFF", "#201E1C"),
             border_width=1,
-            border_color=("#E2E8F0", "#334155")
+            border_color=(Theme.STONE, "#2B2824")
         )
         self.right_card.grid(row=0, column=1, padx=(8, 0), sticky="nsew")
 
@@ -144,9 +144,9 @@ class CustomerManagementView(ctk.CTkFrame):
 
         for c in cust_list:
             is_active = self.selected_customer and self.selected_customer.id == c.id
-            card_bg = (Theme.PRIMARY, "#0284C7") if is_active else ("#F8FAFC", "#0F172A")
-            text_color = "white" if is_active else ("#0F172A", "#F8FAFC")
-            sub_color = "#E0F2FE" if is_active else ("#64748B", "#94A3B8")
+            card_bg = (Theme.PRIMARY, "#0284C7") if is_active else (Theme.PAPER, "#1E1C1A")
+            text_color = "white" if is_active else (Theme.BLACK, Theme.PAPER)
+            sub_color = "#E0F2FE" if is_active else ("#615D56", "#A8A297")
 
             btn_text = f"{c.name}\n{c.mobile_number}  •  {c.get_quote_count()} Quotes"
             c_btn = ctk.CTkButton(
@@ -192,14 +192,14 @@ class CustomerManagementView(ctk.CTkFrame):
             title_box,
             text=c.name,
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=18, weight="bold"),
-            text_color=("#0F172A", "#F8FAFC")
+            text_color=(Theme.BLACK, Theme.PAPER)
         ).pack(anchor="w")
 
         ctk.CTkLabel(
             title_box,
             text=f"📞 {c.mobile_number}  |  ✉ {c.email or 'No email'}",
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11),
-            text_color=("#64748B", "#94A3B8")
+            text_color=("#615D56", "#A8A297")
         ).pack(anchor="w")
 
         edit_btn = ctk.CTkButton(
@@ -208,14 +208,14 @@ class CustomerManagementView(ctk.CTkFrame):
             font=ctk.CTkFont(size=11, weight="bold"),
             width=80,
             height=28,
-            fg_color=("#E2E8F0", "#334155"),
-            text_color=("#0F172A", "#F8FAFC"),
+            fg_color=(Theme.STONE, "#2B2824"),
+            text_color=(Theme.BLACK, Theme.PAPER),
             command=lambda: self.open_customer_editor_modal(c)
         )
         edit_btn.pack(side="right")
 
         # Stats summary row
-        stats_frame = ctk.CTkFrame(self.profile_container, fg_color=("#F8FAFC", "#0F172A"), corner_radius=8)
+        stats_frame = ctk.CTkFrame(self.profile_container, fg_color=(Theme.PAPER, "#1E1C1A"), corner_radius=8)
         stats_frame.pack(fill="x", pady=(0, 12))
         stats_frame.grid_columnconfigure((0, 1, 2), weight=1)
 
@@ -251,7 +251,7 @@ class CustomerManagementView(ctk.CTkFrame):
             self.profile_container,
             text="📜 Quotation History for This Client",
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=14, weight="bold"),
-            text_color=("#0F172A", "#F8FAFC")
+            text_color=(Theme.BLACK, Theme.PAPER)
         ).pack(anchor="w", pady=(0, 6))
 
         history_scroll = ctk.CTkScrollableFrame(self.profile_container, fg_color="transparent", height=240)
@@ -263,7 +263,7 @@ class CustomerManagementView(ctk.CTkFrame):
             return
 
         for q in quotes:
-            r = ctk.CTkFrame(history_scroll, fg_color=("#F8FAFC", "#0F172A"), corner_radius=6)
+            r = ctk.CTkFrame(history_scroll, fg_color=(Theme.PAPER, "#1E1C1A"), corner_radius=6)
             r.pack(fill="x", pady=3)
             r.grid_columnconfigure((0, 1, 2, 3, 4), weight=1)
 
@@ -280,7 +280,7 @@ class CustomerManagementView(ctk.CTkFrame):
                 r,
                 text=q_d_str,
                 font=ctk.CTkFont(size=10),
-                text_color=("#64748B", "#94A3B8")
+                text_color=("#615D56", "#A8A297")
             ).grid(row=0, column=1, padx=8, pady=6, sticky="w")
 
             ctk.CTkLabel(
@@ -324,7 +324,7 @@ class CustomerManagementView(ctk.CTkFrame):
     def create_profile_stat(self, parent, col, title, val):
         f = ctk.CTkFrame(parent, fg_color="transparent")
         f.grid(row=0, column=col, padx=8, pady=8, sticky="w")
-        ctk.CTkLabel(f, text=title, font=ctk.CTkFont(size=10), text_color=("#64748B", "#94A3B8")).pack(anchor="w")
+        ctk.CTkLabel(f, text=title, font=ctk.CTkFont(size=10), text_color=("#615D56", "#A8A297")).pack(anchor="w")
         ctk.CTkLabel(f, text=val, font=ctk.CTkFont(size=13, weight="bold"), text_color=Theme.PRIMARY).pack(anchor="w")
 
     def export_pdf(self, quote_id: int):
