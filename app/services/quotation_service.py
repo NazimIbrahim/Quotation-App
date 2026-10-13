@@ -249,7 +249,12 @@ class QuotationService:
                 for item_data in area_data.get("items", []):
                     desc = item_data.get("description", "").strip()
                     if not desc:
-                        continue
+                        brand_f = item_data.get("brand", "").strip()
+                        size_f = item_data.get("size", "").strip()
+                        if brand_f or size_f:
+                            desc = f"{brand_f} {size_f} Tile".strip()
+                        else:
+                            desc = f"Tile Item #{global_sl}"
                     
                     size = item_data.get("size", "").strip()
                     brand = item_data.get("brand", "").strip()

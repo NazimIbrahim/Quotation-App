@@ -370,6 +370,45 @@ def test_system():
     assert Path(pdf_incl).exists(), "Inclusive PDF not found!"
     print(f" -> PASS: Successfully generated PDF with 18% Tax breakdown for Exclusive ({Path(pdf_excl).name}) and Inclusive ({Path(pdf_incl).name})")
 
+    # [TEST 16] Verifying Quotation Calculation & Item Fallback when Description is Blank
+    print("\n[TEST 16] Verifying Quotation Calculations with Blank Item Description...")
+    blank_payload = {
+        "quotation_number": "AMA-2026-BLANK-DESC",
+        "customer_id": cust.id,
+        "sales_person_id": sp.id,
+        "project_name": "Blank Description Test Project",
+        "status": Quotation.STATUS_OPEN,
+        "tax_mode": "exclusive",
+        "round_off": 0.0,
+        "areas": [
+            {
+                "area_name": "GROUND FLOOR - LIVING ROOM",
+                "items": [
+                    {
+                        "description": "",
+                        "brand": "AMA Signature Collection",
+                        "size": "600X1200",
+                        "coverage_area": 15.5,
+                        "quantity_sqft": 62.0,
+                        "rate_per_sqft": 85.0,
+                        "quantity_boxes": 4.0,
+                        "rate_per_box": 1317.50,
+                        "tax_mode": "exclusive",
+                        "total_amount": 5270.0,
+                    }
+                ]
+            }
+        ]
+    }
+    q_blank = QuotationService.save_quotation(blank_payload)
+    assert len(q_blank.items) == 1, "Item with blank description should not be dropped!"
+    assert q_blank.items[0].description == "AMA Signature Collection 600X1200 Tile", f"Unexpected fallback desc: {q_blank.items[0].description}"
+    assert q_blank.taxable_amount == 5270.0, f"Expected taxable 5270.0, got {q_blank.taxable_amount}"
+    assert q_blank.total_tax == 948.6, f"Expected GST 948.6, got {q_blank.total_tax}"
+    assert q_blank.gross_total == 6218.6, f"Expected gross 6218.6, got {q_blank.gross_total}"
+    assert q_blank.net_total == 6218.6, f"Expected net 6218.6, got {q_blank.net_total}"
+    print(f" -> PASS: Saved quote with blank description! Auto-fallback: '{q_blank.items[0].description}', Gross: ₹{q_blank.gross_total:,.2f}, GST: ₹{q_blank.total_tax:,.2f}, Net: ₹{q_blank.net_total:,.2f}")
+
     print("\n" + "=" * 65)
     print("  ALL CORE MODULES AND TESTS COMPLETED WITH 100% SUCCESS!")
     print("=" * 65)

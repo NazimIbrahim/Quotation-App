@@ -69,6 +69,7 @@ class ItemRowWidget(ctk.CTkFrame):
         )
         self.desc_entry.insert(0, data.get("description", ""))
         self.desc_entry.grid(row=0, column=1, padx=2, pady=3, sticky="ew")
+        self.desc_entry.bind("<KeyRelease>", lambda e: self.on_recalc())
 
         # Determine initial brand directly from active brands in DB
         brand_names = self.get_active_brands_from_db()
@@ -672,6 +673,21 @@ class ItemRowWidget(ctk.CTkFrame):
         tax_str = self.tax_combo.get().strip() if hasattr(self, "tax_combo") else "Excl. 18%"
         tax_mode = "inclusive" if "Incl" in tax_str else "exclusive"
 
+        if tot <= 0:
+            if sqft > 0 and r_sqft > 0:
+                tot = round(sqft * r_sqft, 2)
+            elif boxes > 0 and r_box > 0:
+                tot = round(boxes * r_box, 2)
+
+        if tax_mode == "inclusive":
+            line_gross = tot
+            taxable_amt = round(line_gross / 1.18, 2)
+            gst_amt = round(line_gross - taxable_amt, 2)
+        else:
+            taxable_amt = tot
+            gst_amt = round(taxable_amt * 0.18, 2)
+            line_gross = round(taxable_amt + gst_amt, 2)
+
         return {
             "sl_no": self.sl_no,
             "description": self.desc_entry.get().strip(),
@@ -682,6 +698,9 @@ class ItemRowWidget(ctk.CTkFrame):
             "rate_per_sqft": r_sqft,
             "tax_mode": tax_mode,
             "tax_percent": 18.0,
+            "taxable_amount": taxable_amt,
+            "gst_amount": gst_amt,
+            "line_gross": line_gross,
             "quantity_boxes": boxes,
             "rate_per_box": r_box,
             "total_amount": tot,
@@ -853,12 +872,16 @@ class AreaSectionWidget(ctk.CTkFrame):
         subtotal = 0.0
         for w in self.item_widgets:
             d = w.get_data()
-            tot = d["total_amount"]
-            t_mode = d.get("tax_mode", "exclusive")
-            if t_mode == "exclusive":
-                subtotal += round(tot * 1.18, 2)
-            else:
-                subtotal += tot
+            has_content = (
+                bool(d["description"].strip()) or
+                d["quantity_sqft"] > 0 or
+                d["quantity_boxes"] > 0 or
+                d["rate_per_sqft"] > 0 or
+                d["rate_per_box"] > 0 or
+                d["total_amount"] > 0
+            )
+            if has_content:
+                subtotal += d.get("line_gross", 0.0)
         self.area_subtotal_lbl.configure(text=f"Area Total (with Tax): ₹ {subtotal:,.2f}")
         self.on_recalc()
 
@@ -870,7 +893,22 @@ class AreaSectionWidget(ctk.CTkFrame):
         items = []
         for w in self.item_widgets:
             d = w.get_data()
-            if d["description"]:  # Skip completely blank lines
+            has_content = (
+                bool(d["description"].strip()) or
+                d["quantity_sqft"] > 0 or
+                d["quantity_boxes"] > 0 or
+                d["rate_per_sqft"] > 0 or
+                d["rate_per_box"] > 0 or
+                d["total_amount"] > 0
+            )
+            if has_content:
+                if not d["description"].strip():
+                    brand = d.get("brand", "").strip()
+                    size = d.get("size", "").strip()
+                    if brand or size:
+                        d["description"] = f"{brand} {size} Tile".strip()
+                    else:
+                        d["description"] = f"Tile Item #{d.get('sl_no', 1)}"
                 items.append(d)
         return {
             "area_name": self.name_entry.get().strip() or "General Area",
@@ -1501,16 +1539,20 @@ class QuotationEditorView(ctk.CTkFrame):
         for aw in self.area_widgets:
             adata = aw.get_data()
             for it in adata["items"]:
-                tot = it["total_amount"]
-                t_mode = it.get("tax_mode", "exclusive")
-                if t_mode == "exclusive":
-                    taxable = tot
-                    gst = round(taxable * 0.18, 2)
-                    line_gross = round(taxable + gst, 2)
-                else:
-                    line_gross = tot
-                    taxable = round(line_gross / 1.18, 2)
-                    gst = round(line_gross - taxable, 2)
+                taxable = it.get("taxable_amount")
+                gst = it.get("gst_amount")
+                line_gross = it.get("line_gross")
+                if taxable is None or gst is None or line_gross is None:
+                    tot = it.get("total_amount", 0.0)
+                    t_mode = it.get("tax_mode", "exclusive")
+                    if t_mode == "exclusive":
+                        taxable = tot
+                        gst = round(taxable * 0.18, 2)
+                        line_gross = round(taxable + gst, 2)
+                    else:
+                        line_gross = tot
+                        taxable = round(line_gross / 1.18, 2)
+                        gst = round(line_gross - taxable, 2)
 
                 total_taxable += taxable
                 total_gst += gst
@@ -1565,7 +1607,7 @@ class QuotationEditorView(ctk.CTkFrame):
                 areas_data.append(ad)
 
         if not areas_data:
-            raise ValueError("Quotation must contain at least one item description.")
+            raise ValueError("Quotation must contain at least one item with valid quantity and rate.")
 
         tax_mode = "inclusive" if "Incl" in self.global_tax_combo.get() else "exclusive"
 
