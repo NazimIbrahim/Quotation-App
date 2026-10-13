@@ -205,7 +205,12 @@ class Quotation(BaseModel):
     approved_by = ForeignKeyField(SalesPerson, null=True, backref="approved_quotations")
     approved_at = DateTimeField(null=True)
 
-    # Financial Totals
+    # Financial Totals & Tax Breakdown
+    tax_mode = CharField(max_length=20, default="exclusive")  # 'exclusive' or 'inclusive'
+    taxable_amount = FloatField(default=0.0)
+    cgst_amount = FloatField(default=0.0)
+    sgst_amount = FloatField(default=0.0)
+    total_tax = FloatField(default=0.0)
     gross_total = FloatField(default=0.0)
     round_off = FloatField(default=0.0)  # Can be positive or negative discount/roundoff
     net_total = FloatField(default=0.0)
@@ -221,12 +226,32 @@ class Quotation(BaseModel):
         table_name = "quotations"
 
     def calculate_totals(self):
-        """Recalculates gross and net totals from child items."""
-        total = 0.0
+        """Recalculates taxable, tax, gross and net totals from child items."""
+        taxable_sum = 0.0
+        gst_sum = 0.0
+        gross_sum = 0.0
         for area in self.areas:
             for item in area.items:
-                total += item.total_amount
-        self.gross_total = round(total, 2)
+                tot = float(item.total_amount or 0.0)
+                t_mode = getattr(item, "tax_mode", "exclusive") or "exclusive"
+                t_pct = float(getattr(item, "tax_percent", 18.0) or 18.0)
+                if t_mode == "inclusive":
+                    line_gross = tot
+                    t_amt = round(line_gross / (1.0 + t_pct / 100.0), 2)
+                    g_amt = round(line_gross - t_amt, 2)
+                else:
+                    t_amt = tot
+                    g_amt = round(t_amt * (t_pct / 100.0), 2)
+                    line_gross = round(t_amt + g_amt, 2)
+                taxable_sum += t_amt
+                gst_sum += g_amt
+                gross_sum += line_gross
+
+        self.taxable_amount = round(taxable_sum, 2)
+        self.cgst_amount = round(gst_sum / 2.0, 2)
+        self.sgst_amount = round(gst_sum - self.cgst_amount, 2)
+        self.total_tax = round(gst_sum, 2)
+        self.gross_total = round(gross_sum, 2)
         self.net_total = round(self.gross_total + self.round_off, 2)
         return self.gross_total, self.net_total
 
@@ -291,6 +316,10 @@ class QuotationItem(BaseModel):
     rate_per_sqft = FloatField(default=0.0)
     quantity_boxes = FloatField(default=0.0)
     rate_per_box = FloatField(default=0.0)
+    tax_mode = CharField(max_length=20, default="exclusive")  # 'exclusive' or 'inclusive'
+    tax_percent = FloatField(default=18.0)
+    taxable_amount = FloatField(default=0.0)
+    gst_amount = FloatField(default=0.0)
     total_amount = FloatField(default=0.0)
 
     class Meta:
@@ -606,6 +635,31 @@ def init_database():
             db.execute_sql("ALTER TABLE quotation_items ADD COLUMN brand VARCHAR(120) DEFAULT ''")
         if "coverage_area" not in cols:
             db.execute_sql("ALTER TABLE quotation_items ADD COLUMN coverage_area REAL DEFAULT 0.0")
+        if "tax_mode" not in cols:
+            db.execute_sql("ALTER TABLE quotation_items ADD COLUMN tax_mode VARCHAR(20) DEFAULT 'exclusive'")
+        if "tax_percent" not in cols:
+            db.execute_sql("ALTER TABLE quotation_items ADD COLUMN tax_percent REAL DEFAULT 18.0")
+        if "taxable_amount" not in cols:
+            db.execute_sql("ALTER TABLE quotation_items ADD COLUMN taxable_amount REAL DEFAULT 0.0")
+        if "gst_amount" not in cols:
+            db.execute_sql("ALTER TABLE quotation_items ADD COLUMN gst_amount REAL DEFAULT 0.0")
+    except Exception:
+        pass
+
+    # Safe column migration for quotations
+    try:
+        cursor_q = db.execute_sql("PRAGMA table_info(quotations)")
+        cols_q = [row[1] for row in cursor_q.fetchall()]
+        if "tax_mode" not in cols_q:
+            db.execute_sql("ALTER TABLE quotations ADD COLUMN tax_mode VARCHAR(20) DEFAULT 'exclusive'")
+        if "taxable_amount" not in cols_q:
+            db.execute_sql("ALTER TABLE quotations ADD COLUMN taxable_amount REAL DEFAULT 0.0")
+        if "cgst_amount" not in cols_q:
+            db.execute_sql("ALTER TABLE quotations ADD COLUMN cgst_amount REAL DEFAULT 0.0")
+        if "sgst_amount" not in cols_q:
+            db.execute_sql("ALTER TABLE quotations ADD COLUMN sgst_amount REAL DEFAULT 0.0")
+        if "total_tax" not in cols_q:
+            db.execute_sql("ALTER TABLE quotations ADD COLUMN total_tax REAL DEFAULT 0.0")
     except Exception:
         pass
 

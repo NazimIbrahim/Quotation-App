@@ -627,6 +627,9 @@ class CeramicPDFGenerator:
                 rate_box_str = f"{item.rate_per_box:,.2f}" if item.rate_per_box > 0 else "-"
                 total_str = f"{item.total_amount:,.2f}"
 
+                t_mode = getattr(item, "tax_mode", "exclusive") or "exclusive"
+                tax_tag = "(Incl. 18%)" if t_mode == "inclusive" else "(+18% GST)"
+
                 table_data.append([
                     Paragraph(f"{item.sl_no:02d}", style_td_center),
                     Paragraph(f"<b>{item.description}</b>", style_td),
@@ -634,9 +637,9 @@ class CeramicPDFGenerator:
                     Paragraph(item_brand, style_td_center),
                     Paragraph(cov_str, style_td_center),
                     Paragraph(qty_sqft_str, style_td_right),
-                    Paragraph(rate_sqft_str, style_td_right),
+                    Paragraph(f"<b>{rate_sqft_str}</b><br/><font size='5.5' color='#64748B'>{tax_tag}</font>", style_td_right),
                     Paragraph(qty_box_str, style_td_right),
-                    Paragraph(rate_box_str, style_td_right),
+                    Paragraph(f"<b>{rate_box_str}</b><br/><font size='5.5' color='#64748B'>{tax_tag}</font>", style_td_right),
                     Paragraph(f"<b>{total_str}</b>", style_td_right),
                 ])
                 current_row += 1
@@ -644,6 +647,17 @@ class CeramicPDFGenerator:
         items_table = Table(table_data, colWidths=col_widths, repeatRows=1)
         items_table.setStyle(TableStyle(table_styles))
         story.append(items_table)
+
+        footnote_style = ParagraphStyle(
+            "TableFootnote",
+            parent=styles["Normal"],
+            fontName="Helvetica-Oblique",
+            fontSize=6.5,
+            leading=8.5,
+            textColor=cls.TEXT_MUTED,
+        )
+        story.append(Spacer(1, 2))
+        story.append(Paragraph("* Rates marked '(Incl. 18%)' have 18% GST included; '(+18% GST)' indicates basic rate excluding tax. Detailed GST breakdown itemized below.", footnote_style))
 
         # UNIFORM SECTION GAP 3
         story.append(Spacer(1, cls.SECTION_GAP))
@@ -681,8 +695,23 @@ class CeramicPDFGenerator:
         round_sign = "+" if quote.round_off >= 0 else ""
         round_off_str = f"{round_sign}{quote.round_off:,.2f}"
 
+        taxable_val = float(getattr(quote, "taxable_amount", 0.0) or 0.0)
+        cgst_val = float(getattr(quote, "cgst_amount", 0.0) or 0.0)
+        sgst_val = float(getattr(quote, "sgst_amount", 0.0) or 0.0)
+        total_tax_val = float(getattr(quote, "total_tax", 0.0) or 0.0)
+
+        # Fallback if legacy quotation without tax breakdown
+        if taxable_val == 0.0 and quote.gross_total > 0:
+            taxable_val = round(quote.gross_total / 1.18, 2)
+            total_tax_val = round(quote.gross_total - taxable_val, 2)
+            cgst_val = round(total_tax_val / 2.0, 2)
+            sgst_val = round(total_tax_val - cgst_val, 2)
+
         sub_tbl_data = [
-            [Paragraph("Subtotal:", style_summary_label), Paragraph(f"Rs. {quote.gross_total:,.2f}", style_summary_val)],
+            [Paragraph("Taxable Subtotal:", style_summary_label), Paragraph(f"Rs. {taxable_val:,.2f}", style_summary_val)],
+            [Paragraph("CGST (9.0%):", style_summary_label), Paragraph(f"Rs. {cgst_val:,.2f}", style_summary_val)],
+            [Paragraph("SGST (9.0%):", style_summary_label), Paragraph(f"Rs. {sgst_val:,.2f}", style_summary_val)],
+            [Paragraph("Total GST (18.0%):", style_summary_label), Paragraph(f"Rs. {total_tax_val:,.2f}", style_summary_val)],
             [Paragraph("Discount / Round Off:", style_summary_label), Paragraph(f"Rs. {round_off_str}", style_summary_val)],
         ]
         sub_tbl = Table(sub_tbl_data, colWidths=[120, 107])

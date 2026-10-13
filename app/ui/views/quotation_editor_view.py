@@ -25,7 +25,7 @@ class ItemRowWidget(ctk.CTkFrame):
 
         data = data or {}
 
-        # 11 columns in grid:
+        # 12 columns in grid:
         # 0: Sl (weight 1)
         # 1: Description (weight 5)
         # 2: Size (weight 2)
@@ -33,10 +33,11 @@ class ItemRowWidget(ctk.CTkFrame):
         # 4: Coverage Area (Sqft/Box) (weight 2)
         # 5: Qty Sqft (weight 2)
         # 6: Rate Sqft (weight 2)
-        # 7: Qty Box (weight 2)
-        # 8: Rate Box (weight 2)
-        # 9: Total Amount (weight 2)
-        # 10: Delete (weight 1)
+        # 7: Tax Mode (18%) (weight 2)
+        # 8: Qty Box (weight 2)
+        # 9: Rate Box (weight 2)
+        # 10: Total Amount (weight 2)
+        # 11: Delete (weight 1)
         self.grid_columnconfigure(0, weight=1)
         self.grid_columnconfigure(1, weight=5)
         self.grid_columnconfigure(2, weight=2)
@@ -47,7 +48,8 @@ class ItemRowWidget(ctk.CTkFrame):
         self.grid_columnconfigure(7, weight=2)
         self.grid_columnconfigure(8, weight=2)
         self.grid_columnconfigure(9, weight=2)
-        self.grid_columnconfigure(10, weight=1)
+        self.grid_columnconfigure(10, weight=2)
+        self.grid_columnconfigure(11, weight=1)
 
         # 0. Sl. No
         self.sl_label = ctk.CTkLabel(
@@ -143,7 +145,28 @@ class ItemRowWidget(ctk.CTkFrame):
         self.rate_sqft_entry.grid(row=0, column=6, padx=2, pady=3, sticky="ew")
         self.rate_sqft_entry.bind("<KeyRelease>", lambda e: self.recalculate_amount("rate_sqft"))
 
-        # 7. Quantity in Boxes
+        # 7. Tax Mode (18%) Option
+        init_tax_mode = data.get("tax_mode", "exclusive")
+        tax_str = "Incl. 18%" if init_tax_mode == "inclusive" else "Excl. 18%"
+        self.tax_combo = ctk.CTkOptionMenu(
+            self,
+            values=["Excl. 18%", "Incl. 18%"],
+            height=28,
+            width=82,
+            font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=10, weight="bold"),
+            fg_color=(Theme.STONE, "#2B2824"),
+            text_color=(Theme.BLACK, Theme.PAPER),
+            button_color=Theme.PRIMARY,
+            button_hover_color=Theme.PRIMARY_HOVER,
+            dropdown_fg_color=(Theme.PAPER, "#201E1C"),
+            dropdown_text_color=(Theme.BLACK, Theme.PAPER),
+            dropdown_hover_color=(Theme.STONE, "#332F2A"),
+            command=self.on_tax_mode_changed
+        )
+        self.tax_combo.set(tax_str)
+        self.tax_combo.grid(row=0, column=7, padx=2, pady=3, sticky="ew")
+
+        # 8. Quantity in Boxes
         self.box_entry = ctk.CTkEntry(
             self,
             placeholder_text="Boxes",
@@ -153,10 +176,10 @@ class ItemRowWidget(ctk.CTkFrame):
         )
         if data.get("quantity_boxes"):
             self.box_entry.insert(0, str(data["quantity_boxes"]))
-        self.box_entry.grid(row=0, column=7, padx=2, pady=3, sticky="ew")
+        self.box_entry.grid(row=0, column=8, padx=2, pady=3, sticky="ew")
         self.box_entry.bind("<KeyRelease>", lambda e: self.recalculate_amount("box"))
 
-        # 8. Rate per Box
+        # 9. Rate per Box
         self.rate_box_entry = ctk.CTkEntry(
             self,
             placeholder_text="₹/Box",
@@ -166,10 +189,10 @@ class ItemRowWidget(ctk.CTkFrame):
         )
         if data.get("rate_per_box"):
             self.rate_box_entry.insert(0, str(data["rate_per_box"]))
-        self.rate_box_entry.grid(row=0, column=8, padx=2, pady=3, sticky="ew")
+        self.rate_box_entry.grid(row=0, column=9, padx=2, pady=3, sticky="ew")
         self.rate_box_entry.bind("<KeyRelease>", lambda e: self.recalculate_amount("rate_box"))
 
-        # 9. Total Amount Entry
+        # 10. Total Amount Entry
         self.total_entry = ctk.CTkEntry(
             self,
             placeholder_text="Total ₹",
@@ -179,10 +202,10 @@ class ItemRowWidget(ctk.CTkFrame):
         )
         if data.get("total_amount"):
             self.total_entry.insert(0, f"{float(data['total_amount']):.2f}")
-        self.total_entry.grid(row=0, column=9, padx=2, pady=3, sticky="ew")
+        self.total_entry.grid(row=0, column=10, padx=2, pady=3, sticky="ew")
         self.total_entry.bind("<KeyRelease>", lambda e: self.on_recalc())
 
-        # 10. Delete Button
+        # 11. Delete Button
         del_btn = ctk.CTkButton(
             self,
             text="✕",
@@ -193,7 +216,7 @@ class ItemRowWidget(ctk.CTkFrame):
             hover_color=("#FEE2E2", "#7F1D1D"),
             command=self.delete_self
         )
-        del_btn.grid(row=0, column=10, padx=2, pady=3)
+        del_btn.grid(row=0, column=11, padx=2, pady=3)
 
         # If coverage was not provided in data, look up from catalog
         if not data.get("coverage_area"):
@@ -513,6 +536,9 @@ class ItemRowWidget(ctk.CTkFrame):
 
             self.recalculate_amount("cov")
 
+    def on_tax_mode_changed(self, chosen_val=None):
+        self.recalculate_amount("tax_mode")
+
     def recalculate_amount(self, trigger_source="sqft"):
         """Auto calculates Sqft <-> Boxes and Rates using Coverage Area."""
         if self._is_updating:
@@ -533,12 +559,12 @@ class ItemRowWidget(ctk.CTkFrame):
 
             calc_amount = 0.0
 
-            if trigger_source == "sqft":
+            if trigger_source in ["sqft", "tax_mode"]:
                 if cov > 0 and q_sqft > 0:
                     q_box = round(q_sqft / cov, 2)
                     self.box_entry.delete(0, "end")
                     self.box_entry.insert(0, f"{q_box:g}")
-                if cov > 0 and r_sqft > 0 and (r_box == 0 or not rate_box_txt):
+                if cov > 0 and r_sqft > 0 and (r_box == 0 or not rate_box_txt or trigger_source == "tax_mode"):
                     r_box = round(r_sqft * cov, 2)
                     self.rate_box_entry.delete(0, "end")
                     self.rate_box_entry.insert(0, f"{r_box:.2f}")
@@ -643,6 +669,9 @@ class ItemRowWidget(ctk.CTkFrame):
         except ValueError:
             tot = round(sqft * r_sqft if sqft and r_sqft else boxes * r_box, 2)
 
+        tax_str = self.tax_combo.get().strip() if hasattr(self, "tax_combo") else "Excl. 18%"
+        tax_mode = "inclusive" if "Incl" in tax_str else "exclusive"
+
         return {
             "sl_no": self.sl_no,
             "description": self.desc_entry.get().strip(),
@@ -651,6 +680,8 @@ class ItemRowWidget(ctk.CTkFrame):
             "coverage_area": cov,
             "quantity_sqft": sqft,
             "rate_per_sqft": r_sqft,
+            "tax_mode": tax_mode,
+            "tax_percent": 18.0,
             "quantity_boxes": boxes,
             "rate_per_box": r_box,
             "total_amount": tot,
@@ -664,6 +695,7 @@ class ItemRowWidget(ctk.CTkFrame):
 class AreaSectionWidget(ctk.CTkFrame):
     """Section container grouping items under a project area (e.g. Kids Bathroom, Ground Floor)."""
     def __init__(self, master, area_name: str, on_recalc, on_remove_area=None, area_data=None, catalog_context=None, **kwargs):
+        default_tax_mode = kwargs.pop("default_tax_mode", "exclusive")
         super().__init__(
             master,
             corner_radius=10,
@@ -672,6 +704,7 @@ class AreaSectionWidget(ctk.CTkFrame):
             border_color=("#CBD5E1", "#334155"),
             **kwargs
         )
+        self.default_tax_mode = default_tax_mode
         self.on_recalc = on_recalc
         self.on_remove_area = on_remove_area
         self.catalog_context = catalog_context or {}
@@ -714,7 +747,7 @@ class AreaSectionWidget(ctk.CTkFrame):
         )
         del_area_btn.pack(side="right", padx=10)
 
-        # 2. Table Column Titles (10 columns matching PDF layout + Action button)
+        # 2. Table Column Titles (12 columns matching layout + Action button)
         col_bar = ctk.CTkFrame(self, fg_color=("#F1F5F9", "#111827"), height=26)
         col_bar.pack(fill="x", padx=8, pady=(2, 4))
         col_bar.grid_columnconfigure(0, weight=1)
@@ -727,7 +760,8 @@ class AreaSectionWidget(ctk.CTkFrame):
         col_bar.grid_columnconfigure(7, weight=2)
         col_bar.grid_columnconfigure(8, weight=2)
         col_bar.grid_columnconfigure(9, weight=2)
-        col_bar.grid_columnconfigure(10, weight=1)
+        col_bar.grid_columnconfigure(10, weight=2)
+        col_bar.grid_columnconfigure(11, weight=1)
 
         cols = [
             "Sl.",
@@ -737,6 +771,7 @@ class AreaSectionWidget(ctk.CTkFrame):
             "Cov (Sqft/Bx)",
             "Qty Sqft",
             "₹ / Sqft",
+            "Tax (18%)",
             "Boxes",
             "₹ / Box",
             "Total (₹)",
@@ -772,7 +807,7 @@ class AreaSectionWidget(ctk.CTkFrame):
 
         self.area_subtotal_lbl = ctk.CTkLabel(
             bot_bar,
-            text="Area Subtotal: ₹ 0.00",
+            text="Area Total (with Tax): ₹ 0.00",
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11, weight="bold"),
             text_color=Theme.PRIMARY
         )
@@ -787,6 +822,8 @@ class AreaSectionWidget(ctk.CTkFrame):
 
     def add_item(self, data=None):
         sl = len(self.item_widgets) + 1
+        if data is None:
+            data = {"tax_mode": getattr(self, "default_tax_mode", "exclusive")}
         item_row = ItemRowWidget(
             self.items_container,
             on_recalc=self.on_item_recalc,
@@ -816,8 +853,13 @@ class AreaSectionWidget(ctk.CTkFrame):
         subtotal = 0.0
         for w in self.item_widgets:
             d = w.get_data()
-            subtotal += d["total_amount"]
-        self.area_subtotal_lbl.configure(text=f"Area Subtotal: ₹ {subtotal:,.2f}")
+            tot = d["total_amount"]
+            t_mode = d.get("tax_mode", "exclusive")
+            if t_mode == "exclusive":
+                subtotal += round(tot * 1.18, 2)
+            else:
+                subtotal += tot
+        self.area_subtotal_lbl.configure(text=f"Area Total (with Tax): ₹ {subtotal:,.2f}")
         self.on_recalc()
 
     def remove_self(self):
@@ -1009,6 +1051,39 @@ class QuotationEditorView(ctk.CTkFrame):
         self.address_entry = ctk.CTkEntry(form_grid, font=ctk.CTkFont(size=11), placeholder_text="Full delivery address for logistics")
         self.address_entry.grid(row=3, column=2, columnspan=2, padx=6, pady=(0, 8), sticky="ew")
 
+        # Row 4: Default Tax Setting for Sqft Rates
+        tax_mode_frame = ctk.CTkFrame(form_grid, fg_color="transparent")
+        tax_mode_frame.grid(row=4, column=0, columnspan=4, padx=6, pady=(6, 4), sticky="ew")
+
+        ctk.CTkLabel(
+            tax_mode_frame,
+            text="Tax Option for Sqft Rate:",
+            font=ctk.CTkFont(size=11, weight="bold")
+        ).pack(side="left", padx=(0, 8))
+
+        self.global_tax_combo = ctk.CTkOptionMenu(
+            tax_mode_frame,
+            values=["Excl. 18% Tax (+18% GST added)", "Incl. 18% Tax (18% GST included)"],
+            font=ctk.CTkFont(size=11, weight="bold"),
+            width=260,
+            command=self.on_global_tax_changed
+        )
+        self.global_tax_combo.set("Excl. 18% Tax (+18% GST added)")
+        self.global_tax_combo.pack(side="left", padx=(0, 10))
+
+        apply_all_btn = ctk.CTkButton(
+            tax_mode_frame,
+            text="Apply to All Items ⟳",
+            font=ctk.CTkFont(size=10, weight="bold"),
+            width=125,
+            height=24,
+            fg_color=(Theme.STONE, "#2B2824"),
+            text_color=(Theme.BLACK, Theme.PAPER),
+            hover_color=Theme.PRIMARY,
+            command=self.apply_global_tax_to_all_items
+        )
+        apply_all_btn.pack(side="left")
+
         # 3. Area Sections Bar
         area_control_card = ctk.CTkFrame(self.scroll_body, fg_color="transparent")
         area_control_card.pack(fill="x", pady=(0, 8))
@@ -1115,25 +1190,45 @@ class QuotationEditorView(ctk.CTkFrame):
         r_grid.grid_columnconfigure(0, weight=1)
         r_grid.grid_columnconfigure(1, weight=1)
 
-        # Gross Total
-        ctk.CTkLabel(r_grid, text="Gross Total:", font=ctk.CTkFont(size=12, weight="bold")).grid(row=0, column=0, pady=4, sticky="w")
-        self.gross_total_lbl = ctk.CTkLabel(r_grid, text="₹ 0.00", font=ctk.CTkFont(size=13, weight="bold"))
-        self.gross_total_lbl.grid(row=0, column=1, pady=4, sticky="e")
+        # 0. Taxable Subtotal
+        ctk.CTkLabel(r_grid, text="Taxable Subtotal:", font=ctk.CTkFont(size=11)).grid(row=0, column=0, pady=2, sticky="w")
+        self.taxable_subtotal_lbl = ctk.CTkLabel(r_grid, text="₹ 0.00", font=ctk.CTkFont(size=11, weight="bold"))
+        self.taxable_subtotal_lbl.grid(row=0, column=1, pady=2, sticky="e")
 
-        # Round Off / Discount
-        ctk.CTkLabel(r_grid, text="Round Off / Discount (±₹):", font=ctk.CTkFont(size=11)).grid(row=1, column=0, pady=4, sticky="w")
+        # 1. CGST (9.0%)
+        ctk.CTkLabel(r_grid, text="CGST (9.0%):", font=ctk.CTkFont(size=11)).grid(row=1, column=0, pady=2, sticky="w")
+        self.cgst_lbl = ctk.CTkLabel(r_grid, text="₹ 0.00", font=ctk.CTkFont(size=11))
+        self.cgst_lbl.grid(row=1, column=1, pady=2, sticky="e")
+
+        # 2. SGST (9.0%)
+        ctk.CTkLabel(r_grid, text="SGST (9.0%):", font=ctk.CTkFont(size=11)).grid(row=2, column=0, pady=2, sticky="w")
+        self.sgst_lbl = ctk.CTkLabel(r_grid, text="₹ 0.00", font=ctk.CTkFont(size=11))
+        self.sgst_lbl.grid(row=2, column=1, pady=2, sticky="e")
+
+        # 3. Total 18% GST
+        ctk.CTkLabel(r_grid, text="Total GST (18.0%):", font=ctk.CTkFont(size=11, weight="bold"), text_color=Theme.PRIMARY).grid(row=3, column=0, pady=2, sticky="w")
+        self.total_gst_lbl = ctk.CTkLabel(r_grid, text="₹ 0.00", font=ctk.CTkFont(size=11, weight="bold"), text_color=Theme.PRIMARY)
+        self.total_gst_lbl.grid(row=3, column=1, pady=2, sticky="e")
+
+        # 4. Gross Total (with Tax)
+        ctk.CTkLabel(r_grid, text="Gross Total (with Tax):", font=ctk.CTkFont(size=12, weight="bold")).grid(row=4, column=0, pady=(4, 2), sticky="w")
+        self.gross_total_lbl = ctk.CTkLabel(r_grid, text="₹ 0.00", font=ctk.CTkFont(size=13, weight="bold"))
+        self.gross_total_lbl.grid(row=4, column=1, pady=(4, 2), sticky="e")
+
+        # 5. Round Off / Discount
+        ctk.CTkLabel(r_grid, text="Round Off / Discount (±₹):", font=ctk.CTkFont(size=11)).grid(row=5, column=0, pady=2, sticky="w")
         self.round_off_entry = ctk.CTkEntry(r_grid, width=100, font=ctk.CTkFont(size=11))
         self.round_off_entry.insert(0, "0.00")
-        self.round_off_entry.grid(row=1, column=1, pady=4, sticky="e")
+        self.round_off_entry.grid(row=5, column=1, pady=2, sticky="e")
         self.round_off_entry.bind("<KeyRelease>", lambda e: self.recalculate_totals())
 
-        # Net Total
+        # 6. Net Total
         ctk.CTkLabel(
             r_grid,
             text="NET PAYABLE TOTAL:",
             font=ctk.CTkFont(size=13, weight="bold"),
             text_color=(Theme.BLACK, Theme.PAPER)
-        ).grid(row=2, column=0, pady=(8, 4), sticky="w")
+        ).grid(row=6, column=0, pady=(8, 4), sticky="w")
 
         self.net_total_lbl = ctk.CTkLabel(
             r_grid,
@@ -1141,7 +1236,7 @@ class QuotationEditorView(ctk.CTkFrame):
             font=ctk.CTkFont(size=17, weight="bold"),
             text_color=Theme.ACCENT_GOLD
         )
-        self.net_total_lbl.grid(row=2, column=1, pady=(8, 4), sticky="e")
+        self.net_total_lbl.grid(row=6, column=1, pady=(8, 4), sticky="e")
 
     def load_catalog_cache(self):
         try:
@@ -1279,6 +1374,12 @@ class QuotationEditorView(ctk.CTkFrame):
                 self.round_off_entry.delete(0, "end")
                 self.round_off_entry.insert(0, f"{quote_data['round_off']:.2f}")
 
+                t_mode = quote_data.get("tax_mode", "exclusive")
+                if t_mode == "inclusive":
+                    self.global_tax_combo.set("Incl. 18% Tax (18% GST included)")
+                else:
+                    self.global_tax_combo.set("Excl. 18% Tax (+18% GST added)")
+
                 # Load areas
                 for a in quote_data["areas"]:
                     self.add_area(a["area_name"], area_data=a)
@@ -1294,14 +1395,28 @@ class QuotationEditorView(ctk.CTkFrame):
 
         self.recalculate_totals()
 
+    def on_global_tax_changed(self, chosen_val=None):
+        self.apply_global_tax_to_all_items()
+
+    def apply_global_tax_to_all_items(self):
+        is_incl = "Incl" in self.global_tax_combo.get()
+        new_val = "Incl. 18%" if is_incl else "Excl. 18%"
+        for aw in self.area_widgets:
+            aw.default_tax_mode = "inclusive" if is_incl else "exclusive"
+            for iw in aw.item_widgets:
+                iw.tax_combo.set(new_val)
+        self.recalculate_totals()
+
     def add_area(self, area_name: str, area_data=None):
+        is_incl = "Incl" in self.global_tax_combo.get() if hasattr(self, "global_tax_combo") else False
         area_widget = AreaSectionWidget(
             self.areas_container,
             area_name=area_name,
             on_recalc=self.recalculate_totals,
             on_remove_area=self.remove_area,
             area_data=area_data,
-            catalog_context=self.catalog_context
+            catalog_context=self.catalog_context,
+            default_tax_mode="inclusive" if is_incl else "exclusive"
         )
         area_widget.pack(fill="x", pady=6)
         self.area_widgets.append(area_widget)
@@ -1380,11 +1495,29 @@ class QuotationEditorView(ctk.CTkFrame):
         ).pack(pady=(0, 20))
 
     def recalculate_totals(self):
+        total_taxable = 0.0
+        total_gst = 0.0
         gross = 0.0
         for aw in self.area_widgets:
             adata = aw.get_data()
             for it in adata["items"]:
-                gross += it["total_amount"]
+                tot = it["total_amount"]
+                t_mode = it.get("tax_mode", "exclusive")
+                if t_mode == "exclusive":
+                    taxable = tot
+                    gst = round(taxable * 0.18, 2)
+                    line_gross = round(taxable + gst, 2)
+                else:
+                    line_gross = tot
+                    taxable = round(line_gross / 1.18, 2)
+                    gst = round(line_gross - taxable, 2)
+
+                total_taxable += taxable
+                total_gst += gst
+                gross += line_gross
+
+        cgst = round(total_gst / 2.0, 2)
+        sgst = round(total_gst - cgst, 2)
 
         try:
             round_off = float(self.round_off_entry.get().strip() or 0.0)
@@ -1392,6 +1525,10 @@ class QuotationEditorView(ctk.CTkFrame):
             round_off = 0.0
 
         net = round(gross + round_off, 2)
+        self.taxable_subtotal_lbl.configure(text=f"₹ {total_taxable:,.2f}")
+        self.cgst_lbl.configure(text=f"₹ {cgst:,.2f}")
+        self.sgst_lbl.configure(text=f"₹ {sgst:,.2f}")
+        self.total_gst_lbl.configure(text=f"₹ {total_gst:,.2f}")
         self.gross_total_lbl.configure(text=f"₹ {gross:,.2f}")
         self.net_total_lbl.configure(text=f"₹ {net:,.2f}")
 
@@ -1430,6 +1567,8 @@ class QuotationEditorView(ctk.CTkFrame):
         if not areas_data:
             raise ValueError("Quotation must contain at least one item description.")
 
+        tax_mode = "inclusive" if "Incl" in self.global_tax_combo.get() else "exclusive"
+
         return {
             "id": self.quote_id,
             "quotation_number": self.quote_num_entry.get().strip(),
@@ -1439,6 +1578,7 @@ class QuotationEditorView(ctk.CTkFrame):
             "project_name": self.project_name_entry.get().strip(),
             "special_notes": self.notes_entry.get("1.0", "end").strip(),
             "status": self.status_combo.get(),
+            "tax_mode": tax_mode,
             "round_off": round_off,
             "areas": areas_data,
         }

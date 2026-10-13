@@ -284,6 +284,92 @@ def test_system():
     assert test_sp.get_target_for_month(2026, 10) == base_target
     print(" -> PASS: Deleted altered target and verified instant rollback to base target.")
 
+    print("\n[TEST 15] Verifying 18% Inclusive vs 18% Exclusive Tax Calculations & PDF...")
+    # 1. Tax Exclusive Quotation: Rates exclude 18% tax; 18% GST is added to total
+    excl_payload = {
+        "quotation_number": "AMA-2026-TAX-EXCL",
+        "customer_id": cust.id,
+        "sales_person_id": sp.id,
+        "project_name": "Exclusive 18% GST Villa",
+        "special_notes": "18% GST will be added",
+        "status": Quotation.STATUS_OPEN,
+        "tax_mode": "exclusive",
+        "round_off": 0.0,
+        "areas": [
+            {
+                "area_name": "Foyer & Corridor",
+                "items": [
+                    {
+                        "description": "STATUARIO GLOSS 1200X1800",
+                        "size": "1200X1800",
+                        "brand": "Kajaria Eternity",
+                        "coverage_area": 23.25,
+                        "quantity_sqft": 100.0,
+                        "rate_per_sqft": 50.0,
+                        "tax_mode": "exclusive",
+                        "quantity_boxes": 4.3,
+                        "rate_per_box": 1162.5,
+                        "total_amount": 5000.0,
+                    }
+                ]
+            }
+        ]
+    }
+    q_excl = QuotationService.save_quotation(excl_payload)
+    assert q_excl.taxable_amount == 5000.0, f"Expected 5000.0, got {q_excl.taxable_amount}"
+    assert q_excl.cgst_amount == 450.0, f"Expected 450.0, got {q_excl.cgst_amount}"
+    assert q_excl.sgst_amount == 450.0, f"Expected 450.0, got {q_excl.sgst_amount}"
+    assert q_excl.total_tax == 900.0, f"Expected 900.0, got {q_excl.total_tax}"
+    assert q_excl.gross_total == 5900.0, f"Expected 5900.0, got {q_excl.gross_total}"
+    assert q_excl.net_total == 5900.0, f"Expected 5900.0, got {q_excl.net_total}"
+    print(f" -> PASS: Tax Exclusive Quote {q_excl.quotation_number}: Taxable=₹{q_excl.taxable_amount:,.2f}, CGST(9%)=₹{q_excl.cgst_amount:,.2f}, SGST(9%)=₹{q_excl.sgst_amount:,.2f}, Total GST=₹{q_excl.total_tax:,.2f}, Net=₹{q_excl.net_total:,.2f}")
+
+    # 2. Tax Inclusive Quotation: Rates already include 18% tax
+    incl_payload = {
+        "quotation_number": "AMA-2026-TAX-INCL",
+        "customer_id": cust.id,
+        "sales_person_id": sp.id,
+        "project_name": "Inclusive 18% GST Residency",
+        "special_notes": "All rates include 18% GST",
+        "status": Quotation.STATUS_OPEN,
+        "tax_mode": "inclusive",
+        "round_off": 0.0,
+        "areas": [
+            {
+                "area_name": "Master Suite",
+                "items": [
+                    {
+                        "description": "ARMANI GREY SATIN 800X1600",
+                        "size": "800X1600",
+                        "brand": "Simpolo Ceramics",
+                        "coverage_area": 27.56,
+                        "quantity_sqft": 100.0,
+                        "rate_per_sqft": 118.0,
+                        "tax_mode": "inclusive",
+                        "quantity_boxes": 3.63,
+                        "rate_per_box": 3252.08,
+                        "total_amount": 11800.0,
+                    }
+                ]
+            }
+        ]
+    }
+    q_incl = QuotationService.save_quotation(incl_payload)
+    assert q_incl.gross_total == 11800.0, f"Expected 11800.0, got {q_incl.gross_total}"
+    assert q_incl.taxable_amount == 10000.0, f"Expected 10000.0, got {q_incl.taxable_amount}"
+    assert q_incl.total_tax == 1800.0, f"Expected 1800.0, got {q_incl.total_tax}"
+    assert q_incl.cgst_amount == 900.0, f"Expected 900.0, got {q_incl.cgst_amount}"
+    assert q_incl.sgst_amount == 900.0, f"Expected 900.0, got {q_incl.sgst_amount}"
+    assert q_incl.net_total == 11800.0, f"Expected 11800.0, got {q_incl.net_total}"
+    print(f" -> PASS: Tax Inclusive Quote {q_incl.quotation_number}: Gross=₹{q_incl.gross_total:,.2f}, Taxable=₹{q_incl.taxable_amount:,.2f}, CGST(9%)=₹{q_incl.cgst_amount:,.2f}, SGST(9%)=₹{q_incl.sgst_amount:,.2f}, Net=₹{q_incl.net_total:,.2f}")
+
+    # 3. Generate PDF for Exclusive and Inclusive quotations and verify layout
+    pdf_excl = CeramicPDFGenerator.generate_quotation_pdf(q_excl.id)
+    assert Path(pdf_excl).exists(), "Exclusive PDF not found!"
+    pdf_incl = CeramicPDFGenerator.generate_quotation_pdf(q_incl.id)
+    assert Path(pdf_incl).exists(), "Inclusive PDF not found!"
+    print(f" -> PASS: Successfully generated PDF with 18% Tax breakdown for Exclusive ({Path(pdf_excl).name}) and Inclusive ({Path(pdf_incl).name})")
+
     print("\n" + "=" * 65)
     print("  ALL CORE MODULES AND TESTS COMPLETED WITH 100% SUCCESS!")
     print("=" * 65)

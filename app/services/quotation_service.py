@@ -112,6 +112,10 @@ class QuotationService:
                     "rate_per_sqft": it.rate_per_sqft,
                     "quantity_boxes": it.quantity_boxes,
                     "rate_per_box": it.rate_per_box,
+                    "tax_mode": getattr(it, "tax_mode", "exclusive") or "exclusive",
+                    "tax_percent": float(getattr(it, "tax_percent", 18.0) or 18.0),
+                    "taxable_amount": float(getattr(it, "taxable_amount", 0.0) or 0.0),
+                    "gst_amount": float(getattr(it, "gst_amount", 0.0) or 0.0),
                     "total_amount": it.total_amount,
                 })
             areas_data.append({
@@ -134,6 +138,11 @@ class QuotationService:
             "project_name": quote.project_name,
             "special_notes": quote.special_notes,
             "status": quote.status,
+            "tax_mode": getattr(quote, "tax_mode", "exclusive") or "exclusive",
+            "taxable_amount": float(getattr(quote, "taxable_amount", 0.0) or 0.0),
+            "cgst_amount": float(getattr(quote, "cgst_amount", 0.0) or 0.0),
+            "sgst_amount": float(getattr(quote, "sgst_amount", 0.0) or 0.0),
+            "total_tax": float(getattr(quote, "total_tax", 0.0) or 0.0),
             "gross_total": quote.gross_total,
             "round_off": quote.round_off,
             "net_total": quote.net_total,
@@ -220,7 +229,11 @@ class QuotationService:
                 )
 
             # Insert areas and line items
+            quote_tax_mode = data.get("tax_mode", "inclusive")
+            quote.tax_mode = quote_tax_mode
             gross_total = 0.0
+            total_taxable = 0.0
+            total_gst = 0.0
             global_sl = 1
             for a_idx, area_data in enumerate(data.get("areas", []), start=1):
                 area_name = area_data.get("area_name", f"Area {a_idx}").strip()
@@ -246,6 +259,9 @@ class QuotationService:
                     qty_boxes = float(item_data.get("quantity_boxes") or 0.0)
                     rate_box = float(item_data.get("rate_per_box") or 0.0)
                     
+                    item_tax_mode = item_data.get("tax_mode") or quote_tax_mode or "inclusive"
+                    tax_percent = float(item_data.get("tax_percent", 18.0) or 18.0)
+
                     # Calculate item total
                     item_total = float(item_data.get("total_amount") or 0.0)
                     if item_total <= 0:
@@ -254,7 +270,19 @@ class QuotationService:
                         elif qty_boxes > 0 and rate_box > 0:
                             item_total = round(qty_boxes * rate_box, 2)
 
-                    gross_total += item_total
+                    # Calculate tax breakdown
+                    if item_tax_mode == "inclusive":
+                        line_gross = item_total
+                        taxable_amt = round(line_gross / (1.0 + tax_percent / 100.0), 2)
+                        gst_amt = round(line_gross - taxable_amt, 2)
+                    else:
+                        taxable_amt = item_total
+                        gst_amt = round(taxable_amt * (tax_percent / 100.0), 2)
+                        line_gross = round(taxable_amt + gst_amt, 2)
+
+                    total_taxable += taxable_amt
+                    total_gst += gst_amt
+                    gross_total += line_gross
 
                     QuotationItem.create(
                         area=area_obj,
@@ -268,10 +296,18 @@ class QuotationService:
                         rate_per_sqft=rate_sqft,
                         quantity_boxes=qty_boxes,
                         rate_per_box=rate_box,
+                        tax_mode=item_tax_mode,
+                        tax_percent=tax_percent,
+                        taxable_amount=round(taxable_amt, 2),
+                        gst_amount=round(gst_amt, 2),
                         total_amount=round(item_total, 2)
                     )
                     global_sl += 1
 
+            quote.taxable_amount = round(total_taxable, 2)
+            quote.cgst_amount = round(total_gst / 2.0, 2)
+            quote.sgst_amount = round(total_gst - quote.cgst_amount, 2)
+            quote.total_tax = round(total_gst, 2)
             quote.gross_total = round(gross_total, 2)
             quote.net_total = round(gross_total + quote.round_off, 2)
             quote.save()
