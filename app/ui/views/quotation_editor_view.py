@@ -9,7 +9,7 @@ import customtkinter as ctk
 from app.ui.theme import Theme
 from app.config import DEFAULT_PROJECT_AREAS, COMMON_TILE_SIZES
 from app.database.models import Customer, SalesPerson, Quotation, TileBrand, BrandSizeCoverage
-from app.services.quotation_service import QuotationService
+from app.services.quotation_service import QuotationService, is_cera_brand
 from app.services.pdf_service import CeramicPDFGenerator
 
 
@@ -263,6 +263,7 @@ class ItemRowWidget(ctk.CTkFrame):
         except Exception:
             pass
         return [
+            "CERA",
             "Kajaria Eternity",
             "Simpolo Ceramics",
             "Somany Ceramics",
@@ -1780,7 +1781,7 @@ class QuotationEditorView(ctk.CTkFrame):
 
         ctk.CTkLabel(
             disc_card,
-            text="Distribute discount percentage directly across all item rates (no discount row shown in totals/PDF):",
+            text="Distribute discount directly across non-CERA item rates (CERA brand excluded with 0% discount; no discount row shown in PDF):",
             font=ctk.CTkFont(size=10),
             text_color=("#615D56", "#A8A297"),
             wraplength=420,
@@ -1999,6 +2000,7 @@ class QuotationEditorView(ctk.CTkFrame):
         if not brand_names:
             brand_names = [
                 "KAJARIA",
+                "CERA",
                 "AGL",
                 "Kajaria Eternity",
                 "Simpolo Ceramics",
@@ -2265,6 +2267,7 @@ class QuotationEditorView(ctk.CTkFrame):
         area_widget.pack(fill="x", pady=6)
         self.area_widgets.append(area_widget)
         self.recalculate_totals()
+        return area_widget
 
     def remove_area(self, area_widget):
         if len(self.area_widgets) <= 1:
@@ -2554,25 +2557,60 @@ class QuotationEditorView(ctk.CTkFrame):
             command=save_quick_cust
         ).pack(pady=(0, 20))
 
-    def _get_current_gross_total(self) -> float:
+    def _get_current_gross_breakdown(self):
+        """Calculates and returns:
+        (total_gross, cera_gross, eligible_gross, cera_items, eligible_items)
+        across all valid active items in the quotation.
+        CERA items are excluded from receiving discounts.
+        """
         total_gross = 0.0
+        cera_gross = 0.0
+        eligible_gross = 0.0
+        cera_items = []
+        eligible_items = []
+
         for aw in getattr(self, "area_widgets", []):
-            adata = aw.get_data()
-            for it in adata.get("items", []):
-                taxable = it.get("taxable_amount")
-                gst = it.get("gst_amount")
-                line_gross = it.get("line_gross")
-                if line_gross is None:
-                    tot = it.get("total_amount", 0.0)
-                    t_mode = it.get("tax_mode", "exclusive")
-                    if t_mode == "exclusive":
-                        taxable = tot
-                        gst = round(taxable * 0.18, 2)
-                        line_gross = round(taxable + gst, 2)
-                    else:
-                        line_gross = tot
-                total_gross += line_gross
-        return round(total_gross, 2)
+            for iw in aw.item_widgets:
+                d = iw.get_data()
+                has_content = (
+                    bool(d.get("description", "").strip()) or
+                    d.get("quantity_sqft", 0.0) > 0 or
+                    d.get("quantity_boxes", 0.0) > 0 or
+                    d.get("rate_per_sqft", 0.0) > 0 or
+                    d.get("rate_per_box", 0.0) > 0 or
+                    d.get("total_amount", 0.0) > 0
+                )
+                if has_content:
+                    line_gross = d.get("line_gross", 0.0)
+                    if line_gross <= 0:
+                        tot = float(d.get("total_amount", 0.0) or 0.0)
+                        if d.get("tax_mode", "exclusive") == "exclusive":
+                            line_gross = round(tot * 1.18, 2)
+                        else:
+                            line_gross = tot
+
+                    if line_gross > 0:
+                        total_gross += line_gross
+                        b_name = d.get("brand", "") or (getattr(iw, "brand_combo", None) and iw.brand_combo.get()) or ""
+                        desc = d.get("description", "") or ""
+                        if is_cera_brand(b_name, desc):
+                            cera_gross += line_gross
+                            cera_items.append((aw, iw))
+                        else:
+                            eligible_gross += line_gross
+                            eligible_items.append((aw, iw))
+
+        return (
+            round(total_gross, 2),
+            round(cera_gross, 2),
+            round(eligible_gross, 2),
+            cera_items,
+            eligible_items
+        )
+
+    def _get_current_gross_total(self) -> float:
+        tot, _, _, _, _ = self._get_current_gross_breakdown()
+        return tot
 
     def _on_discount_target_key(self, event=None):
         if getattr(self, "_syncing_discount_inputs", False):
@@ -2586,29 +2624,52 @@ class QuotationEditorView(ctk.CTkFrame):
                 self.discount_feedback_lbl.configure(text="")
                 return
             target = float(val_str)
-            curr_gross = self._get_current_gross_total()
-            if curr_gross > 0 and target <= curr_gross:
-                disc_amt = curr_gross - target
-                disc_pct = (disc_amt / curr_gross) * 100.0
+            curr_gross, cera_gross, eligible_gross, _, eligible_items = self._get_current_gross_breakdown()
+            if curr_gross <= 0:
                 self.discount_val_entry.delete(0, "end")
-                self.discount_val_entry.insert(0, f"{disc_amt:.2f}")
                 self.discount_pct_entry.delete(0, "end")
-                self.discount_pct_entry.insert(0, f"{disc_pct:.2f}")
-                self.discount_feedback_lbl.configure(
-                    text=f"Target: ₹{target:,.2f}  |  Discount: -₹{disc_amt:,.2f} ({disc_pct:.2f}%) to be distributed",
-                    text_color=Theme.PRIMARY
-                )
-            elif curr_gross > 0 and target > curr_gross:
+                self.discount_feedback_lbl.configure(text="")
+                return
+
+            if target > curr_gross:
                 self.discount_val_entry.delete(0, "end")
                 self.discount_pct_entry.delete(0, "end")
                 self.discount_feedback_lbl.configure(
                     text=f"Target ₹{target:,.2f} exceeds current total ₹{curr_gross:,.2f}",
                     text_color=Theme.WARNING
                 )
+                return
+
+            disc_amt = curr_gross - target
+            overall_pct = (disc_amt / curr_gross) * 100.0 if curr_gross > 0 else 0.0
+
+            self.discount_val_entry.delete(0, "end")
+            self.discount_val_entry.insert(0, f"{disc_amt:.2f}")
+            self.discount_pct_entry.delete(0, "end")
+            self.discount_pct_entry.insert(0, f"{overall_pct:.2f}")
+
+            if cera_gross > 0:
+                if not eligible_items or eligible_gross <= 0:
+                    self.discount_feedback_lbl.configure(
+                        text=f"Cannot discount: All items belong to CERA brand (₹{cera_gross:,.2f}) which has 0% discount.",
+                        text_color=Theme.DANGER
+                    )
+                elif disc_amt > eligible_gross:
+                    self.discount_feedback_lbl.configure(
+                        text=f"⚠️ Discount -₹{disc_amt:,.2f} exceeds eligible Non-CERA items (₹{eligible_gross:,.2f}). Max discount: ₹{eligible_gross:,.2f} (Target: ₹{cera_gross:,.2f})",
+                        text_color=Theme.DANGER
+                    )
+                else:
+                    eligible_pct = (disc_amt / eligible_gross) * 100.0
+                    self.discount_feedback_lbl.configure(
+                        text=f"Target: ₹{target:,.2f}  |  Discount: -₹{disc_amt:,.2f} (Non-CERA: {eligible_pct:.2f}% | Overall: {overall_pct:.2f}%)\n* CERA items (₹{cera_gross:,.2f}) excluded from discount (0%)",
+                        text_color=Theme.PRIMARY
+                    )
             else:
-                self.discount_val_entry.delete(0, "end")
-                self.discount_pct_entry.delete(0, "end")
-                self.discount_feedback_lbl.configure(text="")
+                self.discount_feedback_lbl.configure(
+                    text=f"Target: ₹{target:,.2f}  |  Discount: -₹{disc_amt:,.2f} ({overall_pct:.2f}%) to be distributed",
+                    text_color=Theme.PRIMARY
+                )
         except ValueError:
             pass
         finally:
@@ -2626,22 +2687,43 @@ class QuotationEditorView(ctk.CTkFrame):
                 self.discount_feedback_lbl.configure(text="")
                 return
             disc_amt = float(val_str)
-            curr_gross = self._get_current_gross_total()
-            if curr_gross > 0:
-                target = max(0.0, curr_gross - disc_amt)
-                disc_pct = (disc_amt / curr_gross) * 100.0
-                self.discount_target_entry.delete(0, "end")
-                self.discount_target_entry.insert(0, f"{target:.2f}")
-                self.discount_pct_entry.delete(0, "end")
-                self.discount_pct_entry.insert(0, f"{disc_pct:.2f}")
-                self.discount_feedback_lbl.configure(
-                    text=f"Discount: -₹{disc_amt:,.2f} ({disc_pct:.2f}%)  |  Target: ₹{target:,.2f}",
-                    text_color=Theme.PRIMARY
-                )
-            else:
+            curr_gross, cera_gross, eligible_gross, _, eligible_items = self._get_current_gross_breakdown()
+            if curr_gross <= 0:
                 self.discount_target_entry.delete(0, "end")
                 self.discount_pct_entry.delete(0, "end")
                 self.discount_feedback_lbl.configure(text="")
+                return
+
+            target = max(0.0, curr_gross - disc_amt)
+            overall_pct = (disc_amt / curr_gross) * 100.0
+
+            self.discount_target_entry.delete(0, "end")
+            self.discount_target_entry.insert(0, f"{target:.2f}")
+            self.discount_pct_entry.delete(0, "end")
+            self.discount_pct_entry.insert(0, f"{overall_pct:.2f}")
+
+            if cera_gross > 0:
+                if not eligible_items or eligible_gross <= 0:
+                    self.discount_feedback_lbl.configure(
+                        text=f"Cannot discount: All items belong to CERA brand (₹{cera_gross:,.2f}) which has 0% discount.",
+                        text_color=Theme.DANGER
+                    )
+                elif disc_amt > eligible_gross:
+                    self.discount_feedback_lbl.configure(
+                        text=f"⚠️ Discount -₹{disc_amt:,.2f} exceeds eligible Non-CERA items (₹{eligible_gross:,.2f}). Max discount: ₹{eligible_gross:,.2f}",
+                        text_color=Theme.DANGER
+                    )
+                else:
+                    eligible_pct = (disc_amt / eligible_gross) * 100.0
+                    self.discount_feedback_lbl.configure(
+                        text=f"Discount: -₹{disc_amt:,.2f} (Non-CERA: {eligible_pct:.2f}%)  |  Target: ₹{target:,.2f}\n* CERA items (₹{cera_gross:,.2f}) excluded from discount (0%)",
+                        text_color=Theme.PRIMARY
+                    )
+            else:
+                self.discount_feedback_lbl.configure(
+                    text=f"Discount: -₹{disc_amt:,.2f} ({overall_pct:.2f}%)  |  Target: ₹{target:,.2f}",
+                    text_color=Theme.PRIMARY
+                )
         except ValueError:
             pass
         finally:
@@ -2659,22 +2741,43 @@ class QuotationEditorView(ctk.CTkFrame):
                 self.discount_feedback_lbl.configure(text="")
                 return
             disc_pct = float(val_str)
-            curr_gross = self._get_current_gross_total()
-            if curr_gross > 0:
-                disc_amt = round(curr_gross * (disc_pct / 100.0), 2)
-                target = max(0.0, curr_gross - disc_amt)
+            curr_gross, cera_gross, eligible_gross, _, eligible_items = self._get_current_gross_breakdown()
+            if curr_gross <= 0:
                 self.discount_target_entry.delete(0, "end")
-                self.discount_target_entry.insert(0, f"{target:.2f}")
                 self.discount_val_entry.delete(0, "end")
-                self.discount_val_entry.insert(0, f"{disc_amt:.2f}")
+                self.discount_feedback_lbl.configure(text="")
+                return
+
+            disc_amt = round(curr_gross * (disc_pct / 100.0), 2)
+            target = max(0.0, curr_gross - disc_amt)
+
+            self.discount_target_entry.delete(0, "end")
+            self.discount_target_entry.insert(0, f"{target:.2f}")
+            self.discount_val_entry.delete(0, "end")
+            self.discount_val_entry.insert(0, f"{disc_amt:.2f}")
+
+            if cera_gross > 0:
+                if not eligible_items or eligible_gross <= 0:
+                    self.discount_feedback_lbl.configure(
+                        text=f"Cannot discount: All items belong to CERA brand (₹{cera_gross:,.2f}) which has 0% discount.",
+                        text_color=Theme.DANGER
+                    )
+                elif disc_amt > eligible_gross:
+                    self.discount_feedback_lbl.configure(
+                        text=f"⚠️ Discount -₹{disc_amt:,.2f} exceeds eligible Non-CERA items (₹{eligible_gross:,.2f}). Max discount: ₹{eligible_gross:,.2f}",
+                        text_color=Theme.DANGER
+                    )
+                else:
+                    eligible_pct = (disc_amt / eligible_gross) * 100.0
+                    self.discount_feedback_lbl.configure(
+                        text=f"Discount: {disc_pct:.2f}% (-₹{disc_amt:,.2f})  |  Target: ₹{target:,.2f} (Non-CERA: {eligible_pct:.2f}%)\n* CERA items (₹{cera_gross:,.2f}) excluded from discount (0%)",
+                        text_color=Theme.PRIMARY
+                    )
+            else:
                 self.discount_feedback_lbl.configure(
                     text=f"Discount: {disc_pct:.2f}% (-₹{disc_amt:,.2f})  |  Target: ₹{target:,.2f}",
                     text_color=Theme.PRIMARY
                 )
-            else:
-                self.discount_target_entry.delete(0, "end")
-                self.discount_val_entry.delete(0, "end")
-                self.discount_feedback_lbl.configure(text="")
         except ValueError:
             pass
         finally:
@@ -2691,27 +2794,13 @@ class QuotationEditorView(ctk.CTkFrame):
             self._syncing_discount_inputs = False
 
     def apply_distributed_discount(self):
-        # 1. Collect all active items
-        active_items = []
-        for aw in self.area_widgets:
-            for iw in aw.item_widgets:
-                d = iw.get_data()
-                has_content = (
-                    bool(d.get("description", "").strip()) or
-                    d.get("quantity_sqft", 0.0) > 0 or
-                    d.get("quantity_boxes", 0.0) > 0 or
-                    d.get("rate_per_sqft", 0.0) > 0 or
-                    d.get("rate_per_box", 0.0) > 0 or
-                    d.get("total_amount", 0.0) > 0
-                )
-                if has_content and (d.get("total_amount", 0.0) > 0 or d.get("line_gross", 0.0) > 0):
-                    active_items.append((aw, iw))
+        curr_gross, cera_gross, eligible_gross, cera_items, eligible_items = self._get_current_gross_breakdown()
+        active_items = cera_items + eligible_items
 
         if not active_items:
             msgbox.showwarning("No Items", "Please add quotation items with valid quantities and rates first.")
             return
 
-        curr_gross = sum(iw.get_data().get("line_gross", 0.0) for _, iw in active_items)
         if curr_gross <= 0:
             msgbox.showwarning("Zero Total", "Current quotation gross total is ₹0.00. Cannot apply discount.")
             return
@@ -2748,7 +2837,8 @@ class QuotationEditorView(ctk.CTkFrame):
             msgbox.showerror("Invalid Value", "Target total must be greater than zero.")
             return
 
-        if target_total > curr_gross:
+        disc_amount = round(curr_gross - target_total, 2)
+        if disc_amount < 0:
             confirm = msgbox.askyesno(
                 "Target Higher Than Current",
                 f"Target total (₹ {target_total:,.2f}) is greater than current total (₹ {curr_gross:,.2f}).\n\nDo you want to adjust prices upward?"
@@ -2756,19 +2846,54 @@ class QuotationEditorView(ctk.CTkFrame):
             if not confirm:
                 return
 
-        disc_amount = curr_gross - target_total
-        disc_percentage = (disc_amount / curr_gross) * 100.0
-        factor = target_total / curr_gross
+        # Check CERA constraints
+        if cera_gross > 0 and disc_amount > 0:
+            if not eligible_items or eligible_gross <= 0:
+                msgbox.showerror(
+                    "CERA Brand Restriction",
+                    f"All items in this quotation (₹ {curr_gross:,.2f}) belong to the CERA brand.\n\n"
+                    f"As per company policy, CERA brand items cannot be discounted."
+                )
+                return
 
-        # 3. Apply discount factor to each item row
-        for _, iw in active_items:
-            iw.apply_discount_factor(factor)
+            if disc_amount > eligible_gross:
+                msgbox.showerror(
+                    "Discount Exceeds Eligible Items",
+                    f"The requested discount of ₹ {disc_amount:,.2f} exceeds the total value of eligible non-CERA items (₹ {eligible_gross:,.2f}).\n\n"
+                    f"• Total Quotation: ₹ {curr_gross:,.2f}\n"
+                    f"• CERA Brand Items (0% Discount): ₹ {cera_gross:,.2f}\n"
+                    f"• Non-CERA Items Available: ₹ {eligible_gross:,.2f}\n\n"
+                    f"Maximum possible discount is ₹ {eligible_gross:,.2f} (Target total: ₹ {cera_gross:,.2f})."
+                )
+                return
+
+        # Target for eligible (non-CERA) items:
+        # target_eligible = eligible_gross - disc_amount
+        # factor_eligible = target_eligible / eligible_gross
+        if eligible_gross > 0:
+            target_eligible = eligible_gross - disc_amount
+            factor_eligible = target_eligible / eligible_gross
+            eligible_disc_pct = (disc_amount / eligible_gross) * 100.0
+        else:
+            factor_eligible = 1.0
+            eligible_disc_pct = 0.0
+
+        overall_disc_pct = (disc_amount / curr_gross) * 100.0 if curr_gross > 0 else 0.0
+
+        # 3. Apply discount factor ONLY to eligible (non-CERA) items
+        for _, iw in eligible_items:
+            iw.apply_discount_factor(factor_eligible)
+
+        # CERA items are NOT touched (factor = 1.0, 0% discount preserved)
 
         # 4. Check for rounding discrepancy on the line_gross sum
-        new_gross = sum(iw.get_data().get("line_gross", 0.0) for _, iw in active_items)
+        new_cera = sum(iw.get_data().get("line_gross", 0.0) for _, iw in cera_items)
+        new_elig = sum(iw.get_data().get("line_gross", 0.0) for _, iw in eligible_items)
+        new_gross = round(new_cera + new_elig, 2)
         gross_diff = round(target_total - new_gross, 2)
-        if abs(gross_diff) > 0 and active_items:
-            last_aw, last_iw = active_items[-1]
+
+        if abs(gross_diff) > 0 and eligible_items:
+            last_aw, last_iw = eligible_items[-1]
             tax_str = last_iw.tax_combo.get().strip() if hasattr(last_iw, "tax_combo") else "Excl. 18%"
             is_incl = "Incl" in tax_str
             try:
@@ -2782,20 +2907,31 @@ class QuotationEditorView(ctk.CTkFrame):
                     last_iw.total_entry.delete(0, "end")
                     last_iw.total_entry.insert(0, f"{adj_tot:.2f}")
 
-                    sqft = float(last_iw.sqft_entry.get().strip() or 0.0)
-                    cov = float(last_iw.cov_entry.get().strip() or 0.0)
-                    boxes = float(last_iw.box_entry.get().strip() or 0.0)
-                    if sqft > 0:
+                    ptype = last_iw.get_product_type()
+                    sqft = float(last_iw.sqft_entry.get().strip() or 0.0) if last_iw.sqft_entry.get() != "—" else 0.0
+                    cov = float(last_iw.cov_entry.get().strip() or 0.0) if last_iw.cov_entry.get() != "—" else 0.0
+                    boxes = float(last_iw.box_entry.get().strip() or 0.0) if last_iw.box_entry.get() != "—" else 0.0
+
+                    if ptype == "Sqft" and sqft > 0:
                         r_sqft = round(adj_tot / sqft, 2)
                         last_iw.rate_sqft_entry.delete(0, "end")
                         last_iw.rate_sqft_entry.insert(0, f"{r_sqft:.2f}")
-                        if cov > 0:
-                            last_iw.rate_box_entry.delete(0, "end")
-                            last_iw.rate_box_entry.insert(0, f"{round(r_sqft * cov, 2):.2f}")
-                    elif boxes > 0:
-                        r_box = round(adj_tot / boxes, 2)
+                    elif ptype in ["Pieces", "Bags", "Nos"] and boxes > 0:
+                        r_unit = round(adj_tot / boxes, 2)
                         last_iw.rate_box_entry.delete(0, "end")
-                        last_iw.rate_box_entry.insert(0, f"{r_box:.2f}")
+                        last_iw.rate_box_entry.insert(0, f"{r_unit:.2f}")
+                    else:  # Box
+                        if sqft > 0:
+                            r_sqft = round(adj_tot / sqft, 2)
+                            last_iw.rate_sqft_entry.delete(0, "end")
+                            last_iw.rate_sqft_entry.insert(0, f"{r_sqft:.2f}")
+                            if cov > 0:
+                                last_iw.rate_box_entry.delete(0, "end")
+                                last_iw.rate_box_entry.insert(0, f"{round(r_sqft * cov, 2):.2f}")
+                        elif boxes > 0:
+                            r_box = round(adj_tot / boxes, 2)
+                            last_iw.rate_box_entry.delete(0, "end")
+                            last_iw.rate_box_entry.insert(0, f"{r_box:.2f}")
             except Exception:
                 pass
 
@@ -2809,18 +2945,24 @@ class QuotationEditorView(ctk.CTkFrame):
         self.recalculate_totals()
 
         # 7. Update UI feedback
+        cera_txt = f"\n* CERA items (₹{cera_gross:,.2f}) kept at 0% discount." if cera_gross > 0 else ""
         self.discount_feedback_lbl.configure(
-            text=f"✓ Distributed {disc_percentage:.2f}% discount (-₹{disc_amount:,.2f}) across all items.\nTarget ₹{target_total:,.2f} achieved with clean 0.00 round off.",
+            text=f"✓ Distributed -₹{disc_amount:,.2f} on {len(eligible_items)} non-CERA item(s) ({eligible_disc_pct:.2f}%).\nTarget ₹{target_total:,.2f} achieved with clean 0.00 round off.{cera_txt}",
             text_color=Theme.SUCCESS
         )
 
+        cera_dialog_info = (
+            f"• CERA Brand Items: ₹ {cera_gross:,.2f} (0% discount - rates preserved)\n"
+            f"• Non-CERA Items Discount: {eligible_disc_pct:.2f}% ({len(eligible_items)} items)\n"
+        ) if cera_gross > 0 else f"• All Items Discount: {overall_disc_pct:.2f}% ({len(active_items)} items)\n"
+
         msgbox.showinfo(
             "Discount Distributed Successfully",
-            f"A discount of ₹ {disc_amount:,.2f} ({disc_percentage:.2f}%) was distributed across {len(active_items)} item(s).\n\n"
+            f"A discount of ₹ {disc_amount:,.2f} was distributed successfully!\n\n"
             f"• Original Quote: ₹ {curr_gross:,.2f}\n"
             f"• New Target Total: ₹ {target_total:,.2f}\n"
-            f"• All item sqft/box rates have been updated directly.\n"
-            f"• No separate discount row will appear in totals or the exported PDF."
+            f"{cera_dialog_info}\n"
+            f"All eligible unit rates updated directly. No discount row will appear in totals or the exported PDF."
         )
 
     def _get_current_net_total(self) -> float:

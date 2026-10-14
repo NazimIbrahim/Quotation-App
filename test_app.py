@@ -769,6 +769,119 @@ def test_system():
 
     print(f" -> PASS: Encrypted PDF verified ({os.path.basename(pdf_enc)}): Brands removed, AMA codes generated ({ama_codes}), and DB intact.")
 
+    # -------------------------------------------------------------
+    # 21. CERA BRAND DISCOUNT EXCLUSION & NON-CERA RATE REDISTRIBUTION
+    # -------------------------------------------------------------
+    print("\n[TEST 21] Verifying CERA Brand Discount Exclusion & Non-CERA Rate Redistribution...")
+    from app.services.quotation_service import is_cera_brand
+
+    # 1. Verify CERA brand regex detection
+    assert is_cera_brand("CERA") is True
+    assert is_cera_brand("Cera") is True
+    assert is_cera_brand("Cera Sanitaryware") is True
+    assert is_cera_brand("Simpolo Ceramics") is False
+    assert is_cera_brand("Somany Ceramics") is False
+    assert is_cera_brand("AMA Ceramics") is False
+    assert is_cera_brand("", "Cera Basin") is True
+    assert is_cera_brand("", "Ceramic Floor Tile") is False
+
+    # 2. Replicate User's exact scenario:
+    # Initial: ₹110,000 total (₹85,000 Non-CERA Kajaria, ₹25,000 CERA Sanitaryware)
+    # Target: ₹100,000 total (Discount = ₹10,000)
+    # Expected: CERA remains ₹25,000 (0% discount).
+    #           Non-CERA absorbs full ₹10,000 discount -> 10,000 / 85,000 = 11.7647% discount!
+    #           Non-CERA target = ₹75,000 (factor = 75000 / 85000 = 0.8823529...)
+    #           Final total = ₹25,000 + ₹75,000 = ₹100,000 with 0.00 round off!
+    items_raw = [
+        {
+            "description": "Kajaria 600X1200 Polished Glazed Vitrified",
+            "size": "600X1200",
+            "brand": "Kajaria Eternity",
+            "product_type": "Box",
+            "coverage_area": 15.5,
+            "quantity_sqft": 850.0,
+            "rate_per_sqft": 100.0,
+            "quantity_boxes": 55.0,
+            "rate_per_box": 1545.45,
+            "tax_mode": "inclusive",
+            "total_amount": 85000.0
+        },
+        {
+            "description": "CERA Cascade Premium Wall Hung EWC",
+            "size": "Standard EWC/Basin",
+            "brand": "CERA",
+            "product_type": "Pieces",
+            "coverage_area": 1.0,
+            "quantity_sqft": 0.0,
+            "rate_per_sqft": 0.0,
+            "quantity_boxes": 5.0,
+            "rate_per_box": 5000.0,
+            "tax_mode": "inclusive",
+            "total_amount": 25000.0
+        }
+    ]
+
+    gross_initial = sum(i["total_amount"] for i in items_raw)
+    assert gross_initial == 110000.0
+
+    cera_initial = sum(i["total_amount"] for i in items_raw if is_cera_brand(i["brand"], i["description"]))
+    non_cera_initial = sum(i["total_amount"] for i in items_raw if not is_cera_brand(i["brand"], i["description"]))
+    assert cera_initial == 25000.0
+    assert non_cera_initial == 85000.0
+
+    target_total = 100000.0
+    disc_amount = gross_initial - target_total
+    assert disc_amount == 10000.0
+
+    # Non-CERA discount factor
+    target_non_cera = non_cera_initial - disc_amount
+    assert target_non_cera == 75000.0
+    factor_non_cera = target_non_cera / non_cera_initial
+
+    # Apply factor ONLY to non-CERA item
+    for it in items_raw:
+        if not is_cera_brand(it["brand"], it["description"]):
+            it["total_amount"] = round(it["total_amount"] * factor_non_cera, 2)
+            it["rate_per_sqft"] = round(it["total_amount"] / it["quantity_sqft"], 2)
+            it["rate_per_box"] = round(it["rate_per_sqft"] * it["coverage_area"], 2)
+
+    # CERA item must remain untouched
+    cera_after = next(i for i in items_raw if is_cera_brand(i["brand"], i["description"]))
+    assert cera_after["total_amount"] == 25000.0
+    assert cera_after["rate_per_box"] == 5000.0
+
+    # Non-CERA item must be reduced to 75000
+    non_cera_after = next(i for i in items_raw if not is_cera_brand(i["brand"], i["description"]))
+    assert abs(non_cera_after["total_amount"] - 75000.0) < 0.01
+    assert abs(non_cera_after["rate_per_sqft"] - 88.24) < 0.01
+
+    # Save to database and test PDF
+    cera_disc_payload = {
+        "quotation_number": "AMA-2026-CERA-EXCL",
+        "customer_id": cust.id,
+        "sales_person_id": lead_sp.id,
+        "tax_mode": "inclusive",
+        "round_off": 0.0,
+        "areas": [
+            {
+                "area_name": "Showroom Display Suite",
+                "items": items_raw
+            }
+        ]
+    }
+    q_cera_disc = QuotationService.save_quotation(cera_disc_payload)
+    assert abs(q_cera_disc.gross_total - 100000.0) < 0.01
+    assert abs(q_cera_disc.net_total - 100000.0) < 0.01
+    assert abs(q_cera_disc.round_off) < 0.01
+
+    pdf_cera = CeramicPDFGenerator.generate_quotation_pdf(q_cera_disc.id)
+    doc_cera = pdfium.PdfDocument(pdf_cera)
+    text_cera = "".join(p.get_textpage().get_text_range() for p in doc_cera)
+    assert "100,000.00" in text_cera
+    assert "Discount:" not in text_cera
+    assert "Discount / Round Off" not in text_cera
+    print(f" -> PASS: CERA discount exclusion verified: ₹110k total reduced to ₹100k target by adjusting non-CERA ₹85k -> ₹75k (10,000/85,000 = 11.76%). CERA ₹25k untouched at 0% discount. PDF: {os.path.basename(pdf_cera)}")
+
     print("\n" + "=" * 65)
     print("  ALL CORE MODULES AND TESTS COMPLETED WITH 100% SUCCESS!")
     print("=" * 65)

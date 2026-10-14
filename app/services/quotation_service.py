@@ -2,6 +2,7 @@
 Quotation Service: Business logic for creating, updating, auto-numbering,
 and calculating ceramic & tile quotations.
 """
+import re
 from datetime import date, datetime
 from peewee import fn
 from app.database.connection import db
@@ -15,7 +16,24 @@ from app.database.models import (
 )
 
 
+def is_cera_brand(brand: str, desc: str = "") -> bool:
+    """Checks whether an item or brand belongs to the CERA brand.
+    Matches 'CERA', 'Cera', 'CERA SANITARYWARE', 'CERA TILES', etc.
+    Does NOT match 'Simpolo Ceramics', 'Somany Ceramics', 'AMA Ceramics', etc.
+    """
+    b = (brand or "").strip()
+    if re.search(r'\bCERA\b', b, re.IGNORECASE):
+        return True
+    if not b and desc:
+        if re.search(r'\bCERA\b', desc, re.IGNORECASE):
+            return True
+    return False
+
+
 class QuotationService:
+    @staticmethod
+    def is_cera_item(brand: str, desc: str = "") -> bool:
+        return is_cera_brand(brand, desc)
     @staticmethod
     def generate_next_quotation_number() -> str:
         """Generates the next sequential quotation number: AMA-YYYY-XXXX."""

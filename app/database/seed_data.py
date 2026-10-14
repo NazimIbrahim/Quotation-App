@@ -88,6 +88,17 @@ def seed_brands_and_sizes():
                 ("600X1200", 15.50, 2, 98.0, 1519.00),
                 ("200X1200", 12.91, 5, 95.0, 1226.45),
             ]
+        },
+        {
+            "name": "CERA",
+            "description": "Premium sanitaryware, faucets, basins & ceramic surfaces",
+            "sizes": [
+                ("Standard EWC/Basin", 1.0, 1, 0.0, 6500.0, "Pieces"),
+                ("Table Top Basin", 1.0, 1, 0.0, 4200.0, "Pieces"),
+                ("Wall Hung Closet", 1.0, 1, 0.0, 8500.0, "Pieces"),
+                ("600X1200", 15.50, 2, 92.0, 1426.0, "Box"),
+                ("600X600", 15.50, 4, 66.0, 1023.0, "Box"),
+            ]
         }
     ]
 
