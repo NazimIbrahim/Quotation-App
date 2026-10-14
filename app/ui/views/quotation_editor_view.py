@@ -980,10 +980,17 @@ class QuotationEditorView(ctk.CTkFrame):
         self.build_ui()
         self.load_data()
 
+        # Keyboard shortcut Ctrl+S for saving
+        try:
+            self.bind_all("<Control-s>", lambda e: self.save_quotation())
+            self.bind_all("<Control-S>", lambda e: self.save_quotation())
+        except Exception:
+            pass
+
     def build_ui(self):
         # 1. Top Bar with Title & Action Buttons
         top_bar = ctk.CTkFrame(self, fg_color="transparent")
-        top_bar.pack(fill="x", padx=24, pady=(20, 12))
+        top_bar.pack(fill="x", padx=24, pady=(16, 8))
 
         title_box = ctk.CTkFrame(top_bar, fg_color="transparent")
         title_box.pack(side="left")
@@ -996,18 +1003,44 @@ class QuotationEditorView(ctk.CTkFrame):
         )
         self.title_lbl.pack(anchor="w")
 
-        subtitle = ctk.CTkLabel(
+        self.subtitle_lbl = ctk.CTkLabel(
             title_box,
             text="Configure customer details, area groupings, sqft/box rates & live totals",
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=12),
             text_color=("#615D56", "#A8A297"),
         )
-        subtitle.pack(anchor="w")
+        self.subtitle_lbl.pack(anchor="w")
 
         btn_box = ctk.CTkFrame(top_bar, fg_color="transparent")
         btn_box.pack(side="right")
 
-        back_btn = ctk.CTkButton(
+        self.top_save_btn = ctk.CTkButton(
+            btn_box,
+            text="💾 Save Quotation",
+            font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11, weight="bold"),
+            fg_color=Theme.PRIMARY,
+            border_width=Theme.BORDER_WIDTH_BUTTON,
+            corner_radius=Theme.RADIUS_PILL,
+            hover_color=Theme.PRIMARY_HOVER,
+            command=self.save_quotation,
+            height=36
+        )
+        self.top_save_btn.pack(side="left", padx=4)
+
+        self.top_save_pdf_btn = ctk.CTkButton(
+            btn_box,
+            text="📄 Save & Export PDF",
+            font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11, weight="bold"),
+            fg_color=Theme.SUCCESS,
+            border_width=Theme.BORDER_WIDTH_BUTTON,
+            corner_radius=Theme.RADIUS_PILL,
+            hover_color=Theme.SUCCESS_HOVER,
+            command=self.save_and_export_pdf,
+            height=36
+        )
+        self.top_save_pdf_btn.pack(side="left", padx=4)
+
+        self.top_back_btn = ctk.CTkButton(
             btn_box,
             text="← Back to List",
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11, weight="bold"),
@@ -1019,11 +1052,11 @@ class QuotationEditorView(ctk.CTkFrame):
             command=lambda: self.controller.show_view("quotations", None),
             height=36
         )
-        back_btn.pack(side="left", padx=4)
+        self.top_back_btn.pack(side="left", padx=4)
 
         brand_cat_btn = ctk.CTkButton(
             btn_box,
-            text="🏷️ Brands & Coverage",
+            text="🏷️ Brands",
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11, weight="bold"),
             fg_color=Theme.BTN_SECONDARY_BG,
             text_color=(Theme.BLACK, Theme.PAPER),
@@ -1037,7 +1070,7 @@ class QuotationEditorView(ctk.CTkFrame):
 
         sync_cat_btn = ctk.CTkButton(
             btn_box,
-            text="🔄 Sync Catalog",
+            text="🔄 Sync",
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11, weight="bold"),
             fg_color=Theme.BTN_SECONDARY_BG,
             text_color=(Theme.BLACK, Theme.PAPER),
@@ -1049,35 +1082,105 @@ class QuotationEditorView(ctk.CTkFrame):
         )
         sync_cat_btn.pack(side="left", padx=4)
 
-        save_pdf_btn = ctk.CTkButton(
-            btn_box,
-            text="📄 Save & Export PDF",
-            font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11, weight="bold"),
-            fg_color=Theme.SUCCESS,
-            border_width=Theme.BORDER_WIDTH_BUTTON,
-            corner_radius=Theme.RADIUS_PILL,
-            hover_color=Theme.SUCCESS_HOVER,
-            command=self.save_and_export_pdf,
-            height=36
+        # 2. Docked Sticky Footer Bar (Pinned at bottom of window, ALWAYS visible)
+        self.docked_footer = ctk.CTkFrame(
+            self,
+            corner_radius=Theme.RADIUS_CARD,
+            fg_color=("#FFFFFF", "#201E1C"),
+            border_width=Theme.BORDER_WIDTH_CARD,
+            border_color=Theme.LIGHT_BORDER,
+            height=54
         )
-        save_pdf_btn.pack(side="left", padx=4)
+        self.docked_footer.pack(side="bottom", fill="x", padx=24, pady=(6, 12))
 
-        save_btn = ctk.CTkButton(
-            btn_box,
-            text="💾 Save Quotation",
+        # Footer Left: Edit/New Badge & items summary
+        footer_left = ctk.CTkFrame(self.docked_footer, fg_color="transparent")
+        footer_left.pack(side="left", padx=14, pady=8)
+
+        self.footer_badge_lbl = ctk.CTkLabel(
+            footer_left,
+            text="  ➕ NEW QUOTATION DRAFT  ",
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11, weight="bold"),
+            fg_color=("#E0F2FE", "#082F49"),
+            text_color="#0284C7",
+            corner_radius=Theme.RADIUS_PILL
+        )
+        self.footer_badge_lbl.pack(side="left", padx=(0, 10))
+
+        self.footer_summary_lbl = ctk.CTkLabel(
+            footer_left,
+            text="0 Areas • 0 Items",
+            font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11),
+            text_color=("#615D56", "#A8A297")
+        )
+        self.footer_summary_lbl.pack(side="left")
+
+        # Footer Right: Prominent Action Buttons
+        footer_right = ctk.CTkFrame(self.docked_footer, fg_color="transparent")
+        footer_right.pack(side="right", padx=14, pady=8)
+
+        self.footer_save_btn = ctk.CTkButton(
+            footer_right,
+            text="💾 Save Quotation",
+            font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=12, weight="bold"),
             fg_color=Theme.PRIMARY,
+            hover_color=Theme.PRIMARY_HOVER,
             border_width=Theme.BORDER_WIDTH_BUTTON,
             corner_radius=Theme.RADIUS_PILL,
-            hover_color=Theme.PRIMARY_HOVER,
             command=self.save_quotation,
             height=36
         )
-        save_btn.pack(side="left", padx=4)
+        self.footer_save_btn.pack(side="right", padx=(6, 0))
 
-        # Scrollable container for full quotation document
+        self.footer_save_pdf_btn = ctk.CTkButton(
+            footer_right,
+            text="📄 Save & Export PDF",
+            font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11, weight="bold"),
+            fg_color=Theme.SUCCESS,
+            hover_color=Theme.SUCCESS_HOVER,
+            border_width=Theme.BORDER_WIDTH_BUTTON,
+            corner_radius=Theme.RADIUS_PILL,
+            command=self.save_and_export_pdf,
+            height=36
+        )
+        self.footer_save_pdf_btn.pack(side="right", padx=(6, 0))
+
+        self.footer_back_btn = ctk.CTkButton(
+            footer_right,
+            text="← Back",
+            font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11, weight="bold"),
+            fg_color=Theme.BTN_SECONDARY_BG,
+            text_color=(Theme.BLACK, Theme.PAPER),
+            border_width=Theme.BORDER_WIDTH_BUTTON,
+            corner_radius=Theme.RADIUS_PILL,
+            hover_color=Theme.PRIMARY,
+            command=lambda: self.controller.show_view("quotations", None),
+            height=36
+        )
+        self.footer_back_btn.pack(side="right", padx=(0, 0))
+
+        # Footer Center: Net Total Live Display
+        footer_center = ctk.CTkFrame(self.docked_footer, fg_color="transparent")
+        footer_center.pack(side="right", padx=(12, 16), pady=8)
+
+        ctk.CTkLabel(
+            footer_center,
+            text="Net Total: ",
+            font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=12, weight="bold"),
+            text_color=(Theme.BLACK, Theme.PAPER)
+        ).pack(side="left")
+
+        self.footer_net_total_lbl = ctk.CTkLabel(
+            footer_center,
+            text="₹ 0.00",
+            font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=16, weight="bold"),
+            text_color=Theme.ACCENT_GOLD
+        )
+        self.footer_net_total_lbl.pack(side="left")
+
+        # 3. Scrollable container for full quotation document (in middle between top_bar and docked_footer)
         self.scroll_body = ctk.CTkScrollableFrame(self, fg_color="transparent")
-        self.scroll_body.pack(fill="both", expand=True, padx=24, pady=(0, 20))
+        self.scroll_body.pack(fill="both", expand=True, padx=24, pady=(0, 6))
 
         # 2. Header Card (Customer, Quotation No, Date, Sales Rep)
         header_card = ctk.CTkFrame(
@@ -1556,6 +1659,78 @@ class QuotationEditorView(ctk.CTkFrame):
         )
         self.net_total_lbl.grid(row=6, column=1, pady=(8, 4), sticky="e")
 
+        # 6. Bottom Document Actions & Confirmation Card
+        self.actions_card = ctk.CTkFrame(
+            self.scroll_body,
+            corner_radius=Theme.RADIUS_CARD,
+            fg_color=("#FFFFFF", "#201E1C"),
+            border_width=Theme.BORDER_WIDTH_CARD,
+            border_color=Theme.LIGHT_BORDER
+        )
+        self.actions_card.pack(fill="x", pady=(0, 24))
+
+        ac_header = ctk.CTkFrame(self.actions_card, fg_color="transparent")
+        ac_header.pack(fill="x", padx=20, pady=(16, 6))
+
+        self.body_card_title_lbl = ctk.CTkLabel(
+            ac_header,
+            text="💾 Save & Finalize Quotation",
+            font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=16, weight="bold"),
+            text_color=(Theme.BLACK, Theme.PAPER)
+        )
+        self.body_card_title_lbl.pack(anchor="w")
+
+        self.body_card_desc_lbl = ctk.CTkLabel(
+            ac_header,
+            text="Review all areas, items, discounts, and salesperson allocations above. Click below to save your changes to the database.",
+            font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=12),
+            text_color=("#615D56", "#A8A297")
+        )
+        self.body_card_desc_lbl.pack(anchor="w", pady=(2, 0))
+
+        ac_btn_box = ctk.CTkFrame(self.actions_card, fg_color="transparent")
+        ac_btn_box.pack(fill="x", padx=20, pady=(10, 16))
+
+        self.body_save_btn = ctk.CTkButton(
+            ac_btn_box,
+            text="💾 Save Quotation",
+            font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=13, weight="bold"),
+            fg_color=Theme.PRIMARY,
+            hover_color=Theme.PRIMARY_HOVER,
+            border_width=Theme.BORDER_WIDTH_BUTTON,
+            corner_radius=Theme.RADIUS_PILL,
+            height=42,
+            command=self.save_quotation
+        )
+        self.body_save_btn.pack(side="left", padx=(0, 8))
+
+        self.body_save_pdf_btn = ctk.CTkButton(
+            ac_btn_box,
+            text="📄 Save & Export PDF",
+            font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=13, weight="bold"),
+            fg_color=Theme.SUCCESS,
+            hover_color=Theme.SUCCESS_HOVER,
+            border_width=Theme.BORDER_WIDTH_BUTTON,
+            corner_radius=Theme.RADIUS_PILL,
+            height=42,
+            command=self.save_and_export_pdf
+        )
+        self.body_save_pdf_btn.pack(side="left", padx=8)
+
+        self.body_back_btn = ctk.CTkButton(
+            ac_btn_box,
+            text="← Back to Quotation List",
+            font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=12, weight="bold"),
+            fg_color=Theme.BTN_SECONDARY_BG,
+            text_color=(Theme.BLACK, Theme.PAPER),
+            border_width=Theme.BORDER_WIDTH_BUTTON,
+            corner_radius=Theme.RADIUS_PILL,
+            hover_color=Theme.PRIMARY,
+            height=42,
+            command=lambda: self.controller.show_view("quotations", None)
+        )
+        self.body_back_btn.pack(side="left", padx=8)
+
     def load_catalog_cache(self):
         try:
             self.brand_records = list(TileBrand.select().where(TileBrand.is_active == True).order_by(TileBrand.name))
@@ -1624,6 +1799,55 @@ class QuotationEditorView(ctk.CTkFrame):
         msgbox.showinfo("Catalog Synced", f"Catalog synced successfully!\nLoaded {len(self.catalog_context.get('all_db_sizes', []))} sizes across {len(brand_names)} active brands.")
 
 
+    def update_save_labels(self):
+        is_edit = bool(self.quote_id)
+        q_num = self.quote_num_entry.get().strip() if hasattr(self, "quote_num_entry") else ""
+        cust_name = self.customer_combo.get().strip() if hasattr(self, "customer_combo") else ""
+        if "(" in cust_name:
+            cust_name = cust_name.split("(")[0].strip()
+
+        save_text = "💾 Update Quotation" if is_edit else "💾 Save Quotation"
+        pdf_text = "📄 Update & Export PDF" if is_edit else "📄 Save & Export PDF"
+        body_save_text = f"💾 Update Quotation (Save All Changes)" if is_edit else "💾 Save Quotation to Database"
+
+        if hasattr(self, "top_save_btn"):
+            self.top_save_btn.configure(text=save_text)
+        if hasattr(self, "top_save_pdf_btn"):
+            self.top_save_pdf_btn.configure(text=pdf_text)
+
+        if hasattr(self, "footer_save_btn"):
+            self.footer_save_btn.configure(text=save_text)
+        if hasattr(self, "footer_save_pdf_btn"):
+            self.footer_save_pdf_btn.configure(text=pdf_text)
+
+        if hasattr(self, "body_save_btn"):
+            self.body_save_btn.configure(text=body_save_text)
+        if hasattr(self, "body_save_pdf_btn"):
+            self.body_save_pdf_btn.configure(text=pdf_text)
+
+        if hasattr(self, "body_card_title_lbl"):
+            self.body_card_title_lbl.configure(
+                text=f"💾 Update Quotation #{q_num}" if is_edit else "💾 Save & Finalize Quotation"
+            )
+        if hasattr(self, "body_card_desc_lbl"):
+            self.body_card_desc_lbl.configure(
+                text=f"Editing existing quotation for {cust_name or 'customer'}. Click 'Update Quotation' to save your latest changes to the database." if is_edit else "Review all details above. Click 'Save Quotation' to store this quotation in the database."
+            )
+
+        if hasattr(self, "footer_badge_lbl"):
+            if is_edit:
+                self.footer_badge_lbl.configure(
+                    text=f"  ✏️ EDITING: {q_num or f'Quote #{self.quote_id}'}  ",
+                    fg_color=("#FEE2E2", "#450A0A"),
+                    text_color=Theme.DANGER
+                )
+            else:
+                self.footer_badge_lbl.configure(
+                    text="  ➕ NEW QUOTATION DRAFT  ",
+                    fg_color=("#E0F2FE", "#082F49"),
+                    text_color="#0284C7"
+                )
+
     def load_data(self):
         # 0. Load Tile Brand & Size Coverage Catalog
         self.load_catalog_cache()
@@ -1661,6 +1885,10 @@ class QuotationEditorView(ctk.CTkFrame):
             quote_data = QuotationService.get_quotation_details(self.quote_id)
             if quote_data:
                 self.title_lbl.configure(text=f"Editing Quotation: {quote_data['quotation_number']}")
+                if hasattr(self, "subtitle_lbl"):
+                    self.subtitle_lbl.configure(
+                        text=f"✏️ Editing mode: Modifying quote for {quote_data['customer_name']} — Click 'Update Quotation' to save your changes"
+                    )
                 self.quote_num_entry.delete(0, "end")
                 self.quote_num_entry.insert(0, quote_data["quotation_number"])
 
@@ -1750,6 +1978,7 @@ class QuotationEditorView(ctk.CTkFrame):
             self.add_area("GROUND FLOOR - LIVING ROOM")
             self.add_area("KIDS BATHROOM")
 
+        self.update_save_labels()
         self.recalculate_totals()
 
     def on_global_tax_changed(self, chosen_val=None):
@@ -2556,6 +2785,12 @@ class QuotationEditorView(ctk.CTkFrame):
         self.total_gst_lbl.configure(text=f"₹ {total_gst:,.2f}")
         self.gross_total_lbl.configure(text=f"₹ {gross:,.2f}")
         self.net_total_lbl.configure(text=f"₹ {net:,.2f}")
+        total_items = sum(len(aw.item_widgets) for aw in self.area_widgets) if hasattr(self, "area_widgets") else 0
+        total_areas = len(self.area_widgets) if hasattr(self, "area_widgets") else 0
+        if hasattr(self, "footer_net_total_lbl"):
+            self.footer_net_total_lbl.configure(text=f"₹ {net:,.2f}")
+        if hasattr(self, "footer_summary_lbl"):
+            self.footer_summary_lbl.configure(text=f"{total_areas} Area(s) • {total_items} Item(s)")
         self._update_split_display()
 
     def collect_quotation_payload(self):
@@ -2687,13 +2922,26 @@ class QuotationEditorView(ctk.CTkFrame):
 
     def save_quotation(self):
         try:
+            was_edit = bool(self.quote_id)
             payload = self.collect_quotation_payload()
             quote = QuotationService.save_quotation(payload)
             self.quote_id = quote.id
             self.title_lbl.configure(text=f"Editing Quotation: {quote.quotation_number}")
+            if hasattr(self, "subtitle_lbl"):
+                self.subtitle_lbl.configure(
+                    text=f"✏️ Editing mode: Modifying quote for {quote.customer_name} — Click 'Update Quotation' to save your changes"
+                )
+            self.update_save_labels()
+            self.recalculate_totals()
+
+            action_verb = "updated" if was_edit else "saved"
+            title_text = "Quotation Updated" if was_edit else "Quotation Saved"
             msgbox.showinfo(
-                "Saved Successfully",
-                f"Quotation {quote.quotation_number} saved successfully!\nNet Total: ₹ {quote.net_total:,.2f}"
+                title_text,
+                f"Quotation {quote.quotation_number} {action_verb} successfully!\n\n"
+                f"Customer: {quote.customer_name}\n"
+                f"Net Total: ₹ {quote.net_total:,.2f}\n\n"
+                f"All line items, calculations, discounts, and salesperson allocations are safely recorded in the database."
             )
             return quote
         except Exception as e:

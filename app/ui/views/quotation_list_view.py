@@ -191,12 +191,15 @@ class QuotationListView(ctk.CTkFrame):
             q_date = q.quotation_date.strftime("%d-%b-%Y") if hasattr(q.quotation_date, "strftime") else str(q.quotation_date)
             c0 = ctk.CTkFrame(row_frame, fg_color="transparent")
             c0.grid(row=0, column=0, padx=8, pady=8, sticky="w")
-            ctk.CTkLabel(
+            q_num_lbl = ctk.CTkLabel(
                 c0,
                 text=q.quotation_number,
                 font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11, weight="bold"),
-                text_color=Theme.PRIMARY
-            ).pack(anchor="w")
+                text_color=Theme.PRIMARY,
+                cursor="hand2"
+            )
+            q_num_lbl.pack(anchor="w")
+            q_num_lbl.bind("<Button-1>", lambda e, qid=q.id: self.controller.show_view("quotation_editor", qid))
             ctk.CTkLabel(
                 c0,
                 text=q_date,
