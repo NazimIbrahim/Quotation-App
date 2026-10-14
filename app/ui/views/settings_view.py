@@ -4,6 +4,9 @@ logo image upload, GST details, bank accounts, signatures, and printable PDF ter
 """
 import os
 import shutil
+import json
+import socket
+import webbrowser
 from pathlib import Path
 from datetime import datetime
 import tkinter.messagebox as msgbox
@@ -14,6 +17,7 @@ from PIL import Image as PILImage
 from app.ui.theme import Theme
 from app.config import (
     BASE_DIR,
+    DATA_DIR,
     COMPANY_CONFIG,
     BANK_DETAILS,
     STANDARD_TERMS_AND_CONDITIONS,
@@ -105,12 +109,14 @@ class CompanySettingsView(ctk.CTkFrame):
         self.tab_bank = self.tabview.add("🏦 Bank & Payments")
         self.tab_sigs = self.tabview.add("✍️ Signatures")
         self.tab_terms = self.tabview.add("📜 Terms & Conditions")
+        self.tab_sync = self.tabview.add("☁️ Cloud & Mobile Sync")
 
         self.build_brand_tab()
         self.build_logo_tab()
         self.build_bank_tab()
         self.build_sigs_tab()
         self.build_terms_tab()
+        self.build_sync_tab()
 
     def build_brand_tab(self):
         scroll = ctk.CTkScrollableFrame(self.tab_brand, fg_color="transparent")
@@ -398,6 +404,266 @@ class CompanySettingsView(ctk.CTkFrame):
         )
         self.terms_textbox.pack(fill="both", expand=True, pady=(4, 10))
 
+    def build_sync_tab(self):
+        scroll = ctk.CTkScrollableFrame(self.tab_sync, fg_color="transparent")
+        scroll.pack(fill="both", expand=True, padx=16, pady=12)
+
+        # 1. Header Box
+        header_frame = ctk.CTkFrame(scroll, fg_color=Theme.CARD_BG, corner_radius=Theme.RADIUS_CARD, border_width=1, border_color=Theme.BORDER_COLOR)
+        header_frame.pack(fill="x", pady=(0, 12), padx=4)
+
+        header_inner = ctk.CTkFrame(header_frame, fg_color="transparent")
+        header_inner.pack(fill="x", padx=16, pady=12)
+
+        title = ctk.CTkLabel(
+            header_inner,
+            text="📱 Real-Time Android & PC Cloud Synchronization",
+            font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=15, weight="bold"),
+            text_color=(Theme.BLACK, Theme.PAPER)
+        )
+        title.pack(anchor="w")
+
+        desc = ctk.CTkLabel(
+            header_inner,
+            text="Access your quotations, customer directory, catalog, and payments seamlessly across this Windows PC and Android phones. Changes on either device synchronize automatically in real-time.",
+            font=ctk.CTkFont(size=11),
+            text_color=("#615D56", "#A8A297"),
+            wraplength=720,
+            justify="left"
+        )
+        desc.pack(anchor="w", pady=(4, 0))
+
+        # 2. Status Indicator Card
+        status_card = ctk.CTkFrame(scroll, fg_color=Theme.CARD_BG, corner_radius=Theme.RADIUS_CARD, border_width=1, border_color=Theme.BORDER_COLOR)
+        status_card.pack(fill="x", pady=(0, 12), padx=4)
+
+        status_inner = ctk.CTkFrame(status_card, fg_color="transparent")
+        status_inner.pack(fill="x", padx=16, pady=12)
+
+        st_title = ctk.CTkLabel(
+            status_inner,
+            text="Current Database & Sync Status:",
+            font=ctk.CTkFont(size=12, weight="bold")
+        )
+        st_title.pack(anchor="w")
+
+        self.sync_status_badge = ctk.CTkLabel(
+            status_inner,
+            text="🔄 Checking status...",
+            font=ctk.CTkFont(size=12, weight="bold"),
+            text_color=Theme.PRIMARY
+        )
+        self.sync_status_badge.pack(anchor="w", pady=(4, 0))
+
+        # 3. Cloud Database Configuration
+        cfg_frame = ctk.CTkFrame(scroll, fg_color=Theme.CARD_BG, corner_radius=Theme.RADIUS_CARD, border_width=1, border_color=Theme.BORDER_COLOR)
+        cfg_frame.pack(fill="x", pady=(0, 12), padx=4)
+
+        cfg_inner = ctk.CTkFrame(cfg_frame, fg_color="transparent")
+        cfg_inner.pack(fill="x", padx=16, pady=12)
+
+        ctk.CTkLabel(
+            cfg_inner,
+            text="🌐 Cloud Connection Settings (Supabase / PostgreSQL / Render)",
+            font=ctk.CTkFont(size=13, weight="bold")
+        ).pack(anchor="w", pady=(0, 8))
+
+        # Cloud Database URL
+        ctk.CTkLabel(cfg_inner, text="Cloud Database URL (PostgreSQL / Supabase):", font=ctk.CTkFont(size=11, weight="bold")).pack(anchor="w", pady=(4, 2))
+        self.sync_db_url_entry = ctk.CTkEntry(
+            cfg_inner,
+            placeholder_text="postgresql://postgres:password@db.supabase.co:5432/postgres (Leave blank for local SQLite)",
+            height=34,
+            corner_radius=Theme.RADIUS_INPUT,
+            fg_color=Theme.INSET_BG,
+            border_color=Theme.INSET_BORDER,
+            border_width=Theme.BORDER_WIDTH_INPUT,
+            font=ctk.CTkFont(size=11)
+        )
+        self.sync_db_url_entry.pack(fill="x", pady=(0, 8))
+
+        # Cloud Server URL
+        ctk.CTkLabel(cfg_inner, text="Cloud API Server URL (FastAPI Backend):", font=ctk.CTkFont(size=11, weight="bold")).pack(anchor="w", pady=(4, 2))
+        self.sync_server_url_entry = ctk.CTkEntry(
+            cfg_inner,
+            placeholder_text="https://your-app.onrender.com or http://192.168.1.50:8000",
+            height=34,
+            corner_radius=Theme.RADIUS_INPUT,
+            fg_color=Theme.INSET_BG,
+            border_color=Theme.INSET_BORDER,
+            border_width=Theme.BORDER_WIDTH_INPUT,
+            font=ctk.CTkFont(size=11)
+        )
+        self.sync_server_url_entry.pack(fill="x", pady=(0, 10))
+
+        # Action Buttons
+        btn_row = ctk.CTkFrame(cfg_inner, fg_color="transparent")
+        btn_row.pack(fill="x", pady=(4, 0))
+
+        test_btn = ctk.CTkButton(
+            btn_row,
+            text="⚡ Test Cloud Connection",
+            font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11, weight="bold"),
+            fg_color=Theme.BTN_SECONDARY_BG,
+            hover_color=Theme.BTN_SECONDARY_HOVER,
+            text_color=(Theme.BLACK, Theme.PAPER),
+            corner_radius=Theme.RADIUS_PILL,
+            border_width=Theme.BORDER_WIDTH_BUTTON,
+            border_color=Theme.BTN_SECONDARY_BORDER,
+            command=self.test_cloud_connection,
+            height=32
+        )
+        test_btn.pack(side="left", padx=(0, 8))
+
+        save_sync_btn = ctk.CTkButton(
+            btn_row,
+            text="💾 Save Sync Settings",
+            font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11, weight="bold"),
+            fg_color=Theme.PRIMARY,
+            hover_color=Theme.PRIMARY_HOVER,
+            corner_radius=Theme.RADIUS_PILL,
+            command=self.save_sync_settings,
+            height=32
+        )
+        save_sync_btn.pack(side="left")
+
+        # 4. Local Showroom Wi-Fi Quick Access
+        wifi_frame = ctk.CTkFrame(scroll, fg_color=Theme.CARD_BG, corner_radius=Theme.RADIUS_CARD, border_width=1, border_color=Theme.BORDER_COLOR)
+        wifi_frame.pack(fill="x", pady=(0, 12), padx=4)
+
+        wifi_inner = ctk.CTkFrame(wifi_frame, fg_color="transparent")
+        wifi_inner.pack(fill="x", padx=16, pady=12)
+
+        ctk.CTkLabel(
+            wifi_inner,
+            text="📶 Showroom Local Wi-Fi Quick Connect (Instant Phone Access)",
+            font=ctk.CTkFont(size=13, weight="bold")
+        ).pack(anchor="w", pady=(0, 6))
+
+        local_ip = self.get_local_ip()
+        mobile_url = f"http://{local_ip}:8000/mobile/"
+
+        ctk.CTkLabel(
+            wifi_inner,
+            text=f"Open this URL on any Android phone connected to your showroom Wi-Fi network:\n{mobile_url}",
+            font=ctk.CTkFont(size=11, weight="bold"),
+            text_color=Theme.PRIMARY,
+            justify="left"
+        ).pack(anchor="w", pady=(0, 8))
+
+        wifi_btns = ctk.CTkFrame(wifi_inner, fg_color="transparent")
+        wifi_btns.pack(fill="x")
+
+        open_browser_btn = ctk.CTkButton(
+            wifi_btns,
+            text="🌐 Open Mobile App in Browser",
+            font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11, weight="bold"),
+            fg_color=Theme.BTN_SECONDARY_BG,
+            hover_color=Theme.BTN_SECONDARY_HOVER,
+            text_color=(Theme.BLACK, Theme.PAPER),
+            corner_radius=Theme.RADIUS_PILL,
+            border_width=Theme.BORDER_WIDTH_BUTTON,
+            border_color=Theme.BTN_SECONDARY_BORDER,
+            command=lambda: webbrowser.open(mobile_url),
+            height=32
+        )
+        open_browser_btn.pack(side="left", padx=(0, 8))
+
+    @staticmethod
+    def get_local_ip():
+        try:
+            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            s.connect(("8.8.8.8", 80))
+            ip = s.getsockname()[0]
+            s.close()
+            return ip
+        except Exception:
+            return "127.0.0.1"
+
+    def refresh_sync_status(self):
+        from app.database.connection import db
+        sync_cfg_path = DATA_DIR / "cloud_sync_config.json"
+        is_cloud = False
+        db_type = type(db).__name__
+        if sync_cfg_path.exists():
+            try:
+                with open(sync_cfg_path, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                    if data.get("database_url") or data.get("server_url"):
+                        is_cloud = True
+            except Exception:
+                pass
+
+        if is_cloud:
+            self.sync_status_badge.configure(
+                text=f"☁️ Cloud Mode Active ({db_type}) - Synchronized with Android Mobile",
+                text_color="#10B981"
+            )
+        else:
+            self.sync_status_badge.configure(
+                text="💻 Local Offline Mode Active (SQLite WAL) - Instant Desktop Performance",
+                text_color=Theme.PRIMARY
+            )
+
+    def test_cloud_connection(self):
+        db_url = self.sync_db_url_entry.get().strip()
+        srv_url = self.sync_server_url_entry.get().strip()
+
+        if not db_url and not srv_url:
+            msgbox.showinfo(
+                "Local Mode Active",
+                "Local SQLite database is active and working properly!\nEnter a cloud database or API server URL above to connect to cloud."
+            )
+            self.sync_status_badge.configure(
+                text="💻 Local Offline Mode Active (SQLite WAL)",
+                text_color=Theme.PRIMARY
+            )
+            return
+
+        status_messages = []
+        if db_url:
+            try:
+                from playhouse.db_url import connect
+                test_db = connect(db_url)
+                test_db.connect(reuse_if_open=True)
+                status_messages.append("✅ Cloud Database (PostgreSQL): Connected successfully!")
+                test_db.close()
+            except Exception as e:
+                status_messages.append(f"❌ Cloud Database Error: {str(e)}")
+
+        if srv_url:
+            try:
+                import urllib.request
+                health_url = srv_url.rstrip("/") + "/api/health"
+                req = urllib.request.Request(health_url, headers={"User-Agent": "AMA-Desktop-Client"})
+                with urllib.request.urlopen(req, timeout=5) as response:
+                    if response.status == 200:
+                        status_messages.append(f"✅ Cloud API Server: Online & Responsive ({srv_url})")
+                    else:
+                        status_messages.append(f"⚠️ Cloud API Server returned HTTP {response.status}")
+            except Exception as e:
+                status_messages.append(f"❌ Cloud API Server Error: {str(e)}")
+
+        msgbox.showinfo("Cloud Connection Test", "\n\n".join(status_messages))
+        self.refresh_sync_status()
+
+    def save_sync_settings(self):
+        sync_cfg_path = DATA_DIR / "cloud_sync_config.json"
+        payload = {
+            "database_url": self.sync_db_url_entry.get().strip(),
+            "server_url": self.sync_server_url_entry.get().strip()
+        }
+        try:
+            with open(sync_cfg_path, "w", encoding="utf-8") as f:
+                json.dump(payload, f, indent=2)
+            msgbox.showinfo(
+                "Sync Settings Saved",
+                "Cloud synchronization settings saved successfully!\n\nIf you changed the database URL, please restart the desktop application to connect to the cloud database."
+            )
+            self.refresh_sync_status()
+        except Exception as e:
+            msgbox.showerror("Error", f"Failed to save sync config: {str(e)}")
+
     def load_settings(self):
         s = self.setting
 
@@ -477,6 +743,23 @@ class CompanySettingsView(ctk.CTkFrame):
         terms_list = s.get_terms_list()
         self.terms_textbox.delete("1.0", "end")
         self.terms_textbox.insert("1.0", "\n".join(terms_list))
+
+        # Cloud Sync Config
+        sync_cfg_path = DATA_DIR / "cloud_sync_config.json"
+        if sync_cfg_path.exists():
+            try:
+                with open(sync_cfg_path, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                    if hasattr(self, "sync_db_url_entry"):
+                        self.sync_db_url_entry.delete(0, "end")
+                        self.sync_db_url_entry.insert(0, data.get("database_url", "") or "")
+                    if hasattr(self, "sync_server_url_entry"):
+                        self.sync_server_url_entry.delete(0, "end")
+                        self.sync_server_url_entry.insert(0, data.get("server_url", "") or "")
+            except Exception:
+                pass
+        if hasattr(self, "refresh_sync_status"):
+            self.refresh_sync_status()
 
     def update_logo_preview(self, file_path):
         try:
@@ -563,7 +846,17 @@ class CompanySettingsView(ctk.CTkFrame):
         s.set_terms_list(terms_cleaned or STANDARD_TERMS_AND_CONDITIONS)
 
         s.updated_at = datetime.now()
-        s.save()
+        if hasattr(self, "sync_db_url_entry") and hasattr(self, "sync_server_url_entry"):
+            sync_cfg_path = DATA_DIR / "cloud_sync_config.json"
+            payload = {
+                "database_url": self.sync_db_url_entry.get().strip(),
+                "server_url": self.sync_server_url_entry.get().strip()
+            }
+            try:
+                with open(sync_cfg_path, "w", encoding="utf-8") as f:
+                    json.dump(payload, f, indent=2)
+            except Exception:
+                pass
 
         if hasattr(self.controller, "update_sidebar_branding"):
             self.controller.update_sidebar_branding()

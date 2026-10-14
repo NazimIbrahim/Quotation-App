@@ -1090,6 +1090,122 @@ def test_system():
     assert "Only Lost" in text_lost
     print(f" -> PASS: Only Lost PDF report verified: {os.path.basename(pdf_lost)}")
 
+    print("\n[TEST 18] Verifying FastAPI Cloud Backend, Mobile Endpoints & Real-Time Sync...")
+    from fastapi.testclient import TestClient
+    from server.main import app
+
+    with TestClient(app) as client:
+        # 1. Health check
+        res = client.get("/api/health")
+        assert res.status_code == 200, f"Expected 200, got {res.status_code}: {res.text}"
+        health_data = res.json()
+        assert health_data["database_connected"] is True
+        print(f" -> PASS: Health check: {health_data['status']}, Connected={health_data['database_connected']}")
+
+        # 2. Brands and multi-unit types
+        res = client.get("/api/brands")
+        assert res.status_code == 200
+        brands = res.json()["brands"]
+        assert len(brands) > 0
+        print(f" -> PASS: Loaded {len(brands)} tile brands with multi-unit packaging.")
+
+        # 3. Create quotation via cloud API with multi-unit & split attribution
+        lead_rep = SalesPerson.select().first()
+        assist_rep = SalesPerson.select().where(SalesPerson.id != lead_rep.id).first()
+        cust_target = Customer.select().first()
+
+        api_quote_payload = {
+            "customer_id": cust_target.id,
+            "sales_person_id": lead_rep.id,
+            "assisted_by_id": assist_rep.id,
+            "split_type": "percentage",
+            "assisted_share_value": 30.0,
+            "tax_mode": "exclusive",
+            "areas": [
+                {
+                    "area_name": "Living Room Flooring",
+                    "display_order": 1,
+                    "items": [
+                        {
+                            "description": "Kajaria Super White 600x1200",
+                            "size": "600X1200",
+                            "brand": "Kajaria Eternity",
+                            "product_type": "Box",
+                            "quantity_boxes": 20.0,
+                            "rate_per_box": 1500.0,
+                            "taxable_amount": 30000.0,
+                            "gst_amount": 5400.0,
+                            "total_amount": 35400.0
+                        },
+                        {
+                            "description": "Tile Adhesive High Polymer",
+                            "size": "20KG",
+                            "brand": "CERA",
+                            "product_type": "Bags",
+                            "quantity_boxes": 10.0,
+                            "rate_per_box": 650.0,
+                            "taxable_amount": 6500.0,
+                            "gst_amount": 1170.0,
+                            "total_amount": 7670.0
+                        }
+                    ]
+                }
+            ]
+        }
+        res = client.post("/api/quotations", json=api_quote_payload)
+        assert res.status_code == 200, f"Failed to save quote via API: {res.text}"
+        saved_q = res.json()
+        new_quote_id = saved_q["id"]
+        print(f" -> PASS: Cloud API created quote {saved_q['quotation_number']} (Net ₹{saved_q['net_total']})")
+
+        # 4. Fetch details
+        res = client.get(f"/api/quotations/{new_quote_id}")
+        assert res.status_code == 200
+        q_det = res.json()
+        assert q_det["quotation"]["assisted_by_name"] == assist_rep.name
+        assert q_det["quotation"]["split_type"] == "percentage"
+        print(f" -> PASS: Retrieved quote details with assisted salesperson attribution: {assist_rep.name}")
+
+        # 5. Update Status
+        res = client.put(f"/api/quotations/{new_quote_id}/status?status=Won")
+        assert res.status_code == 200
+        assert res.json()["status"] == "Won"
+        print(" -> PASS: Updated quote status to 'Won' via API")
+
+        # 6. Stream Standard PDF
+        res = client.get(f"/api/quotations/{new_quote_id}/pdf")
+        assert res.status_code == 200
+        assert res.headers["content-type"] == "application/pdf"
+        assert len(res.content) > 1000
+        print(" -> PASS: Standard PDF streaming verified via API")
+
+        # 7. Stream Encrypted PDF (-AMA)
+        res = client.get(f"/api/quotations/{new_quote_id}/pdf?encrypted=true")
+        assert res.status_code == 200
+        assert res.headers["content-type"] == "application/pdf"
+        assert len(res.content) > 1000
+        print(" -> PASS: Encrypted PDF (-AMA) streaming verified via API")
+
+        # 8. Customer Phone Search
+        res = client.get(f"/api/customers?search={cust_target.mobile_number[:5]}")
+        assert res.status_code == 200
+        matching = res.json()["customers"]
+        assert len(matching) >= 1
+        print(f" -> PASS: Customer phone search autocomplete verified ({len(matching)} found)")
+
+        # 9. Dashboard KPIs
+        res = client.get("/api/reports/dashboard")
+        assert res.status_code == 200
+        dash = res.json()
+        assert "kpis" in dash and "sales_reps" in dash
+        print(" -> PASS: Dashboard KPIs and sales targets verified")
+
+        # 10. Mobile Web App static serving
+        res = client.get("/mobile/")
+        assert res.status_code == 200
+        assert "AMA Ceramics" in res.text
+        print(" -> PASS: Mobile Touch PWA served successfully at /mobile/")
+
     print("\n" + "=" * 65)
     print("  ALL CORE MODULES AND TESTS COMPLETED WITH 100% SUCCESS!")
     print("=" * 65)

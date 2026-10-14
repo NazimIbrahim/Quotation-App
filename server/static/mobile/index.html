@@ -1,0 +1,1149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>AMA Ceramics — Quotation Management</title>
+  <link rel="manifest" href="/mobile/manifest.json">
+  <meta name="theme-color" content="#1565C0">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="icon" type="image/png" href="/mobile/icon-192.png">
+
+  <style>
+    :root {
+      --primary: #1565C0;
+      --primary-hover: #0D47A1;
+      --secondary: #1976D2;
+      --coral: #E05A47;
+      --bg: #F8FAFC;
+      --card-bg: #FFFFFF;
+      --text-main: #0F172A;
+      --text-muted: #64748B;
+      --border: #E2E8F0;
+      --success: #059669;
+      --warning: #D97706;
+      --danger: #DC2626;
+      --radius: 12px;
+      --radius-sm: 8px;
+      --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+      --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.08);
+      --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    body {
+      font-family: var(--font);
+      background-color: var(--bg);
+      color: var(--text-main);
+      padding-bottom: 74px;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Top App Bar */
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: var(--card-bg);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+    }
+    .brand-wrap { display: flex; align-items: center; gap: 10px; }
+    .brand-logo {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: var(--primary);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+      font-size: 14px;
+      letter-spacing: -0.5px;
+    }
+    .brand-title { font-size: 15px; font-weight: 800; color: var(--primary); }
+    .brand-sub { font-size: 10px; color: var(--text-muted); }
+    .sync-badge {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 8px;
+      border-radius: 20px;
+      background: #ECFDF5;
+      color: var(--success);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .sync-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--success); }
+
+    /* Bottom Navigation Bar */
+    nav.bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 60px;
+      background: var(--card-bg);
+      border-top: 1px solid var(--border);
+      display: flex;
+      z-index: 100;
+    }
+    .nav-item {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      color: var(--text-muted);
+      font-size: 10px;
+      font-weight: 600;
+      cursor: pointer;
+      user-select: none;
+      transition: color 0.15s ease;
+    }
+    .nav-item.active { color: var(--primary); font-weight: 800; }
+    .nav-icon { font-size: 18px; }
+
+    /* Views Container */
+    .view-container { padding: 16px; max-width: 680px; margin: 0 auto; display: none; }
+    .view-container.active { display: block; animation: fadeIn 0.15s ease; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* Cards */
+    .card {
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      padding: 14px;
+      margin-bottom: 12px;
+      box-shadow: var(--shadow);
+    }
+    .card-title { font-size: 14px; font-weight: 700; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+
+    /* Search & Filter Bar */
+    .search-box {
+      display: flex;
+      align-items: center;
+      background: #FFFFFF;
+      border: 1px solid var(--border);
+      border-radius: 30px;
+      padding: 6px 14px;
+      margin-bottom: 12px;
+    }
+    .search-box input {
+      border: none;
+      outline: none;
+      width: 100%;
+      font-size: 13px;
+      font-family: inherit;
+    }
+    .filter-pills {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      padding-bottom: 8px;
+      margin-bottom: 10px;
+      scrollbar-width: none;
+    }
+    .filter-pills::-webkit-scrollbar { display: none; }
+    .pill {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 5px 12px;
+      border-radius: 20px;
+      background: #FFFFFF;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      white-space: nowrap;
+      cursor: pointer;
+    }
+    .pill.active { background: var(--primary); color: white; border-color: var(--primary); }
+
+    /* Quotation Card */
+    .quote-card {
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      padding: 14px;
+      margin-bottom: 12px;
+      box-shadow: var(--shadow);
+    }
+    .quote-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+    .q-num { font-size: 14px; font-weight: 800; color: var(--text-main); }
+    .q-date { font-size: 11px; color: var(--text-muted); }
+    .q-badge {
+      font-size: 10px;
+      font-weight: 800;
+      padding: 2px 8px;
+      border-radius: 12px;
+      text-transform: uppercase;
+    }
+    .badge-won { background: #ECFDF5; color: var(--success); }
+    .badge-open { background: #E0F2FE; color: var(--secondary); }
+    .badge-in-review { background: #FEF3C7; color: var(--warning); }
+    .badge-lost { background: #FEE2E2; color: var(--danger); }
+
+    .q-cust { font-size: 13px; font-weight: 700; margin-bottom: 2px; }
+    .q-phone { font-size: 11px; color: var(--text-muted); margin-bottom: 6px; }
+    .q-rep { font-size: 11px; color: #475569; margin-bottom: 8px; }
+
+    .q-totals {
+      display: flex;
+      justify-content: space-between;
+      border-top: 1px dashed var(--border);
+      padding-top: 8px;
+      margin-top: 8px;
+    }
+    .q-val-label { font-size: 10px; color: var(--text-muted); }
+    .q-val-num { font-size: 13px; font-weight: 800; color: var(--text-main); }
+
+    .q-actions {
+      display: flex;
+      gap: 6px;
+      margin-top: 10px;
+      border-top: 1px solid #F1F5F9;
+      padding-top: 10px;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 8px 12px;
+      border-radius: var(--radius-sm);
+      border: none;
+      cursor: pointer;
+      text-decoration: none;
+      font-family: inherit;
+    }
+    .btn-primary { background: var(--primary); color: white; }
+    .btn-secondary { background: #F1F5F9; color: var(--text-main); border: 1px solid var(--border); }
+    .btn-wa { background: #25D366; color: white; }
+    .btn-enc { background: #334155; color: white; }
+    .btn-block { width: 100%; height: 42px; font-size: 13px; border-radius: var(--radius); }
+
+    /* Form Inputs */
+    .form-group { margin-bottom: 12px; }
+    .form-label { font-size: 11px; font-weight: 700; color: var(--text-main); margin-bottom: 4px; display: block; }
+    .form-input, .form-select {
+      width: 100%;
+      height: 38px;
+      padding: 6px 10px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-size: 12px;
+      font-family: inherit;
+      background: #FFFFFF;
+      outline: none;
+    }
+    .form-input:focus, .form-select:focus { border-color: var(--primary); }
+    .form-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+    /* Item Box */
+    .item-box {
+      background: #F8FAFC;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 10px;
+      margin-bottom: 10px;
+      position: relative;
+    }
+    .item-del-btn {
+      position: absolute;
+      top: 6px;
+      right: 8px;
+      background: none;
+      border: none;
+      color: var(--danger);
+      font-size: 14px;
+      font-weight: 900;
+      cursor: pointer;
+    }
+    .unit-tag {
+      display: inline-block;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: #E2E8F0;
+      color: #334155;
+      margin-left: 4px;
+    }
+
+    /* KPI Grid */
+    .kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+    .kpi-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 12px;
+    }
+    .kpi-lbl { font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px; }
+    .kpi-val { font-size: 17px; font-weight: 900; color: var(--primary); }
+    .kpi-sub { font-size: 9px; color: var(--text-muted); margin-top: 2px; }
+
+    /* Notification Banner */
+    .toast {
+      position: fixed;
+      top: 14px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #0F172A;
+      color: white;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      z-index: 200;
+      display: none;
+      box-shadow: var(--shadow-lg);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top App Header -->
+  <header>
+    <div class="brand-wrap">
+      <div class="brand-logo">AMA</div>
+      <div>
+        <div class="brand-title">AMA Ceramics</div>
+        <div class="brand-sub">Quotation System v2.0</div>
+      </div>
+    </div>
+    <div class="sync-badge" id="syncStatus">
+      <span class="sync-dot"></span> Synced
+    </div>
+  </header>
+
+  <div class="toast" id="toastMsg"></div>
+
+  <!-- VIEW 1: QUOTATIONS LIST -->
+  <div class="view-container active" id="viewQuotations">
+    <div class="search-box">
+      <input type="text" id="quoteSearchInput" placeholder="🔍 Search quotes, customers, phone..." oninput="onSearchQuotes()">
+    </div>
+
+    <div class="filter-pills">
+      <div class="pill active" onclick="setFilterStatus('All', this)">All</div>
+      <div class="pill" onclick="setFilterStatus('Won', this)">Won</div>
+      <div class="pill" onclick="setFilterStatus('Open', this)">Open</div>
+      <div class="pill" onclick="setFilterStatus('In-Review', this)">In-Review</div>
+      <div class="pill" onclick="setFilterStatus('Lost', this)">Lost</div>
+    </div>
+
+    <div id="quotesListContainer">
+      <div style="text-align:center; padding: 40px; color: var(--text-muted);">Loading quotations...</div>
+    </div>
+  </div>
+
+  <!-- VIEW 2: NEW / EDIT QUOTATION -->
+  <div class="view-container" id="viewNewQuote">
+    <div class="card">
+      <div class="card-title">
+        <span>Create Quotation</span>
+        <button class="btn btn-secondary" onclick="resetQuoteForm()" style="padding: 4px 8px; font-size: 10px;">Clear Form</button>
+      </div>
+
+      <!-- Customer Selection -->
+      <div class="form-group">
+        <label class="form-label">Customer Name or Mobile Number *</label>
+        <input type="text" class="form-input" id="custSearchInput" placeholder="Type name or 10-digit phone..." oninput="searchCustomerAutocomplete()">
+        <input type="hidden" id="selectedCustId">
+        <div id="custSuggestionsBox" style="background:#FFF; border:1px solid var(--border); border-radius:6px; max-height:120px; overflow-y:auto; display:none; margin-top:2px;"></div>
+      </div>
+
+      <div class="form-grid-2">
+        <div class="form-group">
+          <label class="form-label">Customer Mobile</label>
+          <input type="text" class="form-input" id="custPhoneInput" placeholder="+91 98...">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Site / Project Location</label>
+          <input type="text" class="form-input" id="custSiteInput" placeholder="e.g. Bopal Villa">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Delivery Address</label>
+        <input type="text" class="form-input" id="custAddressInput" placeholder="Full delivery address...">
+      </div>
+
+      <div class="form-grid-2">
+        <div class="form-group">
+          <label class="form-label">Primary Sales Rep</label>
+          <select class="form-select" id="salesRepSelect"></select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Assisted Deal Split</label>
+          <select class="form-select" id="assistedRepSelect"></select>
+        </div>
+      </div>
+
+      <div class="form-grid-2">
+        <div class="form-group">
+          <label class="form-label">Split Type</label>
+          <select class="form-select" id="splitTypeSelect">
+            <option value="none">No Split (100% Primary)</option>
+            <option value="percentage">50% / 50% Split</option>
+            <option value="amount">Custom Amount Split</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Tax Calculation Mode</label>
+          <select class="form-select" id="taxModeSelect" onchange="recalculateTotals()">
+            <option value="exclusive">18% GST (Exclusive)</option>
+            <option value="inclusive">18% GST (Inclusive)</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quotation Items -->
+    <div class="card">
+      <div class="card-title">
+        <span>Line Items</span>
+        <button class="btn btn-secondary" onclick="addItemRow()">+ Add Item</button>
+      </div>
+
+      <div id="itemsContainer"></div>
+
+      <!-- Lump-sum target discount with CERA exclusion -->
+      <div class="form-group" style="margin-top: 14px; border-top: 1px dashed var(--border); padding-top: 10px;">
+        <label class="form-label">🎯 Target Lump-Sum Deal Amount (₹)</label>
+        <input type="number" class="form-input" id="targetTotalInput" placeholder="e.g. 100000 (CERA items automatically excluded)" oninput="applyLumpSumDiscount()">
+        <span style="font-size: 10px; color: var(--text-muted);">Adjusts non-CERA rates proportionally. CERA items remain 0% discount.</span>
+      </div>
+
+      <!-- Financial Totals -->
+      <div style="background: #F8FAFC; border-radius: var(--radius-sm); padding: 10px; margin-top: 10px;">
+        <div style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:4px;">
+          <span style="color:var(--text-muted);">Taxable Total:</span>
+          <span id="txtTaxableTotal">₹ 0.00</span>
+        </div>
+        <div style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:4px;">
+          <span style="color:var(--text-muted);">Total GST (18%):</span>
+          <span id="txtGstTotal">₹ 0.00</span>
+        </div>
+        <div style="display:flex; justify-content:space-between; font-size:14px; font-weight:800; border-top:1px dashed #CBD5E1; padding-top:6px;">
+          <span>Net Total:</span>
+          <span id="txtNetTotal" style="color:var(--primary);">₹ 0.00</span>
+        </div>
+      </div>
+
+      <div style="margin-top: 14px;">
+        <button class="btn btn-primary btn-block" onclick="saveQuotation()">💾 Save Quotation & Sync</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- VIEW 3: CUSTOMERS -->
+  <div class="view-container" id="viewCustomers">
+    <div class="search-box">
+      <input type="text" id="custDirectorySearch" placeholder="🔍 Search customers by name or phone..." oninput="loadCustomers()">
+    </div>
+    <div id="customersListContainer"></div>
+  </div>
+
+  <!-- VIEW 4: DASHBOARD -->
+  <div class="view-container" id="viewDashboard">
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-lbl">Won Sales</div>
+        <div class="kpi-val" id="dashWonVal">₹ 0</div>
+        <div class="kpi-sub" id="dashWonQuotes">0 Deals Closed</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-lbl">Pipeline Value</div>
+        <div class="kpi-val" id="dashPipeVal" style="color:#0284C7;">₹ 0</div>
+        <div class="kpi-sub">Open & In-Review</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-lbl">Cleared Collections</div>
+        <div class="kpi-val" id="dashClearedVal" style="color:var(--success);">₹ 0</div>
+        <div class="kpi-sub">Realized in bank</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-lbl">Outstanding Balance</div>
+        <div class="kpi-val" id="dashBalVal" style="color:var(--danger);">₹ 0</div>
+        <div class="kpi-sub">Pending receivables</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Sales Team Performance</div>
+      <div id="teamProgressContainer"></div>
+    </div>
+  </div>
+
+  <!-- VIEW 5: PAYMENTS -->
+  <div class="view-container" id="viewPayments">
+    <div class="card">
+      <div class="card-title">Record Payment / Advance</div>
+      <div class="form-group">
+        <label class="form-label">Quotation</label>
+        <select class="form-select" id="payQuoteSelect"></select>
+      </div>
+      <div class="form-grid-2">
+        <div class="form-group">
+          <label class="form-label">Amount (₹) *</label>
+          <input type="number" class="form-input" id="payAmountInput" placeholder="e.g. 50000">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Payment Mode</label>
+          <select class="form-select" id="payModeSelect">
+            <option>UPI (Google Pay / PhonePe)</option>
+            <option>NEFT / RTGS Bank Transfer</option>
+            <option>Cheque</option>
+            <option>Cash</option>
+          </select>
+        </div>
+      </div>
+      <button class="btn btn-primary btn-block" onclick="recordPayment()">💳 Record & Clear Payment</button>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Recent Collections</div>
+      <div id="paymentsListContainer"></div>
+    </div>
+  </div>
+
+  <!-- Bottom Navigation Bar -->
+  <nav class="bottom-nav">
+    <div class="nav-item active" onclick="switchNav('viewQuotations', this)">
+      <div class="nav-icon">📑</div>
+      <span>Quotes</span>
+    </div>
+    <div class="nav-item" onclick="switchNav('viewNewQuote', this)">
+      <div class="nav-icon">➕</div>
+      <span>New</span>
+    </div>
+    <div class="nav-item" onclick="switchNav('viewCustomers', this)">
+      <div class="nav-icon">👥</div>
+      <span>Customers</span>
+    </div>
+    <div class="nav-item" onclick="switchNav('viewDashboard', this)">
+      <div class="nav-icon">📊</div>
+      <span>Dashboard</span>
+    </div>
+    <div class="nav-item" onclick="switchNav('viewPayments', this)">
+      <div class="nav-icon">💳</div>
+      <span>Payments</span>
+    </div>
+  </nav>
+
+  <script>
+    const API_BASE = window.location.origin + "/api";
+    let catalogBrands = [];
+    let salesTeam = [];
+    let activeFilterStatus = "All";
+
+    // Show temporary toast message
+    function showToast(msg) {
+      const t = document.getElementById("toastMsg");
+      t.innerText = msg;
+      t.style.display = "block";
+      setTimeout(() => { t.style.display = "none"; }, 3000);
+    }
+
+    // Navigation Switcher
+    function switchNav(viewId, el) {
+      document.querySelectorAll(".view-container").forEach(v => v.classList.remove("active"));
+      document.querySelectorAll(".nav-item").forEach(n => n.classList.remove("active"));
+      document.getElementById(viewId).classList.add("active");
+      if (el) el.classList.add("active");
+
+      if (viewId === "viewQuotations") loadQuotations();
+      if (viewId === "viewCustomers") loadCustomers();
+      if (viewId === "viewDashboard") loadDashboard();
+      if (viewId === "viewPayments") loadPayments();
+      if (viewId === "viewNewQuote" && document.getElementById("itemsContainer").children.length === 0) {
+        addItemRow();
+      }
+    }
+
+    // 1. Initial Data Loader
+    async function initApp() {
+      try {
+        const [brandsRes, teamRes] = await Promise.all([
+          fetch(API_BASE + "/brands").then(r => r.json()),
+          fetch(API_BASE + "/salespersons").then(r => r.json()),
+        ]);
+
+        catalogBrands = brandsRes.brands || [];
+        salesTeam = teamRes.sales_team || [];
+
+        // Populate Sales Rep Selects
+        const spSel = document.getElementById("salesRepSelect");
+        const asstSel = document.getElementById("assistedRepSelect");
+        spSel.innerHTML = "";
+        asstSel.innerHTML = '<option value="">None (Single Rep)</option>';
+
+        salesTeam.forEach(sp => {
+          spSel.innerHTML += `<option value="${sp.id}">${sp.name} (${sp.role})</option>`;
+          asstSel.innerHTML += `<option value="${sp.id}">${sp.name} (${sp.role})</option>`;
+        });
+
+        loadQuotations();
+      } catch (e) {
+        console.error("Init Error:", e);
+        document.getElementById("syncStatus").innerHTML = '<span class="sync-dot" style="background:#DC2626;"></span> Offline';
+      }
+    }
+
+    // 2. Load Quotations
+    async function loadQuotations() {
+      const q = document.getElementById("quoteSearchInput").value.trim();
+      let url = `${API_BASE}/quotations?search=${encodeURIComponent(q)}`;
+      if (activeFilterStatus !== "All") url += `&status=${encodeURIComponent(activeFilterStatus)}`;
+
+      try {
+        const res = await fetch(url).then(r => r.json());
+        const list = res.quotations || [];
+        const box = document.getElementById("quotesListContainer");
+
+        if (list.length === 0) {
+          box.innerHTML = `<div style="text-align:center; padding: 40px; color: var(--text-muted);">No quotations found.</div>`;
+          return;
+        }
+
+        let html = "";
+        list.forEach(q => {
+          const badgeClass = `badge-${(q.status || "").toLowerCase().replace(' ', '-')}`;
+          const waText = encodeURIComponent(`Hello ${q.customer_name},\nHere is your quotation ${q.quotation_number} from AMA Ceramics.\nTotal: Rs. ${Number(q.net_total).toLocaleString('en-IN')}\nView PDF: ${window.location.origin}/api/quotations/${q.id}/pdf`);
+
+          html += `
+            <div class="quote-card">
+              <div class="quote-head">
+                <div>
+                  <div class="q-num">${q.quotation_number}</div>
+                  <div class="q-date">${q.quotation_date}</div>
+                </div>
+                <span class="q-badge ${badgeClass}">${q.status}</span>
+              </div>
+              <div class="q-cust">${q.customer_name}</div>
+              <div class="q-phone">📱 ${q.customer_phone || "-"}</div>
+              <div class="q-rep">👤 ${q.sales_person_name}${q.assisted_by_name ? ` (Asst: ${q.assisted_by_name})` : ""}</div>
+
+              <div class="q-totals">
+                <div>
+                  <div class="q-val-label">Net Valuation</div>
+                  <div class="q-val-num">₹ ${Number(q.net_total).toLocaleString('en-IN')}</div>
+                </div>
+                <div style="text-align:right;">
+                  <div class="q-val-label">Cleared / Bal</div>
+                  <div class="q-val-num" style="color:var(--success);">₹ ${Number(q.cleared_payments).toLocaleString('en-IN')} <span style="font-size:10px; color:var(--danger);">(₹ ${Number(q.outstanding_balance).toLocaleString('en-IN')})</span></div>
+                </div>
+              </div>
+
+              <div class="q-actions">
+                <a class="btn btn-primary" href="${API_BASE}/quotations/${q.id}/pdf" target="_blank">📄 PDF</a>
+                <a class="btn btn-enc" href="${API_BASE}/quotations/${q.id}/pdf?encrypted=true" target="_blank">🔒 Enc</a>
+                <a class="btn btn-wa" href="https://wa.me/${(q.customer_phone || '').replace(/[^0-9]/g, '')}?text=${waText}" target="_blank">💬 WhatsApp</a>
+              </div>
+            </div>
+          `;
+        });
+        box.innerHTML = html;
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    function setFilterStatus(st, el) {
+      activeFilterStatus = st;
+      document.querySelectorAll(".filter-pills .pill").forEach(p => p.classList.remove("active"));
+      el.classList.add("active");
+      loadQuotations();
+    }
+
+    let searchTimer = null;
+    function onSearchQuotes() {
+      clearTimeout(searchTimer);
+      searchTimer = setTimeout(loadQuotations, 250);
+    }
+
+    // 3. Customer Autocomplete
+    let custTimer = null;
+    function searchCustomerAutocomplete() {
+      clearTimeout(custTimer);
+      const val = document.getElementById("custSearchInput").value.trim();
+      const box = document.getElementById("custSuggestionsBox");
+
+      if (val.length < 2) {
+        box.style.display = "none";
+        return;
+      }
+
+      custTimer = setTimeout(async () => {
+        const res = await fetch(`${API_BASE}/customers?search=${encodeURIComponent(val)}`).then(r => r.json());
+        const custs = res.customers || [];
+        if (custs.length === 0) {
+          box.style.display = "none";
+          return;
+        }
+
+        let html = "";
+        custs.forEach(c => {
+          html += `<div style="padding: 8px 10px; border-bottom:1px solid #F1F5F9; font-size:12px; cursor:pointer;" onclick="selectCustomer(${JSON.stringify(c).replace(/"/g, '&quot;')})">
+            <b>${c.name}</b> (${c.mobile_number})<br><small style="color:var(--text-muted);">${c.delivery_address || ''}</small>
+          </div>`;
+        });
+        box.innerHTML = html;
+        box.style.display = "block";
+      }, 200);
+    }
+
+    function selectCustomer(c) {
+      document.getElementById("selectedCustId").value = c.id;
+      document.getElementById("custSearchInput").value = c.name;
+      document.getElementById("custPhoneInput").value = c.mobile_number;
+      document.getElementById("custAddressInput").value = c.delivery_address || "";
+      document.getElementById("custSiteInput").value = c.site_location || "";
+      document.getElementById("custSuggestionsBox").style.display = "none";
+    }
+
+    // 4. Line Items Builder
+    let itemCounter = 0;
+    function addItemRow() {
+      itemCounter++;
+      const id = itemCounter;
+      const c = document.getElementById("itemsContainer");
+
+      const div = document.createElement("div");
+      div.className = "item-box";
+      div.id = `itemRow_${id}`;
+
+      // Build Brands Options
+      let brandOpts = "";
+      catalogBrands.forEach(b => {
+        brandOpts += `<option value="${b.name}">${b.name}</option>`;
+      });
+
+      div.innerHTML = `
+        <button class="item-del-btn" onclick="removeItemRow(${id})">✕</button>
+        <div class="form-group" style="margin-bottom:6px;">
+          <label class="form-label">Item Description</label>
+          <input type="text" class="form-input item-desc" value="AMA Signature Vitrified Tile">
+        </div>
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label class="form-label">Brand</label>
+            <select class="form-select item-brand" onchange="onBrandChanged(${id})">${brandOpts}</select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Size <span class="unit-tag item-unit-tag">Box</span></label>
+            <select class="form-select item-size" onchange="onSizeChanged(${id})"></select>
+          </div>
+        </div>
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label class="form-label item-qty-lbl">Quantity (Boxes)</label>
+            <input type="number" class="form-input item-qty" value="10" oninput="recalculateTotals()">
+          </div>
+          <div class="form-group">
+            <label class="form-label item-rate-lbl">Rate (₹/Box)</label>
+            <input type="number" class="form-input item-rate" value="1000" oninput="recalculateTotals()">
+          </div>
+        </div>
+        <div style="text-align:right; font-size:12px; font-weight:800; color:var(--text-main); margin-top:2px;">
+          Line Total: <span class="item-total-txt">₹ 10,000.00</span>
+        </div>
+        <input type="hidden" class="item-coverage" value="15.5">
+        <input type="hidden" class="item-ptype" value="Box">
+      `;
+      c.appendChild(div);
+      onBrandChanged(id);
+    }
+
+    function removeItemRow(id) {
+      const el = document.getElementById(`itemRow_${id}`);
+      if (el) el.remove();
+      recalculateTotals();
+    }
+
+    function onBrandChanged(id) {
+      const row = document.getElementById(`itemRow_${id}`);
+      const bName = row.querySelector(".item-brand").value;
+      const bObj = catalogBrands.find(b => b.name === bName);
+      const sizeSel = row.querySelector(".item-size");
+      sizeSel.innerHTML = "";
+
+      if (bObj && bObj.sizes) {
+        bObj.sizes.forEach(s => {
+          sizeSel.innerHTML += `<option value="${s.size}" data-ptype="${s.product_type}" data-cov="${s.coverage_sqft}" data-rbox="${s.default_rate_box}" data-rsqft="${s.default_rate_sqft}">${s.size} (${s.product_type})</option>`;
+        });
+      }
+      onSizeChanged(id);
+    }
+
+    function onSizeChanged(id) {
+      const row = document.getElementById(`itemRow_${id}`);
+      const sizeSel = row.querySelector(".item-size");
+      const opt = sizeSel.options[sizeSel.selectedIndex];
+      if (!opt) return;
+
+      const ptype = opt.getAttribute("data-ptype") || "Box";
+      const cov = parseFloat(opt.getAttribute("data-cov") || "15.5");
+      const rbox = parseFloat(opt.getAttribute("data-rbox") || "0");
+      const rsqft = parseFloat(opt.getAttribute("data-rsqft") || "0");
+
+      row.querySelector(".item-unit-tag").innerText = ptype;
+      row.querySelector(".item-ptype").value = ptype;
+      row.querySelector(".item-coverage").value = cov;
+
+      const qtyLbl = row.querySelector(".item-qty-lbl");
+      const rateLbl = row.querySelector(".item-rate-lbl");
+      const rateInput = row.querySelector(".item-rate");
+
+      if (ptype === "Sqft") {
+        qtyLbl.innerText = "Quantity (Sqft)";
+        rateLbl.innerText = "Rate (₹/Sqft)";
+        if (rsqft > 0) rateInput.value = rsqft;
+      } else if (ptype === "Box") {
+        qtyLbl.innerText = "Quantity (Boxes)";
+        rateLbl.innerText = "Rate (₹/Box)";
+        if (rbox > 0) rateInput.value = rbox;
+      } else {
+        qtyLbl.innerText = `Quantity (${ptype})`;
+        rateLbl.innerText = `Rate (₹/${ptype})`;
+        if (rbox > 0) rateInput.value = rbox;
+      }
+
+      recalculateTotals();
+    }
+
+    function recalculateTotals() {
+      let taxableSum = 0;
+      let grossSum = 0;
+      const isInclusive = document.getElementById("taxModeSelect").value === "inclusive";
+
+      document.querySelectorAll(".item-box").forEach(row => {
+        const qty = parseFloat(row.querySelector(".item-qty").value || 0);
+        const rate = parseFloat(row.querySelector(".item-rate").value || 0);
+        const lineVal = qty * rate;
+
+        row.querySelector(".item-total-txt").innerText = `₹ ${lineVal.toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
+
+        let taxable = lineVal;
+        let lineGross = lineVal;
+        if (isInclusive) {
+          taxable = lineVal / 1.18;
+          lineGross = lineVal;
+        } else {
+          taxable = lineVal;
+          lineGross = lineVal * 1.18;
+        }
+
+        taxableSum += taxable;
+        grossSum += lineGross;
+      });
+
+      const gstSum = grossSum - taxableSum;
+
+      document.getElementById("txtTaxableTotal").innerText = `₹ ${taxableSum.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+      document.getElementById("txtGstTotal").innerText = `₹ ${gstSum.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+      document.getElementById("txtNetTotal").innerText = `₹ ${grossSum.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+    }
+
+    // 5. CERA Discount Exclusion Formula
+    function isCeraBrand(bName, desc) {
+      const reg = /\bCERA\b/i;
+      return reg.test(bName || "") || reg.test(desc || "");
+    }
+
+    function applyLumpSumDiscount() {
+      const target = parseFloat(document.getElementById("targetTotalInput").value || 0);
+      if (target <= 0) return;
+
+      const rows = Array.from(document.querySelectorAll(".item-box"));
+      let grossCurrent = 0;
+      let ceraCurrent = 0;
+      let nonCeraCurrent = 0;
+
+      rows.forEach(r => {
+        const q = parseFloat(r.querySelector(".item-qty").value || 0);
+        const rate = parseFloat(r.querySelector(".item-rate").value || 0);
+        const line = q * rate;
+        const b = r.querySelector(".item-brand").value;
+        const d = r.querySelector(".item-desc").value;
+
+        grossCurrent += line;
+        if (isCeraBrand(b, d)) ceraCurrent += line;
+        else nonCeraCurrent += line;
+      });
+
+      const discountAmt = grossCurrent - target;
+      if (discountAmt <= 0 || nonCeraCurrent <= 0) return;
+
+      const nonCeraTarget = nonCeraCurrent - discountAmt;
+      const factor = nonCeraTarget / nonCeraCurrent;
+
+      rows.forEach(r => {
+        const b = r.querySelector(".item-brand").value;
+        const d = r.querySelector(".item-desc").value;
+        if (!isCeraBrand(b, d)) {
+          const curRate = parseFloat(r.querySelector(".item-rate").value || 0);
+          r.querySelector(".item-rate").value = (curRate * factor).toFixed(2);
+        }
+      });
+
+      recalculateTotals();
+      showToast("CERA items preserved at 0% discount. Non-CERA rates adjusted!");
+    }
+
+    // 6. Save Quotation
+    async function saveQuotation() {
+      let custId = document.getElementById("selectedCustId").value;
+      const custName = document.getElementById("custSearchInput").value.trim();
+      const custPhone = document.getElementById("custPhoneInput").value.trim();
+      const custAddr = document.getElementById("custAddressInput").value.trim();
+      const custSite = document.getElementById("custSiteInput").value.trim();
+
+      if (!custName || !custPhone) {
+        alert("Please enter customer name and mobile number.");
+        return;
+      }
+
+      // If customer doesn't have an ID, create customer first
+      if (!custId) {
+        const cRes = await fetch(API_BASE + "/customers", {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify({
+            name: custName,
+            mobile_number: custPhone,
+            delivery_address: custAddr || "Ahmedabad",
+            site_location: custSite
+          })
+        }).then(r => r.json());
+        custId = cRes.id;
+      }
+
+      const items = [];
+      document.querySelectorAll(".item-box").forEach((r, idx) => {
+        const ptype = r.querySelector(".item-ptype").value;
+        const qty = parseFloat(r.querySelector(".item-qty").value || 0);
+        const rate = parseFloat(r.querySelector(".item-rate").value || 0);
+        const cov = parseFloat(r.querySelector(".item-coverage").value || 1);
+
+        items.push({
+          sl_no: idx + 1,
+          description: r.querySelector(".item-desc").value || "Ceramic Tile",
+          brand: r.querySelector(".item-brand").value,
+          size: r.querySelector(".item-size").value,
+          product_type: ptype,
+          coverage_area: cov,
+          quantity_boxes: ptype === "Box" ? qty : (qty / (cov || 1)),
+          rate_per_box: ptype === "Box" ? rate : (rate * cov),
+          quantity_sqft: ptype === "Sqft" ? qty : (qty * cov),
+          rate_per_sqft: ptype === "Sqft" ? rate : (rate / (cov || 1)),
+          tax_mode: document.getElementById("taxModeSelect").value,
+          total_amount: qty * rate
+        });
+      });
+
+      if (items.length === 0) {
+        alert("Please add at least one line item.");
+        return;
+      }
+
+      const payload = {
+        customer_id: parseInt(custId),
+        sales_person_id: parseInt(document.getElementById("salesRepSelect").value),
+        assisted_by_id: document.getElementById("assistedRepSelect").value ? parseInt(document.getElementById("assistedRepSelect").value) : null,
+        split_type: document.getElementById("splitTypeSelect").value,
+        assisted_share_value: 50.0,
+        tax_mode: document.getElementById("taxModeSelect").value,
+        project_name: custSite,
+        areas: [{
+          area_name: "Ground Floor Supply",
+          display_order: 1,
+          items: items
+        }]
+      };
+
+      try {
+        const res = await fetch(API_BASE + "/quotations", {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify(payload)
+        }).then(r => r.json());
+
+        if (res.success) {
+          showToast(`Quotation ${res.quotation_number} saved & synced!`);
+          resetQuoteForm();
+          switchNav("viewQuotations", document.querySelectorAll(".nav-item")[0]);
+        } else {
+          alert("Error saving: " + JSON.stringify(res));
+        }
+      } catch (e) {
+        alert("Error saving quotation: " + e.message);
+      }
+    }
+
+    function resetQuoteForm() {
+      document.getElementById("selectedCustId").value = "";
+      document.getElementById("custSearchInput").value = "";
+      document.getElementById("custPhoneInput").value = "";
+      document.getElementById("custAddressInput").value = "";
+      document.getElementById("custSiteInput").value = "";
+      document.getElementById("itemsContainer").innerHTML = "";
+      document.getElementById("targetTotalInput").value = "";
+      addItemRow();
+    }
+
+    // 7. Customers Directory
+    async function loadCustomers() {
+      const q = document.getElementById("custDirectorySearch").value.trim();
+      const res = await fetch(`${API_BASE}/customers?search=${encodeURIComponent(q)}`).then(r => r.json());
+      const box = document.getElementById("customersListContainer");
+      const custs = res.customers || [];
+
+      if (custs.length === 0) {
+        box.innerHTML = `<div style="text-align:center; padding: 40px; color: var(--text-muted);">No customers found.</div>`;
+        return;
+      }
+
+      let html = "";
+      custs.forEach(c => {
+        html += `
+          <div class="card">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+              <div>
+                <div style="font-size:14px; font-weight:800;">${c.name}</div>
+                <div style="font-size:12px; color:var(--text-muted);">📱 ${c.mobile_number}</div>
+                <div style="font-size:11px; color:#475569; margin-top:2px;">📍 ${c.delivery_address || 'No address'}</div>
+              </div>
+              <span class="q-badge badge-won">${c.quote_count} Quotes</span>
+            </div>
+            <div style="display:flex; gap:6px; margin-top:10px; border-top:1px solid #F1F5F9; padding-top:8px;">
+              <a class="btn btn-secondary" href="tel:${c.mobile_number}" style="flex:1;">📞 Call</a>
+              <a class="btn btn-wa" href="https://wa.me/${c.mobile_number.replace(/[^0-9]/g, '')}" target="_blank" style="flex:1;">💬 WhatsApp</a>
+            </div>
+          </div>
+        `;
+      });
+      box.innerHTML = html;
+    }
+
+    // 8. Dashboard
+    async function loadDashboard() {
+      try {
+        const [dashRes, teamRes] = await Promise.all([
+          fetch(API_BASE + "/reports/dashboard").then(r => r.json()),
+          fetch(API_BASE + "/salespersons").then(r => r.json()),
+        ]);
+
+        document.getElementById("dashWonVal").innerText = `₹ ${Number(dashRes.won_sales_value || 0).toLocaleString('en-IN')}`;
+        document.getElementById("dashWonQuotes").innerText = `${dashRes.won_quotes_count || 0} Deals Closed`;
+        document.getElementById("dashPipeVal").innerText = `₹ ${Number(dashRes.pipeline_value || 0).toLocaleString('en-IN')}`;
+        document.getElementById("dashClearedVal").innerText = `₹ ${Number(dashRes.cleared_payments || 0).toLocaleString('en-IN')}`;
+        document.getElementById("dashBalVal").innerText = `₹ ${Number(dashRes.total_outstanding || 0).toLocaleString('en-IN')}`;
+
+        // Team Progress
+        const tBox = document.getElementById("teamProgressContainer");
+        let html = "";
+        (teamRes.sales_team || []).forEach(sp => {
+          html += `
+            <div style="margin-bottom:12px;">
+              <div style="display:flex; justify-content:space-between; font-size:12px; font-weight:700;">
+                <span>${sp.name} (${sp.role})</span>
+                <span>${sp.percentage_achieved}%</span>
+              </div>
+              <div style="height:6px; background:#E2E8F0; border-radius:3px; overflow:hidden; margin:4px 0;">
+                <div style="height:100%; width:${Math.min(100, sp.percentage_achieved)}%; background:var(--primary);"></div>
+              </div>
+              <div style="display:flex; justify-content:space-between; font-size:10px; color:var(--text-muted);">
+                <span>Achieved: ₹ ${Number(sp.sales_achieved).toLocaleString('en-IN')}</span>
+                <span>Target: ₹ ${Number(sp.monthly_target).toLocaleString('en-IN')}</span>
+              </div>
+            </div>
+          `;
+        });
+        tBox.innerHTML = html;
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    // 9. Payments
+    async function loadPayments() {
+      const [quotesRes, payRes] = await Promise.all([
+        fetch(API_BASE + "/quotations").then(r => r.json()),
+        fetch(API_BASE + "/payments").then(r => r.json()),
+      ]);
+
+      const qSel = document.getElementById("payQuoteSelect");
+      qSel.innerHTML = "";
+      (quotesRes.quotations || []).forEach(q => {
+        qSel.innerHTML += `<option value="${q.id}">${q.quotation_number} - ${q.customer_name} (Bal: ₹ ${Number(q.outstanding_balance).toLocaleString('en-IN')})</option>`;
+      });
+
+      const pBox = document.getElementById("paymentsListContainer");
+      const list = payRes.payments || [];
+      if (list.length === 0) {
+        pBox.innerHTML = `<div style="text-align:center; padding:20px; color:var(--text-muted);">No payments recorded yet.</div>`;
+        return;
+      }
+
+      let html = "";
+      list.forEach(p => {
+        html += `
+          <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #F1F5F9;">
+            <div>
+              <div style="font-size:12px; font-weight:700;">${p.quotation_number} • ${p.customer_name}</div>
+              <div style="font-size:10px; color:var(--text-muted);">${p.payment_date} • ${p.payment_mode}</div>
+            </div>
+            <div style="text-align:right;">
+              <div style="font-size:13px; font-weight:800; color:var(--success);">+ ₹ ${Number(p.amount).toLocaleString('en-IN')}</div>
+              <span class="q-badge badge-won" style="font-size:9px;">${p.status}</span>
+            </div>
+          </div>
+        `;
+      });
+      pBox.innerHTML = html;
+    }
+
+    async function recordPayment() {
+      const qId = parseInt(document.getElementById("payQuoteSelect").value);
+      const amt = parseFloat(document.getElementById("payAmountInput").value || 0);
+      const mode = document.getElementById("payModeSelect").value;
+
+      if (!qId || amt <= 0) {
+        alert("Please enter a valid payment amount.");
+        return;
+      }
+
+      const res = await fetch(API_BASE + "/payments", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+          quotation_id: qId,
+          amount: amt,
+          payment_mode: mode
+        })
+      }).then(r => r.json());
+
+      if (res.success) {
+        showToast(`Payment of ₹ ${amt.toLocaleString('en-IN')} recorded & cleared!`);
+        document.getElementById("payAmountInput").value = "";
+        loadPayments();
+      }
+    }
+
+    // Launch
+    window.addEventListener("DOMContentLoaded", initApp);
+  </script>
+</body>
+</html>

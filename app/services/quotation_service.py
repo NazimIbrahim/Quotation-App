@@ -263,10 +263,19 @@ class QuotationService:
             split_type = data.get("split_type", "none") if assisted_sp else "none"
             assisted_share_val = float(data.get("assisted_share_value", 0.0) or 0.0) if assisted_sp else 0.0
 
+            q_date = data.get("quotation_date")
+            if isinstance(q_date, str) and q_date.strip():
+                try:
+                    q_date = datetime.strptime(q_date.strip(), "%Y-%m-%d").date()
+                except Exception:
+                    q_date = date.today()
+            elif not q_date:
+                q_date = date.today()
+
             quote_id = data.get("id")
             if quote_id:
                 quote = Quotation.get_by_id(quote_id)
-                quote.quotation_date = data.get("quotation_date", quote.quotation_date)
+                quote.quotation_date = q_date or quote.quotation_date
                 quote.customer = cust
                 quote.customer_name = cust.name
                 quote.customer_phone = cust.mobile_number
@@ -287,7 +296,7 @@ class QuotationService:
                 q_num = data.get("quotation_number") or QuotationService.generate_next_quotation_number()
                 quote = Quotation.create(
                     quotation_number=q_num,
-                    quotation_date=data.get("quotation_date", date.today()),
+                    quotation_date=q_date,
                     customer=cust,
                     customer_name=cust.name,
                     customer_phone=cust.mobile_number,
