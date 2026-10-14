@@ -412,8 +412,10 @@ class ReportPDFGenerator:
                 q_data.append([
                     Paragraph(str(idx), styles["td_center"]),
                     Paragraph(f"<b>{q.quotation_number}</b>", styles["td"]),
-                    Paragraph(q.customer_name[:24], styles["td"]),
-                    Paragraph(q.sales_person_name[:18], styles["td"]),
+                    Paragraph(
+                        f"{q.sales_person_name[:10]} + {q.assisted_by_name[:8]}" if getattr(q, "assisted_by_name", None) else q.sales_person_name[:18],
+                        styles["td"]
+                    ),
                     Paragraph(f"<font color='{stat_col}'><b>{q.status}</b></font>", styles["td_center"]),
                     Paragraph(f"Rs. {q.net_total:,.2f}", styles["td_right"]),
                     Paragraph(f"Rs. {q.get_cleared_payments():,.2f}", styles["td_right"]),
@@ -752,7 +754,10 @@ class ReportPDFGenerator:
                     Paragraph(str(idx), styles["td_center"]),
                     Paragraph(f"<b>{q.quotation_number}</b>", styles["td"]),
                     Paragraph(q.customer_name[:24], styles["td"]),
-                    Paragraph(q.sales_person_name[:18], styles["td"]),
+                    Paragraph(
+                        f"{q.sales_person_name[:10]} + {q.assisted_by_name[:8]}" if getattr(q, "assisted_by_name", None) else q.sales_person_name[:18],
+                        styles["td"]
+                    ),
                     Paragraph(f"Rs. {q.net_total:,.2f}", styles["td_right"]),
                     Paragraph(f"Rs. {q.get_cleared_payments():,.2f}", styles["td_right"]),
                     Paragraph(f"Rs. {q.get_outstanding_balance():,.2f}", styles["td_right"]),

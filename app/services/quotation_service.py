@@ -49,7 +49,10 @@ class QuotationService:
             query = query.where(Quotation.status == status)
             
         if sales_person_id:
-            query = query.where(Quotation.sales_person_id == sales_person_id)
+            query = query.where(
+                (Quotation.sales_person_id == sales_person_id) |
+                (Quotation.assisted_by_id == sales_person_id)
+            )
             
         if search_query:
             pattern = f"%{search_query}%"
@@ -135,6 +138,12 @@ class QuotationService:
             "delivery_address": quote.delivery_address,
             "sales_person_id": quote.sales_person_id,
             "sales_person_name": quote.sales_person_name,
+            "assisted_by_id": getattr(quote, "assisted_by_id", None),
+            "assisted_by_name": getattr(quote, "assisted_by_name", None),
+            "split_type": getattr(quote, "split_type", "none") or "none",
+            "assisted_share_value": float(getattr(quote, "assisted_share_value", 0.0) or 0.0),
+            "primary_share_amount": float(getattr(quote, "primary_share_amount", 0.0) or 0.0),
+            "assisted_share_amount": float(getattr(quote, "assisted_share_amount", 0.0) or 0.0),
             "project_name": quote.project_name,
             "special_notes": quote.special_notes,
             "status": quote.status,
@@ -188,6 +197,16 @@ class QuotationService:
         with db.atomic():
             cust = Customer.get_by_id(data["customer_id"])
             sp = SalesPerson.get_by_id(data["sales_person_id"])
+            assisted_sp_id = data.get("assisted_by_id")
+            assisted_sp = None
+            if assisted_sp_id and str(assisted_sp_id).isdigit() and int(assisted_sp_id) != sp.id:
+                try:
+                    assisted_sp = SalesPerson.get_by_id(int(assisted_sp_id))
+                except SalesPerson.DoesNotExist:
+                    assisted_sp = None
+
+            split_type = data.get("split_type", "none") if assisted_sp else "none"
+            assisted_share_val = float(data.get("assisted_share_value", 0.0) or 0.0) if assisted_sp else 0.0
 
             quote_id = data.get("id")
             if quote_id:
@@ -315,6 +334,26 @@ class QuotationService:
             quote.total_tax = round(total_gst, 2)
             quote.gross_total = round(gross_total, 2)
             quote.net_total = round(gross_total + quote.round_off, 2)
+
+            if assisted_sp and split_type in ("percentage", "amount"):
+                quote.assisted_by = assisted_sp
+                quote.assisted_by_name = assisted_sp.name
+                quote.split_type = split_type
+                quote.assisted_share_value = assisted_share_val
+                if split_type == "percentage":
+                    quote.assisted_share_amount = round(quote.net_total * (assisted_share_val / 100.0), 2)
+                    quote.primary_share_amount = round(quote.net_total - quote.assisted_share_amount, 2)
+                else:
+                    quote.assisted_share_amount = min(quote.net_total, round(assisted_share_val, 2))
+                    quote.primary_share_amount = round(quote.net_total - quote.assisted_share_amount, 2)
+            else:
+                quote.assisted_by = None
+                quote.assisted_by_name = None
+                quote.split_type = "none"
+                quote.assisted_share_value = 0.0
+                quote.primary_share_amount = quote.net_total
+                quote.assisted_share_amount = 0.0
+
             quote.save()
 
             return quote

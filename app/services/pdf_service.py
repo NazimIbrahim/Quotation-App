@@ -534,6 +534,11 @@ class CeramicPDFGenerator:
             [Paragraph("Valid Till:", style_meta_k), Paragraph("15 Days from date", style_meta_v)],
             [Paragraph("Sales Executive:", style_meta_k), Paragraph(quote.sales_person_name, style_meta_v)],
         ]
+        if getattr(quote, "assisted_by_name", None):
+            meta_sub_data.append([
+                Paragraph("Assisted By:", style_meta_k),
+                Paragraph(quote.assisted_by_name, style_meta_v)
+            ])
         meta_sub_table = Table(meta_sub_data, colWidths=[110, 137])
         meta_sub_table.setStyle(TableStyle([
             ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),

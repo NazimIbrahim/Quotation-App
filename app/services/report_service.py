@@ -236,9 +236,9 @@ class ReportService:
         team_perf = []
         for sp in sales_team:
             daily_target = round(sp.get_target_for_month(target_date.year, target_date.month) / 26.0, 2)
-            sp_quotes = [q for q in quotes if q.sales_person_id == sp.id]
+            sp_quotes = [q for q in quotes if q.sales_person_id == sp.id or getattr(q, 'assisted_by_id', None) == sp.id]
             sp_won = [q for q in sp_quotes if q.status == Quotation.STATUS_WON]
-            sp_achieved = sum(q.net_total for q in sp_won)
+            sp_achieved = sum(q.get_credit_for_salesperson(sp.id) for q in sp_won)
             pct = (sp_achieved / daily_target * 100.0) if daily_target > 0 else 0.0
             team_perf.append({
                 "sales_person": sp,
@@ -428,8 +428,8 @@ class ReportService:
 
         for sp in sales_team:
             target = sp.get_target_for_month(year, month)
-            sp_won = [q for q in won_quotes if q.sales_person_id == sp.id]
-            achieved = sum(q.net_total for q in sp_won)
+            sp_won = [q for q in won_quotes if q.sales_person_id == sp.id or getattr(q, 'assisted_by_id', None) == sp.id]
+            achieved = sum(q.get_credit_for_salesperson(sp.id) for q in sp_won)
             balance = max(0.0, target - achieved)
             pct = (achieved / target * 100.0) if target > 0 else 0.0
 
@@ -605,7 +605,7 @@ class ReportService:
                 achieved = sp.get_sales_achieved(month=m, year=y)
 
                 won_count = Quotation.select().where(
-                    (Quotation.sales_person == sp) &
+                    ((Quotation.sales_person == sp) | (Quotation.assisted_by == sp)) &
                     (Quotation.status == Quotation.STATUS_WON) &
                     (Quotation.quotation_date >= m_date) &
                     (Quotation.quotation_date <= end_m)

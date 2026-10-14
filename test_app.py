@@ -490,6 +490,71 @@ def test_system():
     assert "Discount:" not in pdf_text, "Discount row must NOT appear in PDF"
     print(f" -> PASS: ₹85,000 reduced to ₹80,000 target by distributing rates (~₹94.12/sqft). Round off is ₹0.00 and no discount row printed in PDF: {os.path.basename(pdf_disc)}")
 
+    print("\n[TEST 18] Verifying Assisted Salesperson Split Deals (Percentage & Amount Modes, PDF, Attribution)...")
+    # Clean up previous run if exists
+    old_split = Quotation.get_or_none(Quotation.quotation_number == "AMA-2026-SPLIT-AUTO")
+    if old_split:
+        QuotationItem.delete().where(QuotationItem.quotation == old_split).execute()
+        QuotationArea.delete().where(QuotationArea.quotation == old_split).execute()
+        old_split.delete_instance()
+
+    all_sps = list(SalesPerson.select().where(SalesPerson.is_active == True))
+    lead_sp = all_sps[0]
+    asst_sp = all_sps[1]
+
+    # Test 50% split on 60,000 quote
+    split_payload = {
+        "quotation_number": "AMA-2026-SPLIT-AUTO",
+        "customer_id": cust.id,
+        "sales_person_id": lead_sp.id,
+        "assisted_by_id": asst_sp.id,
+        "split_type": "percentage",
+        "assisted_share_value": 50.0,
+        "status": Quotation.STATUS_WON,
+        "tax_mode": "inclusive",
+        "round_off": 0.0,
+        "areas": [
+            {
+                "area_name": "Living Room",
+                "items": [
+                    {
+                        "description": "Premium Vitrified 800X1600",
+                        "size": "800X1600",
+                        "quantity_sqft": 600.0,
+                        "rate_per_sqft": 100.0,
+                        "tax_mode": "inclusive",
+                        "total_amount": 60000.0
+                    }
+                ]
+            }
+        ]
+    }
+    q_split = QuotationService.save_quotation(split_payload)
+    assert q_split.assisted_by_id == asst_sp.id
+    assert abs(q_split.primary_share_amount - 30000.0) < 0.01
+    assert abs(q_split.assisted_share_amount - 30000.0) < 0.01
+
+    # Attribution verification
+    assert abs(q_split.get_credit_for_salesperson(lead_sp.id) - 30000.0) < 0.01
+    assert abs(q_split.get_credit_for_salesperson(asst_sp.id) - 30000.0) < 0.01
+
+    # Amount split update: Assisted gets 20,000, Lead gets 40,000
+    split_payload["id"] = q_split.id
+    split_payload["split_type"] = "amount"
+    split_payload["assisted_share_value"] = 20000.0
+    q_split_amt = QuotationService.save_quotation(split_payload)
+    assert abs(q_split_amt.primary_share_amount - 40000.0) < 0.01
+    assert abs(q_split_amt.assisted_share_amount - 20000.0) < 0.01
+
+    # PDF verification
+    pdf_split = CeramicPDFGenerator.generate_quotation_pdf(q_split_amt.id)
+    pdf_split_doc = pdfium.PdfDocument(pdf_split)
+    pdf_split_text = "".join(p.get_textpage().get_text_range() for p in pdf_split_doc)
+    assert lead_sp.name in pdf_split_text
+    assert "Assisted By:" in pdf_split_text
+    assert asst_sp.name in pdf_split_text
+    print(f" -> PASS: Assisted deal split verified (50% -> ₹30k/₹30k, Amount -> ₹40k/₹20k). Both reps credited and PDF verified: {os.path.basename(pdf_split)}")
+
     print("\n" + "=" * 65)
     print("  ALL CORE MODULES AND TESTS COMPLETED WITH 100% SUCCESS!")
     print("=" * 65)

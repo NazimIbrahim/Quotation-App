@@ -102,9 +102,9 @@ class SalesPerson(BaseModel):
             return round(base_monthly * (days / 30.0), 2)
 
     def get_sales_achieved(self, month=None, year=None, start_date=None, end_date=None):
-        """Calculates total sales achieved from 'Won' quotations in period."""
-        query = Quotation.select(fn.SUM(Quotation.net_total)).where(
-            (Quotation.sales_person == self) &
+        """Calculates total sales achieved from 'Won' quotations in period, accounting for assisted splits."""
+        query = Quotation.select().where(
+            ((Quotation.sales_person == self) | (Quotation.assisted_by == self)) &
             (Quotation.status == Quotation.STATUS_WON)
         )
         if start_date and end_date:
@@ -117,8 +117,10 @@ class SalesPerson(BaseModel):
                 (Quotation.quotation_date.year == year) &
                 (Quotation.quotation_date.month == month)
             )
-        total = query.scalar() or 0.0
-        return float(total)
+        total = 0.0
+        for q in query:
+            total += q.get_credit_for_salesperson(self.id)
+        return round(float(total), 2)
 
     def get_balance_to_target(self, month=None, year=None, start_date=None, end_date=None, target_amount=None):
         achieved = self.get_sales_achieved(month=month, year=year, start_date=start_date, end_date=end_date)
@@ -218,12 +220,42 @@ class Quotation(BaseModel):
     # Additional Details
     project_name = CharField(max_length=150, null=True)
     special_notes = TextField(null=True)
+
+    # Assisted Salesperson & Sales Split Collaboration
+    assisted_by = ForeignKeyField(SalesPerson, null=True, backref="assisted_quotations", on_delete="SET NULL")
+    assisted_by_name = CharField(max_length=120, null=True)
+    split_type = CharField(max_length=20, default="none")  # 'none', 'percentage', 'amount'
+    assisted_share_value = FloatField(default=0.0)
+    primary_share_amount = FloatField(default=0.0)
+    assisted_share_amount = FloatField(default=0.0)
     
     created_at = DateTimeField(default=datetime.now)
     updated_at = DateTimeField(default=datetime.now)
 
     class Meta:
         table_name = "quotations"
+
+    def get_credit_for_salesperson(self, sales_person_id: int) -> float:
+        """Returns the net sales amount credited to the given salesperson on this quote."""
+        if getattr(self, "assisted_by_id", None) and getattr(self, "split_type", "none") in ("percentage", "amount"):
+            if self.sales_person_id == sales_person_id:
+                prim = getattr(self, "primary_share_amount", 0.0) or 0.0
+                if prim > 0:
+                    return float(prim)
+                return max(0.0, float(self.net_total - (getattr(self, "assisted_share_amount", 0.0) or 0.0)))
+            elif self.assisted_by_id == sales_person_id:
+                asst = getattr(self, "assisted_share_amount", 0.0) or 0.0
+                if asst > 0:
+                    return float(asst)
+                val = getattr(self, "assisted_share_value", 0.0) or 0.0
+                if self.split_type == "percentage":
+                    return round(float(self.net_total) * (val / 100.0), 2)
+                else:
+                    return round(float(val), 2)
+        else:
+            if self.sales_person_id == sales_person_id:
+                return float(self.net_total)
+        return 0.0
 
     def calculate_totals(self):
         """Recalculates taxable, tax, gross and net totals from child items."""
@@ -660,6 +692,18 @@ def init_database():
             db.execute_sql("ALTER TABLE quotations ADD COLUMN sgst_amount REAL DEFAULT 0.0")
         if "total_tax" not in cols_q:
             db.execute_sql("ALTER TABLE quotations ADD COLUMN total_tax REAL DEFAULT 0.0")
+        if "assisted_by_id" not in cols_q:
+            db.execute_sql("ALTER TABLE quotations ADD COLUMN assisted_by_id INTEGER NULL")
+        if "assisted_by_name" not in cols_q:
+            db.execute_sql("ALTER TABLE quotations ADD COLUMN assisted_by_name VARCHAR(120) NULL")
+        if "split_type" not in cols_q:
+            db.execute_sql("ALTER TABLE quotations ADD COLUMN split_type VARCHAR(20) DEFAULT 'none'")
+        if "assisted_share_value" not in cols_q:
+            db.execute_sql("ALTER TABLE quotations ADD COLUMN assisted_share_value REAL DEFAULT 0.0")
+        if "primary_share_amount" not in cols_q:
+            db.execute_sql("ALTER TABLE quotations ADD COLUMN primary_share_amount REAL DEFAULT 0.0")
+        if "assisted_share_amount" not in cols_q:
+            db.execute_sql("ALTER TABLE quotations ADD COLUMN assisted_share_amount REAL DEFAULT 0.0")
     except Exception:
         pass
 
@@ -667,6 +711,7 @@ def init_database():
     try:
         db.execute_sql("CREATE INDEX IF NOT EXISTS idx_quote_status_date ON quotations(status, quotation_date)")
         db.execute_sql("CREATE INDEX IF NOT EXISTS idx_quote_sp_status_date ON quotations(sales_person_id, status, quotation_date)")
+        db.execute_sql("CREATE INDEX IF NOT EXISTS idx_quote_assisted_status ON quotations(assisted_by_id, status, quotation_date)")
         db.execute_sql("CREATE INDEX IF NOT EXISTS idx_quote_cust_status ON quotations(customer_id, status)")
         db.execute_sql("CREATE INDEX IF NOT EXISTS idx_payment_quote_status ON payments(quotation_id, status)")
         db.execute_sql("CREATE INDEX IF NOT EXISTS idx_payment_status_date ON payments(status, payment_date)")

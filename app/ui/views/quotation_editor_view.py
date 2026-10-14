@@ -1147,8 +1147,8 @@ class QuotationEditorView(ctk.CTkFrame):
             self.customer_combo._entry.bind("<KeyRelease>", self._on_customer_key_release)
 
         # Sales Person Selector
-        ctk.CTkLabel(form_grid, text="Sales Associate:", font=ctk.CTkFont(size=11, weight="bold")).grid(row=0, column=3, padx=6, pady=(4, 2), sticky="w")
-        self.salesperson_combo = ctk.CTkComboBox(form_grid, values=["Loading..."], font=ctk.CTkFont(size=11))
+        ctk.CTkLabel(form_grid, text="Lead Sales Associate:", font=ctk.CTkFont(size=11, weight="bold")).grid(row=0, column=3, padx=6, pady=(4, 2), sticky="w")
+        self.salesperson_combo = ctk.CTkComboBox(form_grid, values=["Loading..."], font=ctk.CTkFont(size=11), command=self._on_primary_salesperson_changed)
         self.salesperson_combo.grid(row=1, column=3, padx=6, pady=(0, 8), sticky="ew")
 
         # Auto-popup suggestions panel for matched existing customers from database
@@ -1223,6 +1223,91 @@ class QuotationEditorView(ctk.CTkFrame):
             command=self.apply_global_tax_to_all_items
         )
         apply_all_btn.pack(side="left")
+
+        # Row 7: Sales Collaboration & Commission Split (Assisted Salesperson)
+        self.split_card = ctk.CTkFrame(
+            form_grid,
+            corner_radius=Theme.RADIUS_CARD,
+            fg_color=("#F8FAFC", "#1C1A18"),
+            border_width=1,
+            border_color=Theme.LIGHT_BORDER
+        )
+        self.split_card.grid(row=7, column=0, columnspan=4, padx=6, pady=(10, 4), sticky="ew")
+
+        split_top_row = ctk.CTkFrame(self.split_card, fg_color="transparent")
+        split_top_row.pack(fill="x", padx=12, pady=(8, 4))
+
+        ctk.CTkLabel(
+            split_top_row,
+            text="🤝 Sales Collaboration & Commission Split (Optional - Deals Closed by 2 Salespersons)",
+            font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11, weight="bold"),
+            text_color=(Theme.BLACK, Theme.PAPER)
+        ).pack(side="left")
+
+        # Controls Row
+        split_ctrl_row = ctk.CTkFrame(self.split_card, fg_color="transparent")
+        split_ctrl_row.pack(fill="x", padx=12, pady=(0, 6))
+
+        # Assisted Salesperson Dropdown
+        ctk.CTkLabel(split_ctrl_row, text="Assisted By:", font=ctk.CTkFont(size=11, weight="bold")).pack(side="left", padx=(0, 4))
+        self.assisted_combo = ctk.CTkComboBox(
+            split_ctrl_row,
+            values=["None (Solo Sale)"],
+            font=ctk.CTkFont(size=11),
+            width=210,
+            command=self._on_assisted_salesperson_changed
+        )
+        self.assisted_combo.set("None (Solo Sale)")
+        self.assisted_combo.pack(side="left", padx=(0, 12))
+
+        # Split Mode Option
+        ctk.CTkLabel(split_ctrl_row, text="Split Share By:", font=ctk.CTkFont(size=11, weight="bold")).pack(side="left", padx=(0, 4))
+        self.split_mode_combo = ctk.CTkOptionMenu(
+            split_ctrl_row,
+            values=["Percentage (%)", "Amount (₹)"],
+            font=ctk.CTkFont(size=10, weight="bold"),
+            width=130,
+            command=self._on_split_mode_changed
+        )
+        self.split_mode_combo.set("Percentage (%)")
+        self.split_mode_combo.pack(side="left", padx=(0, 12))
+
+        # Assisted Share % Entry
+        ctk.CTkLabel(split_ctrl_row, text="Assisted (%):", font=ctk.CTkFont(size=11, weight="bold")).pack(side="left", padx=(0, 4))
+        self.assisted_share_pct_entry = ctk.CTkEntry(split_ctrl_row, width=70, font=ctk.CTkFont(size=11), placeholder_text="50.0")
+        self.assisted_share_pct_entry.pack(side="left", padx=(0, 12))
+        self.assisted_share_pct_entry.bind("<KeyRelease>", self._on_assisted_pct_key)
+
+        # Assisted Share Amount Entry
+        ctk.CTkLabel(split_ctrl_row, text="Assisted (₹):", font=ctk.CTkFont(size=11, weight="bold")).pack(side="left", padx=(0, 4))
+        self.assisted_share_amt_entry = ctk.CTkEntry(split_ctrl_row, width=105, font=ctk.CTkFont(size=11), placeholder_text="0.00")
+        self.assisted_share_amt_entry.pack(side="left", padx=(0, 10))
+        self.assisted_share_amt_entry.bind("<KeyRelease>", self._on_assisted_amt_key)
+
+        # 50/50 Equal Split Quick Button
+        self.equal_split_btn = ctk.CTkButton(
+            split_ctrl_row,
+            text="50/50 Split ⚖️",
+            font=ctk.CTkFont(size=10, weight="bold"),
+            width=90,
+            height=28,
+            corner_radius=Theme.RADIUS_PILL,
+            fg_color=Theme.BTN_SECONDARY_BG,
+            text_color=(Theme.BLACK, Theme.PAPER),
+            hover_color=Theme.PRIMARY,
+            command=self.set_equal_split
+        )
+        self.equal_split_btn.pack(side="left")
+
+        # Live Split Preview Badge
+        self.split_preview_lbl = ctk.CTkLabel(
+            self.split_card,
+            text="ℹ Solo Sale: 100% of quotation value is attributed to the lead sales associate.",
+            font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=10),
+            text_color=("#615D56", "#A8A297"),
+            anchor="w"
+        )
+        self.split_preview_lbl.pack(anchor="w", padx=12, pady=(0, 8))
 
         # 3. Area Sections Bar
         area_control_card = ctk.CTkFrame(self.scroll_body, fg_color="transparent")
@@ -1566,6 +1651,11 @@ class QuotationEditorView(ctk.CTkFrame):
             else:
                 self.salesperson_combo.set(sp_names[0])
 
+        if hasattr(self, "assisted_combo"):
+            assisted_vals = ["None (Solo Sale)"] + sp_names
+            self.assisted_combo.configure(values=assisted_vals)
+            self.assisted_combo.set("None (Solo Sale)")
+
         # 2. Check if editing existing quote or new quote
         if self.quote_id:
             quote_data = QuotationService.get_quotation_details(self.quote_id)
@@ -1586,11 +1676,37 @@ class QuotationEditorView(ctk.CTkFrame):
                         self.update_customer_status(f"✓ Existing Customer: {c.name} — Loaded from database", status_type="success")
                         break
 
-                # Select salesperson
+                # Select primary salesperson
                 for idx, s in enumerate(self.salespersons_cache):
                     if s.id == quote_data["sales_person_id"]:
                         self.salesperson_combo.set(sp_names[idx])
                         break
+
+                # Select assisted salesperson if present
+                asst_id = quote_data.get("assisted_by_id")
+                if asst_id and hasattr(self, "assisted_combo"):
+                    for idx, s in enumerate(self.salespersons_cache):
+                        if s.id == asst_id:
+                            self.assisted_combo.set(sp_names[idx])
+                            break
+                    split_t = quote_data.get("split_type", "percentage")
+                    if split_t == "amount":
+                        self.split_mode_combo.set("Amount (₹)")
+                    else:
+                        self.split_mode_combo.set("Percentage (%)")
+
+                    share_val = float(quote_data.get("assisted_share_value", 50.0) or 50.0)
+                    if split_t == "amount":
+                        self.assisted_share_amt_entry.delete(0, "end")
+                        self.assisted_share_amt_entry.insert(0, f"{share_val:.2f}")
+                    else:
+                        self.assisted_share_pct_entry.delete(0, "end")
+                        self.assisted_share_pct_entry.insert(0, f"{share_val:.1f}")
+                else:
+                    if hasattr(self, "assisted_combo"):
+                        self.assisted_combo.set("None (Solo Sale)")
+                        self.assisted_share_pct_entry.delete(0, "end")
+                        self.assisted_share_amt_entry.delete(0, "end")
 
                 self.phone_entry.delete(0, "end")
                 self.phone_entry.insert(0, quote_data["customer_phone"])
@@ -1624,6 +1740,11 @@ class QuotationEditorView(ctk.CTkFrame):
             new_q_num = QuotationService.generate_next_quotation_number()
             self.quote_num_entry.delete(0, "end")
             self.quote_num_entry.insert(0, new_q_num)
+
+            if hasattr(self, "assisted_combo"):
+                self.assisted_combo.set("None (Solo Sale)")
+                self.assisted_share_pct_entry.delete(0, "end")
+                self.assisted_share_amt_entry.delete(0, "end")
 
             # Add default initial areas: "Ground Floor" & "Kids Bathroom"
             self.add_area("GROUND FLOOR - LIVING ROOM")
@@ -2215,6 +2336,185 @@ class QuotationEditorView(ctk.CTkFrame):
             f"• No separate discount row will appear in totals or the exported PDF."
         )
 
+    def _get_current_net_total(self) -> float:
+        """Returns the current computed net payable total from editor."""
+        try:
+            txt = self.net_total_lbl.cget("text")
+            clean = txt.replace("₹", "").replace(",", "").strip()
+            return float(clean or 0.0)
+        except Exception:
+            return 0.0
+
+    def _on_primary_salesperson_changed(self, choice=None):
+        """Called when primary salesperson changes."""
+        if hasattr(self, "assisted_combo"):
+            asst = self.assisted_combo.get().strip()
+            if asst and not asst.startswith("None") and asst == self.salesperson_combo.get().strip():
+                msgbox.showwarning("Notice", "Lead Sales Associate and Assisted Sales Associate cannot be the same person.")
+                self.assisted_combo.set("None (Solo Sale)")
+        self._update_split_display()
+
+    def _on_assisted_salesperson_changed(self, choice=None):
+        """Called when assisted salesperson dropdown changes."""
+        if not hasattr(self, "assisted_combo"):
+            return
+        asst = self.assisted_combo.get().strip()
+        if asst and not asst.startswith("None"):
+            if asst == self.salesperson_combo.get().strip():
+                msgbox.showwarning("Notice", "Lead Sales Associate and Assisted Sales Associate cannot be the same person.")
+                self.assisted_combo.set("None (Solo Sale)")
+                self._update_split_display()
+                return
+            # If entries empty, default to 50%
+            if not self.assisted_share_pct_entry.get().strip():
+                self.assisted_share_pct_entry.insert(0, "50.0")
+        self._update_split_display()
+
+    def _on_split_mode_changed(self, choice=None):
+        """Called when split mode changes between Percentage and Amount."""
+        self._update_split_display()
+
+    def _on_assisted_pct_key(self, event=None):
+        """Synchronizes amount when percentage is typed."""
+        if getattr(self, "_syncing_split_entries", False):
+            return
+        net_tot = self._get_current_net_total()
+        self._syncing_split_entries = True
+        try:
+            pct_str = self.assisted_share_pct_entry.get().strip()
+            if not pct_str:
+                self.assisted_share_amt_entry.delete(0, "end")
+                self.assisted_share_amt_entry.insert(0, "0.00")
+            else:
+                pct = float(pct_str)
+                amt = round(net_tot * (pct / 100.0), 2)
+                self.assisted_share_amt_entry.delete(0, "end")
+                self.assisted_share_amt_entry.insert(0, f"{amt:.2f}")
+        except ValueError:
+            pass
+        finally:
+            self._syncing_split_entries = False
+        self._update_split_preview_label()
+
+    def _on_assisted_amt_key(self, event=None):
+        """Synchronizes percentage when amount is typed."""
+        if getattr(self, "_syncing_split_entries", False):
+            return
+        net_tot = self._get_current_net_total()
+        self._syncing_split_entries = True
+        try:
+            amt_str = self.assisted_share_amt_entry.get().strip()
+            if not amt_str:
+                self.assisted_share_pct_entry.delete(0, "end")
+                self.assisted_share_pct_entry.insert(0, "0.0")
+            else:
+                amt = float(amt_str)
+                pct = round((amt / net_tot * 100.0), 1) if net_tot > 0 else 0.0
+                self.assisted_share_pct_entry.delete(0, "end")
+                self.assisted_share_pct_entry.insert(0, f"{pct:.1f}")
+        except ValueError:
+            pass
+        finally:
+            self._syncing_split_entries = False
+        self._update_split_preview_label()
+
+    def set_equal_split(self):
+        """Sets equal 50/50 split between lead and assisted salesperson."""
+        if not hasattr(self, "assisted_combo"):
+            return
+        asst = self.assisted_combo.get().strip()
+        if not asst or asst.startswith("None"):
+            # Select first available non-primary salesperson
+            prim = self.salesperson_combo.get().strip()
+            vals = self.assisted_combo.cget("values") or []
+            for v in vals:
+                if not v.startswith("None") and v != prim:
+                    self.assisted_combo.set(v)
+                    break
+        self.split_mode_combo.set("Percentage (%)")
+        self.assisted_share_pct_entry.delete(0, "end")
+        self.assisted_share_pct_entry.insert(0, "50.0")
+        self._update_split_display()
+
+    def _update_split_display(self):
+        """Recalculates amounts and updates preview label."""
+        if not hasattr(self, "assisted_combo"):
+            return
+        asst = self.assisted_combo.get().strip()
+        if not asst or asst.startswith("None"):
+            self.split_preview_lbl.configure(
+                text="ℹ Solo Sale: 100% of quotation value is attributed to the lead sales associate.",
+                text_color=("#615D56", "#A8A297")
+            )
+            return
+
+        net_tot = self._get_current_net_total()
+        is_pct = "Percentage" in self.split_mode_combo.get()
+
+        if is_pct:
+            pct_txt = self.assisted_share_pct_entry.get().strip()
+            try:
+                pct = float(pct_txt) if pct_txt else 50.0
+            except ValueError:
+                pct = 50.0
+            amt = round(net_tot * (pct / 100.0), 2)
+            if not getattr(self, "_syncing_split_entries", False):
+                self._syncing_split_entries = True
+                try:
+                    self.assisted_share_amt_entry.delete(0, "end")
+                    self.assisted_share_amt_entry.insert(0, f"{amt:.2f}")
+                finally:
+                    self._syncing_split_entries = False
+        else:
+            amt_txt = self.assisted_share_amt_entry.get().strip()
+            try:
+                amt = float(amt_txt) if amt_txt else round(net_tot * 0.5, 2)
+            except ValueError:
+                amt = round(net_tot * 0.5, 2)
+            pct = round((amt / net_tot * 100.0), 1) if net_tot > 0 else 50.0
+            if not getattr(self, "_syncing_split_entries", False):
+                self._syncing_split_entries = True
+                try:
+                    self.assisted_share_pct_entry.delete(0, "end")
+                    self.assisted_share_pct_entry.insert(0, f"{pct:.1f}")
+                finally:
+                    self._syncing_split_entries = False
+
+        self._update_split_preview_label()
+
+    def _update_split_preview_label(self):
+        if not hasattr(self, "split_preview_lbl"):
+            return
+        asst = self.assisted_combo.get().strip() if hasattr(self, "assisted_combo") else "None"
+        if not asst or asst.startswith("None"):
+            self.split_preview_lbl.configure(
+                text="ℹ Solo Sale: 100% of quotation value is attributed to the lead sales associate.",
+                text_color=("#615D56", "#A8A297")
+            )
+            return
+
+        net_tot = self._get_current_net_total()
+        lead_name = self.salesperson_combo.get().split("(")[0].strip() or "Lead"
+        asst_name = asst.split("(")[0].strip() or "Assisted"
+
+        try:
+            asst_pct = float(self.assisted_share_pct_entry.get().strip() or 0.0)
+        except ValueError:
+            asst_pct = 0.0
+
+        try:
+            asst_amt = float(self.assisted_share_amt_entry.get().strip() or 0.0)
+        except ValueError:
+            asst_amt = 0.0
+
+        lead_pct = max(0.0, round(100.0 - asst_pct, 1))
+        lead_amt = max(0.0, round(net_tot - asst_amt, 2))
+
+        self.split_preview_lbl.configure(
+            text=f"✓ Split Active: Lead ({lead_name}) gets {lead_pct:.1f}% (₹ {lead_amt:,.2f})  •  Assisted ({asst_name}) gets {asst_pct:.1f}% (₹ {asst_amt:,.2f})",
+            text_color=Theme.PRIMARY
+        )
+
     def recalculate_totals(self):
         total_taxable = 0.0
         total_gst = 0.0
@@ -2256,6 +2556,7 @@ class QuotationEditorView(ctk.CTkFrame):
         self.total_gst_lbl.configure(text=f"₹ {total_gst:,.2f}")
         self.gross_total_lbl.configure(text=f"₹ {gross:,.2f}")
         self.net_total_lbl.configure(text=f"₹ {net:,.2f}")
+        self._update_split_display()
 
     def collect_quotation_payload(self):
         # Validate customer
@@ -2299,7 +2600,7 @@ class QuotationEditorView(ctk.CTkFrame):
             self.refresh_customer_dropdown_options()
             self.matched_customer_id = matched_cust.id
 
-        # Validate salesperson
+        # Validate primary salesperson
         selected_sp_str = self.salesperson_combo.get()
         matched_sp = None
         for s in self.salespersons_cache:
@@ -2308,6 +2609,48 @@ class QuotationEditorView(ctk.CTkFrame):
                 break
         if not matched_sp:
             raise ValueError("Please select a sales associate.")
+
+        # Validate assisted salesperson & split share
+        assisted_choice = self.assisted_combo.get().strip() if hasattr(self, "assisted_combo") else "None"
+        matched_assisted = None
+        split_type = "none"
+        assisted_share_value = 0.0
+
+        if assisted_choice and not assisted_choice.startswith("None"):
+            for s in self.salespersons_cache:
+                if f"{s.name} ({s.role})" == assisted_choice or s.name == assisted_choice:
+                    matched_assisted = s
+                    break
+            if not matched_assisted:
+                raise ValueError("Selected assisted salesperson is not recognized.")
+            if matched_assisted.id == matched_sp.id:
+                raise ValueError("Lead Sales Associate and Assisted Sales Associate cannot be the same person.")
+
+            mode_str = self.split_mode_combo.get()
+            split_type = "percentage" if "Percentage" in mode_str else "amount"
+
+            if split_type == "percentage":
+                pct_txt = self.assisted_share_pct_entry.get().strip()
+                if not pct_txt:
+                    pct_txt = "50.0"
+                try:
+                    val = float(pct_txt)
+                    if val <= 0 or val >= 100:
+                        raise ValueError()
+                    assisted_share_value = val
+                except ValueError:
+                    raise ValueError("Assisted salesperson share percentage must be a number between 0% and 100%.")
+            else:
+                amt_txt = self.assisted_share_amt_entry.get().strip()
+                if not amt_txt:
+                    raise ValueError("Please enter an assisted salesperson share amount.")
+                try:
+                    val = float(amt_txt)
+                    if val <= 0:
+                        raise ValueError()
+                    assisted_share_value = val
+                except ValueError:
+                    raise ValueError("Assisted salesperson share amount must be a positive number.")
 
         try:
             round_off = float(self.round_off_entry.get().strip() or 0.0)
@@ -2331,6 +2674,9 @@ class QuotationEditorView(ctk.CTkFrame):
             "quotation_date": self.date_entry.get().strip() or date.today(),
             "customer_id": matched_cust.id,
             "sales_person_id": matched_sp.id,
+            "assisted_by_id": matched_assisted.id if matched_assisted else None,
+            "split_type": split_type,
+            "assisted_share_value": assisted_share_value,
             "project_name": self.project_name_entry.get().strip(),
             "special_notes": self.notes_entry.get("1.0", "end").strip(),
             "status": self.status_combo.get(),

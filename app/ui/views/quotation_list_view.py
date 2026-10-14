@@ -221,12 +221,22 @@ class QuotationListView(ctk.CTkFrame):
             ).pack(anchor="w")
 
             # Col 2: Sales Person
+            c2 = ctk.CTkFrame(row_frame, fg_color="transparent")
+            c2.grid(row=0, column=2, padx=8, pady=8, sticky="w")
             ctk.CTkLabel(
-                row_frame,
+                c2,
                 text=q.sales_person_name,
                 font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11),
                 text_color=(Theme.BLACK, Theme.PAPER)
-            ).grid(row=0, column=2, padx=8, pady=8, sticky="w")
+            ).pack(anchor="w")
+            if getattr(q, "assisted_by_name", None):
+                split_info = f"🤝 + {q.assisted_by_name} ({q.assisted_share_value:.0f}%)" if q.split_type == "percentage" else f"🤝 + {q.assisted_by_name} (₹{q.assisted_share_amount:,.0f})"
+                ctk.CTkLabel(
+                    c2,
+                    text=split_info,
+                    font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=9, weight="bold"),
+                    text_color=Theme.PRIMARY
+                ).pack(anchor="w")
 
             # Col 3: Net Total
             ctk.CTkLabel(
