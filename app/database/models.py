@@ -122,6 +122,27 @@ class SalesPerson(BaseModel):
             total += q.get_credit_for_salesperson(self.id)
         return round(float(total), 2)
 
+    def get_pipeline_value(self, month=None, year=None, start_date=None, end_date=None):
+        """Calculates total sales pipeline from 'Open' & 'In-Review' quotations, accounting for assisted splits."""
+        query = Quotation.select().where(
+            ((Quotation.sales_person == self) | (Quotation.assisted_by == self)) &
+            (Quotation.status.in_([Quotation.STATUS_OPEN, Quotation.STATUS_IN_REVIEW]))
+        )
+        if start_date and end_date:
+            query = query.where(
+                (Quotation.quotation_date >= start_date) &
+                (Quotation.quotation_date <= end_date)
+            )
+        elif year and month:
+            query = query.where(
+                (Quotation.quotation_date.year == year) &
+                (Quotation.quotation_date.month == month)
+            )
+        total = 0.0
+        for q in query:
+            total += q.get_credit_for_salesperson(self.id)
+        return round(float(total), 2)
+
     def get_balance_to_target(self, month=None, year=None, start_date=None, end_date=None, target_amount=None):
         achieved = self.get_sales_achieved(month=month, year=year, start_date=start_date, end_date=end_date)
         if target_amount is None:
@@ -237,23 +258,32 @@ class Quotation(BaseModel):
 
     def get_credit_for_salesperson(self, sales_person_id: int) -> float:
         """Returns the net sales amount credited to the given salesperson on this quote."""
-        if getattr(self, "assisted_by_id", None) and getattr(self, "split_type", "none") in ("percentage", "amount"):
-            if self.sales_person_id == sales_person_id:
+        try:
+            sp_id = int(sales_person_id)
+        except (ValueError, TypeError):
+            return 0.0
+
+        asst_id = getattr(self, "assisted_by_id", None)
+        split_type = getattr(self, "split_type", "none") or "none"
+
+        if asst_id and split_type in ("percentage", "amount"):
+            if int(self.sales_person_id) == sp_id:
                 prim = getattr(self, "primary_share_amount", 0.0) or 0.0
                 if prim > 0:
                     return float(prim)
-                return max(0.0, float(self.net_total - (getattr(self, "assisted_share_amount", 0.0) or 0.0)))
-            elif self.assisted_by_id == sales_person_id:
+                asst_amt = getattr(self, "assisted_share_amount", 0.0) or 0.0
+                return max(0.0, round(float(self.net_total) - float(asst_amt), 2))
+            elif int(asst_id) == sp_id:
                 asst = getattr(self, "assisted_share_amount", 0.0) or 0.0
                 if asst > 0:
                     return float(asst)
                 val = getattr(self, "assisted_share_value", 0.0) or 0.0
-                if self.split_type == "percentage":
-                    return round(float(self.net_total) * (val / 100.0), 2)
+                if split_type == "percentage":
+                    return round(float(self.net_total) * (float(val) / 100.0), 2)
                 else:
                     return round(float(val), 2)
         else:
-            if self.sales_person_id == sales_person_id:
+            if int(self.sales_person_id) == sp_id:
                 return float(self.net_total)
         return 0.0
 

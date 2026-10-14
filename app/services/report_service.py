@@ -140,17 +140,9 @@ class ReportService:
         team_total_achieved = 0.0
 
         for sp in sales_team:
-            # Sales achieved in timeframe from Won quotes
-            achieved = (
-                Quotation.select(fn.SUM(Quotation.net_total))
-                .where(
-                    (Quotation.sales_person == sp) &
-                    (Quotation.status == Quotation.STATUS_WON) &
-                    (Quotation.quotation_date >= start_date) &
-                    (Quotation.quotation_date <= end_date)
-                ).scalar() or 0.0
-            )
-            achieved = float(achieved)
+            # Sales achieved in timeframe from Won quotes (properly attributing primary and assisted shares!)
+            achieved = sp.get_sales_achieved(start_date=start_date, end_date=end_date)
+            pipeline = sp.get_pipeline_value(start_date=start_date, end_date=end_date)
 
             effective_target = sp.get_target_for_period(start_date, end_date)
 
@@ -167,6 +159,7 @@ class ReportService:
                 "contact": sp.contact_number,
                 "target": round(effective_target, 2),
                 "achieved": round(achieved, 2),
+                "pipeline": round(pipeline, 2),
                 "balance": round(balance, 2),
                 "percentage": round(pct, 1),
             })
@@ -611,17 +604,28 @@ class ReportService:
                     (Quotation.quotation_date <= end_m)
                 ).count()
 
-                col_val = (
-                    Payment.select(fn.SUM(Payment.amount))
+                col_val = 0.0
+                pmts = (
+                    Payment.select(Payment, Quotation)
                     .join(Quotation)
                     .where(
-                        (Quotation.sales_person == sp) &
+                        ((Quotation.sales_person == sp) | (Quotation.assisted_by == sp)) &
                         (Payment.payment_date >= m_date) &
                         (Payment.payment_date <= end_m) &
                         (Payment.status == Payment.STATUS_CLEARED)
-                    ).scalar() or 0.0
+                    )
                 )
-                col_val = float(col_val)
+                for p in pmts:
+                    pq = p.quotation
+                    if pq.sales_person_id == sp.id:
+                        if getattr(pq, "assisted_by_id", None) and getattr(pq, "split_type", "none") in ("percentage", "amount"):
+                            ratio = max(0.0, pq.get_credit_for_salesperson(sp.id) / pq.net_total) if pq.net_total > 0 else 1.0
+                            col_val += float(p.amount) * ratio
+                        else:
+                            col_val += float(p.amount)
+                    elif getattr(pq, "assisted_by_id", None) == sp.id:
+                        ratio = min(1.0, pq.get_credit_for_salesperson(sp.id) / pq.net_total) if pq.net_total > 0 else 0.0
+                        col_val += float(p.amount) * ratio
 
                 variance = achieved - target
                 pct = (achieved / target * 100.0) if target > 0 else 0.0

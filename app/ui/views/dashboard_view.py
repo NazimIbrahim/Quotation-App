@@ -270,9 +270,10 @@ class DashboardView(ctk.CTkFrame):
             )
             name_lbl.pack(side="left")
 
+            pipe_txt = f"  •  Pipeline: ₹ {person['pipeline']:,.0f}" if person.get("pipeline", 0) > 0 else ""
             stat_lbl = ctk.CTkLabel(
                 info_row,
-                text=f"Achieved: ₹ {person['achieved']:,.0f} / Target: ₹ {person['target']:,.0f}  •  Bal: ₹ {person['balance']:,.0f}",
+                text=f"Achieved: ₹ {person['achieved']:,.0f} / Target: ₹ {person['target']:,.0f}{pipe_txt}  •  Bal: ₹ {person['balance']:,.0f}",
                 font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11),
                 text_color=("#615D56", "#A8A297")
             )

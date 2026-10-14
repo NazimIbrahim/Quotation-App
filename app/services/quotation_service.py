@@ -60,7 +60,9 @@ class QuotationService:
                 (Quotation.quotation_number.ilike(pattern)) |
                 (Quotation.customer_name.ilike(pattern)) |
                 (Quotation.customer_phone.ilike(pattern)) |
-                (Quotation.project_name.ilike(pattern))
+                (Quotation.project_name.ilike(pattern)) |
+                (Quotation.sales_person_name.ilike(pattern)) |
+                (Quotation.assisted_by_name.ilike(pattern))
             )
             
         quotes = list(query)
@@ -199,10 +201,12 @@ class QuotationService:
             sp = SalesPerson.get_by_id(data["sales_person_id"])
             assisted_sp_id = data.get("assisted_by_id")
             assisted_sp = None
-            if assisted_sp_id and str(assisted_sp_id).isdigit() and int(assisted_sp_id) != sp.id:
+            if assisted_sp_id is not None:
                 try:
-                    assisted_sp = SalesPerson.get_by_id(int(assisted_sp_id))
-                except SalesPerson.DoesNotExist:
+                    aid = int(assisted_sp_id)
+                    if aid != sp.id and aid > 0:
+                        assisted_sp = SalesPerson.get_by_id(aid)
+                except (ValueError, TypeError, SalesPerson.DoesNotExist):
                     assisted_sp = None
 
             split_type = data.get("split_type", "none") if assisted_sp else "none"

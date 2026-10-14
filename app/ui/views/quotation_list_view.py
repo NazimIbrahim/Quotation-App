@@ -18,6 +18,8 @@ class QuotationListView(ctk.CTkFrame):
         super().__init__(master, fg_color="transparent", **kwargs)
         self.controller = controller
         self.selected_status = "All"
+        self.selected_salesperson_id = None
+        self.salespersons_cache = []
         self.search_text = ""
 
         self.build_ui()
@@ -82,6 +84,34 @@ class QuotationListView(ctk.CTkFrame):
         self.status_segment.set("All")
         self.status_segment.pack(side="left")
 
+        # Salesperson Filter Dropdown
+        sp_filter_box = ctk.CTkFrame(filter_bar, fg_color="transparent")
+        sp_filter_box.pack(side="left", padx=(14, 0))
+
+        ctk.CTkLabel(
+            sp_filter_box,
+            text="👤 Salesperson:",
+            font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11, weight="bold"),
+            text_color=(Theme.BLACK, Theme.PAPER)
+        ).pack(side="left", padx=(0, 6))
+
+        self.sp_filter_menu = ctk.CTkOptionMenu(
+            sp_filter_box,
+            values=["All Sales Associates"],
+            command=self.on_salesperson_filter,
+            width=210,
+            height=34,
+            corner_radius=Theme.RADIUS_PILL,
+            fg_color=Theme.BTN_SECONDARY_BG,
+            text_color=(Theme.BLACK, Theme.PAPER),
+            button_color=Theme.PRIMARY,
+            button_hover_color=Theme.PRIMARY_HOVER,
+            dropdown_font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11),
+            font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11, weight="bold")
+        )
+        self.sp_filter_menu.pack(side="left")
+        self.load_salespersons()
+
         # Search box
         search_box = ctk.CTkFrame(filter_bar, fg_color="transparent")
         search_box.pack(side="right")
@@ -126,6 +156,9 @@ class QuotationListView(ctk.CTkFrame):
         )
         self.table_card.pack(fill="both", expand=True, padx=24, pady=(0, 20))
 
+        # Table Banner Frame (Shown when salesperson or other filter is active)
+        self.banner_frame = ctk.CTkFrame(self.table_card, fg_color=("#F5EBE1", "#2D2620"), corner_radius=8)
+
         # Table Header Row (Stone)
         self.header_frame = ctk.CTkFrame(self.table_card, fg_color=(Theme.STONE, "#242220"), corner_radius=10, height=36)
         self.header_frame.pack(fill="x", padx=(18, 29), pady=(12, 6))
@@ -148,6 +181,39 @@ class QuotationListView(ctk.CTkFrame):
         self.rows_frame = ctk.CTkScrollableFrame(self.table_card, fg_color="transparent")
         self.rows_frame.pack(fill="both", expand=True, padx=12, pady=(0, 12))
 
+    def load_salespersons(self):
+        try:
+            self.salespersons_cache = list(
+                SalesPerson.select().where(SalesPerson.is_active == True).order_by(SalesPerson.name.asc())
+            )
+            options = ["All Sales Associates"] + [
+                f"{s.name} ({s.role})" if s.role else s.name
+                for s in self.salespersons_cache
+            ]
+            self.sp_filter_menu.configure(values=options)
+            if self.selected_salesperson_id is None:
+                self.sp_filter_menu.set("All Sales Associates")
+        except Exception as e:
+            print(f"Error loading salespersons: {e}")
+
+    def on_salesperson_filter(self, val):
+        if val == "All Sales Associates":
+            self.selected_salesperson_id = None
+        else:
+            matched = None
+            for s in self.salespersons_cache:
+                formatted = f"{s.name} ({s.role})" if s.role else s.name
+                if val == formatted or val == s.name:
+                    matched = s
+                    break
+            self.selected_salesperson_id = matched.id if matched else None
+        self.refresh_table()
+
+    def clear_salesperson_filter(self):
+        self.selected_salesperson_id = None
+        self.sp_filter_menu.set("All Sales Associates")
+        self.refresh_table()
+
     def _on_search_key(self, event=None):
         if hasattr(self, '_search_timer') and self._search_timer:
             self.after_cancel(self._search_timer)
@@ -167,8 +233,51 @@ class QuotationListView(ctk.CTkFrame):
 
         quotes = QuotationService.get_all_quotations(
             status=self.selected_status,
+            sales_person_id=self.selected_salesperson_id,
             search_query=self.search_text
         )
+
+        # Update salesperson filter banner
+        for w in self.banner_frame.winfo_children():
+            w.destroy()
+
+        if self.selected_salesperson_id:
+            sp = next((s for s in self.salespersons_cache if s.id == self.selected_salesperson_id), None)
+            sp_name = sp.name if sp else "Selected Salesperson"
+            sp_role = f" ({sp.role})" if sp and sp.role else ""
+
+            total_count = len(quotes)
+            won_credit = sum(q.get_credit_for_salesperson(self.selected_salesperson_id) for q in quotes if q.status == "Won")
+            pipe_credit = sum(q.get_credit_for_salesperson(self.selected_salesperson_id) for q in quotes if q.status in ["Open", "In-Review"])
+            total_credit = won_credit + pipe_credit
+
+            self.banner_frame.pack(fill="x", padx=(18, 29), pady=(8, 2), before=self.header_frame)
+
+            banner_left = ctk.CTkFrame(self.banner_frame, fg_color="transparent")
+            banner_left.pack(side="left", padx=12, pady=6)
+
+            ctk.CTkLabel(
+                banner_left,
+                text=f"👤 Filtered by: {sp_name}{sp_role}  •  {total_count} quotes  |  Won Achieved: ₹{won_credit:,.2f}  |  Active Pipeline: ₹{pipe_credit:,.2f}  |  Total Credit: ₹{total_credit:,.2f}",
+                font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11, weight="bold"),
+                text_color=(Theme.BLACK, Theme.PAPER)
+            ).pack(side="left")
+
+            ctk.CTkButton(
+                self.banner_frame,
+                text="✕ Clear Filter",
+                font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=10, weight="bold"),
+                width=100,
+                height=24,
+                corner_radius=Theme.RADIUS_PILL,
+                fg_color=Theme.BTN_SECONDARY_BG,
+                text_color=(Theme.BLACK, Theme.PAPER),
+                border_width=Theme.BORDER_WIDTH_BUTTON,
+                hover_color=Theme.DANGER,
+                command=self.clear_salesperson_filter
+            ).pack(side="right", padx=12, pady=6)
+        else:
+            self.banner_frame.pack_forget()
 
         if not quotes:
             empty_lbl = ctk.CTkLabel(
@@ -226,20 +335,46 @@ class QuotationListView(ctk.CTkFrame):
             # Col 2: Sales Person
             c2 = ctk.CTkFrame(row_frame, fg_color="transparent")
             c2.grid(row=0, column=2, padx=8, pady=8, sticky="w")
-            ctk.CTkLabel(
-                c2,
-                text=q.sales_person_name,
-                font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11),
-                text_color=(Theme.BLACK, Theme.PAPER)
-            ).pack(anchor="w")
-            if getattr(q, "assisted_by_name", None):
-                split_info = f"🤝 + {q.assisted_by_name} ({q.assisted_share_value:.0f}%)" if q.split_type == "percentage" else f"🤝 + {q.assisted_by_name} (₹{q.assisted_share_amount:,.0f})"
+            lead_name = q.sales_person_name or "Unassigned"
+            has_assisted = bool(getattr(q, "assisted_by_name", None))
+
+            if self.selected_salesperson_id:
+                my_credit = q.get_credit_for_salesperson(self.selected_salesperson_id)
+                if q.sales_person_id == self.selected_salesperson_id:
+                    role_tag = "👑 Lead Rep"
+                    col_role = Theme.PRIMARY
+                else:
+                    role_tag = "🤝 Assisted Partner"
+                    col_role = Theme.SUCCESS
+
                 ctk.CTkLabel(
                     c2,
-                    text=split_info,
-                    font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=9, weight="bold"),
-                    text_color=Theme.PRIMARY
+                    text=lead_name,
+                    font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11, weight="bold" if q.sales_person_id == self.selected_salesperson_id else "normal"),
+                    text_color=(Theme.BLACK, Theme.PAPER)
                 ).pack(anchor="w")
+
+                ctk.CTkLabel(
+                    c2,
+                    text=f"{role_tag} • Credit: ₹{my_credit:,.0f}",
+                    font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=9, weight="bold"),
+                    text_color=col_role
+                ).pack(anchor="w")
+            else:
+                ctk.CTkLabel(
+                    c2,
+                    text=lead_name,
+                    font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11),
+                    text_color=(Theme.BLACK, Theme.PAPER)
+                ).pack(anchor="w")
+                if has_assisted:
+                    split_info = f"🤝 + {q.assisted_by_name} ({q.assisted_share_value:.0f}%)" if q.split_type == "percentage" else f"🤝 + {q.assisted_by_name} (₹{q.assisted_share_amount:,.0f})"
+                    ctk.CTkLabel(
+                        c2,
+                        text=split_info,
+                        font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=9, weight="bold"),
+                        text_color=Theme.PRIMARY
+                    ).pack(anchor="w")
 
             # Col 3: Net Total
             ctk.CTkLabel(

@@ -323,20 +323,49 @@ class SalesTeamView(ctk.CTkFrame):
             if start_d and end_d:
                 target_val = sp.get_target_for_period(start_d, end_d)
                 achieved = sp.get_sales_achieved(start_date=start_d, end_date=end_d)
+                pipeline = sp.get_pipeline_value(start_date=start_d, end_date=end_d)
             else:
                 target_val = sp.monthly_target
-                achieved = sp.get_sales_achieved()
+                achieved = sp.get_sales_achieved(month=today.month, year=today.year)
+                pipeline = sp.get_pipeline_value(month=today.month, year=today.year)
 
             balance = max(0.0, round(target_val - achieved, 2))
             pct = (achieved / target_val * 100.0) if target_val > 0 else 0.0
 
             metrics_grid = ctk.CTkFrame(card, fg_color=(Theme.PAPER, "#1E1C1A"), corner_radius=Theme.RADIUS_SM, border_width=1, border_color=Theme.LIGHT_BORDER)
             metrics_grid.pack(fill="x", padx=16, pady=(0, 8))
-            metrics_grid.grid_columnconfigure((0, 1, 2), weight=1)
+            metrics_grid.grid_columnconfigure((0, 1, 2, 3), weight=1)
 
             self.create_metric_cell(metrics_grid, 0, scope_title, f"₹ {target_val:,.2f}", Theme.SECONDARY)
             self.create_metric_cell(metrics_grid, 1, "SALES ACHIEVED", f"₹ {achieved:,.2f}", Theme.SUCCESS)
-            self.create_metric_cell(metrics_grid, 2, "BALANCE TO TARGET", f"₹ {balance:,.2f}", Theme.DANGER if balance > 0 else Theme.SUCCESS)
+            self.create_metric_cell(metrics_grid, 2, "ACTIVE PIPELINE", f"₹ {pipeline:,.2f}", Theme.PRIMARY)
+            self.create_metric_cell(metrics_grid, 3, "BALANCE TO TARGET", f"₹ {balance:,.2f}", Theme.DANGER if balance > 0 else Theme.SUCCESS)
+
+            # Check assisted co-sales contribution
+            assisted_won_q = list(Quotation.select().where(
+                (Quotation.assisted_by == sp) &
+                (Quotation.status == Quotation.STATUS_WON) &
+                ((Quotation.quotation_date >= start_d) if start_d else (Quotation.quotation_date.month == today.month)) &
+                ((Quotation.quotation_date <= end_d) if end_d else (Quotation.quotation_date.year == today.year))
+            ))
+            assisted_pipe_q = list(Quotation.select().where(
+                (Quotation.assisted_by == sp) &
+                (Quotation.status.in_([Quotation.STATUS_OPEN, Quotation.STATUS_IN_REVIEW])) &
+                ((Quotation.quotation_date >= start_d) if start_d else (Quotation.quotation_date.month == today.month)) &
+                ((Quotation.quotation_date <= end_d) if end_d else (Quotation.quotation_date.year == today.year))
+            ))
+            asst_won_cred = sum(q.get_credit_for_salesperson(sp.id) for q in assisted_won_q)
+            asst_pipe_cred = sum(q.get_credit_for_salesperson(sp.id) for q in assisted_pipe_q)
+
+            if asst_won_cred > 0 or asst_pipe_cred > 0:
+                asst_row = ctk.CTkFrame(card, fg_color="transparent")
+                asst_row.pack(fill="x", padx=16, pady=(0, 6))
+                ctk.CTkLabel(
+                    asst_row,
+                    text=f"🤝 Co-Sales / Assisted Deals: ₹ {asst_won_cred:,.2f} won ({len(assisted_won_q)} deals) • ₹ {asst_pipe_cred:,.2f} pipeline ({len(assisted_pipe_q)} deals) added to target",
+                    font=ctk.CTkFont(size=10, weight="bold"),
+                    text_color=Theme.PRIMARY
+                ).pack(side="left")
 
             # Active Target Rules Badges
             configured_targets = list(
