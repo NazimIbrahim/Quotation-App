@@ -679,6 +679,96 @@ def test_system():
     assert "Nos" in pdf_multi_text
     print(f" -> PASS: Created quotation with all 5 product types (Box, Sqft, Pieces, Bags, Nos). Math verified (Taxable: ₹61,900, Gross: ₹73,042), and PDF verified: {os.path.basename(pdf_multi)}")
 
+    # -------------------------------------------------------------
+    # 20. ENCRYPTED PRODUCT NAMED QUOTATION EXPORT (BRAND REMOVAL & AMA CODES)
+    # -------------------------------------------------------------
+    print("\n[TEST 20] Verifying Encrypted Product Named Quotation Export (Brand Removal, 4-5 Letter Code + -AMA, Original DB Integrity)...")
+    enc_payload = {
+        "quotation_number": "AMA-2026-ENC-TEST",
+        "customer_id": cust.id,
+        "sales_person_id": lead_sp.id,
+        "tax_mode": "exclusive",
+        "round_off": 0.0,
+        "areas": [
+            {
+                "area_name": "Master Suite & Balcony",
+                "items": [
+                    {
+                        "description": "Kajaria Eternity Marmo Royal",
+                        "size": "800X1600",
+                        "brand": "Kajaria Eternity",
+                        "product_type": "Box",
+                        "coverage_area": 27.56,
+                        "quantity_sqft": 551.2,
+                        "rate_per_sqft": 110.0,
+                        "quantity_boxes": 20.0,
+                        "rate_per_box": 3031.6,
+                        "tax_mode": "exclusive",
+                        "total_amount": 60632.0
+                    },
+                    {
+                        "description": "Simpolo Wall Decor Flora",
+                        "size": "300X600",
+                        "brand": "Simpolo Ceramics",
+                        "product_type": "Box",
+                        "coverage_area": 9.69,
+                        "quantity_sqft": 96.9,
+                        "rate_per_sqft": 65.0,
+                        "quantity_boxes": 10.0,
+                        "rate_per_box": 629.85,
+                        "tax_mode": "exclusive",
+                        "total_amount": 6298.5
+                    }
+                ]
+            }
+        ]
+    }
+    q_enc = QuotationService.save_quotation(enc_payload)
+
+    # 1. Verify that database contains original unencrypted values
+    db_items = list(QuotationItem.select().where(QuotationItem.quotation == q_enc).order_by(QuotationItem.sl_no))
+    assert db_items[0].description == "Kajaria Eternity Marmo Royal"
+    assert db_items[0].brand == "Kajaria Eternity"
+    assert db_items[1].description == "Simpolo Wall Decor Flora"
+    assert db_items[1].brand == "Simpolo Ceramics"
+
+    # 2. Generate standard PDF -> brand and descriptions must be present
+    pdf_std = CeramicPDFGenerator.generate_quotation_pdf(q_enc.id, encrypted=False)
+    doc_std = pdfium.PdfDocument(pdf_std)
+    text_std = "".join(p.get_textpage().get_text_range() for p in doc_std)
+    norm_text_std = text_std.replace("\r", " ").replace("\n", " ")
+    assert "Kajaria" in norm_text_std
+    assert "Simpolo" in norm_text_std
+    assert "Marmo Royal" in norm_text_std
+
+    # 3. Generate ENCRYPTED PDF -> brands removed, descriptions masked with 4-5 letters + '-AMA'
+    pdf_enc = CeramicPDFGenerator.generate_quotation_pdf(q_enc.id, encrypted=True)
+    doc_enc = pdfium.PdfDocument(pdf_enc)
+    text_enc = "".join(p.get_textpage().get_text_range() for p in doc_enc)
+    norm_text_enc = text_enc.replace("\r", " ").replace("\n", " ")
+
+    # Competitor brand names and original product names MUST NOT exist in encrypted PDF
+    assert "Kajaria" not in norm_text_enc, "Brand 'Kajaria' leaked into encrypted PDF!"
+    assert "Simpolo" not in norm_text_enc, "Brand 'Simpolo' leaked into encrypted PDF!"
+    assert "Marmo Royal" not in norm_text_enc, "Original product description leaked into encrypted PDF!"
+    assert "Flora" not in norm_text_enc, "Original product description leaked into encrypted PDF!"
+
+    # Encrypted AMA product code pattern (4-5 uppercase letters followed by -AMA)
+    import re
+    ama_codes = re.findall(r"\b[A-Z]{4,5}-AMA\b", text_enc)
+    assert len(ama_codes) >= 2, f"Expected at least 2 encrypted AMA product codes, found: {ama_codes}"
+    for c in ama_codes:
+        parts = c.split("-")
+        assert len(parts) == 2 and parts[1] == "AMA"
+        assert len(parts[0]) in (4, 5)
+
+    # Verify that database records remain STILL untouched after encrypted export
+    db_items_after = list(QuotationItem.select().where(QuotationItem.quotation == q_enc).order_by(QuotationItem.sl_no))
+    assert db_items_after[0].description == "Kajaria Eternity Marmo Royal"
+    assert db_items_after[0].brand == "Kajaria Eternity"
+
+    print(f" -> PASS: Encrypted PDF verified ({os.path.basename(pdf_enc)}): Brands removed, AMA codes generated ({ama_codes}), and DB intact.")
+
     print("\n" + "=" * 65)
     print("  ALL CORE MODULES AND TESTS COMPLETED WITH 100% SUCCESS!")
     print("=" * 65)

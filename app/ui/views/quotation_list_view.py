@@ -422,7 +422,7 @@ class QuotationListView(ctk.CTkFrame):
             pdf_btn = ctk.CTkButton(
                 c6,
                 text="📄 PDF",
-                width=48,
+                width=46,
                 height=26,
                 corner_radius=Theme.RADIUS_SM,
                 border_width=Theme.BORDER_WIDTH_BUTTON,
@@ -432,6 +432,22 @@ class QuotationListView(ctk.CTkFrame):
                 command=lambda qid=q.id: self.export_pdf(qid)
             )
             pdf_btn.pack(side="left", padx=2)
+
+            # Encrypted PDF Button (Muted slate)
+            enc_pdf_btn = ctk.CTkButton(
+                c6,
+                text="🔒 Enc",
+                width=46,
+                height=26,
+                corner_radius=Theme.RADIUS_SM,
+                border_width=Theme.BORDER_WIDTH_BUTTON,
+                font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=10, weight="bold"),
+                fg_color=("#475569", "#334155"),
+                text_color="#FFFFFF",
+                hover_color=("#334155", "#1E293B"),
+                command=lambda qid=q.id: self.export_pdf(qid, encrypted=True)
+            )
+            enc_pdf_btn.pack(side="left", padx=2)
 
             # Edit Button
             edit_btn = ctk.CTkButton(
@@ -495,13 +511,19 @@ class QuotationListView(ctk.CTkFrame):
             )
             del_btn.pack(side="left", padx=2)
 
-    def export_pdf(self, quote_id: int):
+    def export_pdf(self, quote_id: int, encrypted: bool = False):
         try:
-            pdf_path = CeramicPDFGenerator.generate_quotation_pdf(quote_id)
-            msgbox.showinfo(
-                "PDF Export Complete",
-                f"Quotation PDF generated successfully!\n\nLocation:\n{pdf_path}"
-            )
+            pdf_path = CeramicPDFGenerator.generate_quotation_pdf(quote_id, encrypted=encrypted)
+            title = "Encrypted PDF Export Complete" if encrypted else "PDF Export Complete"
+            desc = (
+                f"Encrypted Quotation PDF generated successfully!\n\n"
+                f"• Brands have been removed.\n"
+                f"• Products masked with AMA codes (e.g. HSDS-AMA).\n"
+                f"• Database records remain 100% untouched.\n\n"
+                f"Location:\n{pdf_path}"
+            ) if encrypted else f"Quotation PDF generated successfully!\n\nLocation:\n{pdf_path}"
+
+            msgbox.showinfo(title, desc)
             # Open PDF in default viewer
             try:
                 os.startfile(pdf_path)

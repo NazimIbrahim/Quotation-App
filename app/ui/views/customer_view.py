@@ -351,7 +351,7 @@ class CustomerManagementView(ctk.CTkFrame):
             ctk.CTkButton(
                 btn_box,
                 text="PDF",
-                width=48,
+                width=38,
                 height=26,
                 corner_radius=Theme.RADIUS_PILL,
                 font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=10, weight="bold"),
@@ -363,8 +363,22 @@ class CustomerManagementView(ctk.CTkFrame):
 
             ctk.CTkButton(
                 btn_box,
+                text="Enc",
+                width=38,
+                height=26,
+                corner_radius=Theme.RADIUS_PILL,
+                font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=10, weight="bold"),
+                fg_color=("#475569", "#334155"),
+                text_color="#FFFFFF",
+                hover_color=("#334155", "#1E293B"),
+                border_width=Theme.BORDER_WIDTH_BUTTON,
+                command=lambda qid=q.id: self.export_pdf(qid, encrypted=True)
+            ).pack(side="left", padx=2)
+
+            ctk.CTkButton(
+                btn_box,
                 text="Edit",
-                width=48,
+                width=42,
                 height=26,
                 corner_radius=Theme.RADIUS_PILL,
                 font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=10, weight="bold"),
@@ -380,10 +394,17 @@ class CustomerManagementView(ctk.CTkFrame):
         ctk.CTkLabel(f, text=title, font=ctk.CTkFont(size=10), text_color=("#615D56", "#A8A297")).pack(anchor="w")
         ctk.CTkLabel(f, text=val, font=ctk.CTkFont(size=13, weight="bold"), text_color=Theme.PRIMARY).pack(anchor="w")
 
-    def export_pdf(self, quote_id: int):
+    def export_pdf(self, quote_id: int, encrypted: bool = False):
         try:
-            pdf_path = CeramicPDFGenerator.generate_quotation_pdf(quote_id)
-            msgbox.showinfo("PDF Generated", f"PDF exported successfully:\n{pdf_path}")
+            pdf_path = CeramicPDFGenerator.generate_quotation_pdf(quote_id, encrypted=encrypted)
+            title = "Encrypted PDF Generated" if encrypted else "PDF Generated"
+            desc = (
+                f"Encrypted Quotation PDF exported successfully!\n\n"
+                f"• Brands removed\n"
+                f"• Products masked with AMA codes (e.g. HSDS-AMA)\n\n"
+                f"Location:\n{pdf_path}"
+            ) if encrypted else f"PDF exported successfully:\n{pdf_path}"
+            msgbox.showinfo(title, desc)
             import os
             os.startfile(pdf_path)
         except Exception as e:

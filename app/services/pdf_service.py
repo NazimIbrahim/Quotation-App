@@ -5,6 +5,8 @@ exact specifications, all terms & conditions, single-line company name, and
 transparent 1:1 logo branding aligned to the right.
 """
 import os
+import random
+import string
 from datetime import date, datetime
 from pathlib import Path
 
@@ -242,15 +244,21 @@ class CeramicPDFGenerator:
         canv.restoreState()
 
     @classmethod
-    def generate_quotation_pdf(cls, quote_id: int, output_filepath: str = None) -> str:
-        """Generates official quotation PDF with single-line company name, 1:1 logo, and all terms."""
+    def generate_quotation_pdf(cls, quote_id: int, output_filepath: str = None, encrypted: bool = False) -> str:
+        """Generates official quotation PDF with single-line company name, 1:1 logo, and all terms.
+        If encrypted=True:
+            - Brand column is removed completely
+            - Product names are masked into 4-5 random alphabets + '-AMA' (e.g. 'HSDS-AMA')
+            - Database records remain 100% original and untouched
+        """
         quote = Quotation.get_by_id(quote_id)
         if not quote:
             raise ValueError(f"Quotation #{quote_id} not found.")
 
         if not output_filepath:
             safe_num = quote.quotation_number.replace("/", "_").replace("\\", "_")
-            filename = f"Quotation_{safe_num}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+            enc_tag = "_Encrypted" if encrypted else ""
+            filename = f"Quotation_{safe_num}{enc_tag}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
             output_filepath = str(OUTPUT_PDF_DIR / filename)
 
         doc = SimpleDocTemplate(
@@ -568,24 +576,42 @@ class CeramicPDFGenerator:
         story.append(Spacer(1, cls.SECTION_GAP))
 
         # =============================================================
-        # 3. PRODUCT ITEMS TABLE (10 Columns)
+        # 3. PRODUCT ITEMS TABLE (10 Columns Standard, 9 Columns Encrypted)
         # =============================================================
-        col_widths = [22, 126, 46, 52, 45, 47, 49, 46, 50, 64]
-
-        table_data = [
-            [
-                Paragraph("<b>NO.</b>", style_th),
-                Paragraph("<b>PRODUCT DESCRIPTION</b>", style_th),
-                Paragraph("<b>SIZE</b>", style_th),
-                Paragraph("<b>BRAND</b>", style_th),
-                Paragraph("<b>COV.<br/>(SQFT/BX)</b>", style_th),
-                Paragraph("<b>QTY<br/>(SQFT)</b>", style_th),
-                Paragraph("<b>RATE/SQFT<br/>(Rs.)</b>", style_th),
-                Paragraph("<b>QTY<br/>(BOX/UNIT)</b>", style_th),
-                Paragraph("<b>RATE/UNIT<br/>(Rs.)</b>", style_th),
-                Paragraph("<b>TOTAL<br/>(Rs.)</b>", style_th),
+        if encrypted:
+            # Brand column is removed; width 52pt redistributed (126 + 48 = 174, NO is 24, etc.)
+            col_widths = [24, 174, 48, 47, 48, 48, 46, 48, 64]  # sum = 547
+            table_data = [
+                [
+                    Paragraph("<b>NO.</b>", style_th),
+                    Paragraph("<b>PRODUCT CODE</b>", style_th),
+                    Paragraph("<b>SIZE</b>", style_th),
+                    Paragraph("<b>COV.<br/>(SQFT/BX)</b>", style_th),
+                    Paragraph("<b>QTY<br/>(SQFT)</b>", style_th),
+                    Paragraph("<b>RATE/SQFT<br/>(Rs.)</b>", style_th),
+                    Paragraph("<b>QTY<br/>(BOX/UNIT)</b>", style_th),
+                    Paragraph("<b>RATE/UNIT<br/>(Rs.)</b>", style_th),
+                    Paragraph("<b>TOTAL<br/>(Rs.)</b>", style_th),
+                ]
             ]
-        ]
+            span_cols = 8
+        else:
+            col_widths = [22, 126, 46, 52, 45, 47, 49, 46, 50, 64]  # sum = 547
+            table_data = [
+                [
+                    Paragraph("<b>NO.</b>", style_th),
+                    Paragraph("<b>PRODUCT DESCRIPTION</b>", style_th),
+                    Paragraph("<b>SIZE</b>", style_th),
+                    Paragraph("<b>BRAND</b>", style_th),
+                    Paragraph("<b>COV.<br/>(SQFT/BX)</b>", style_th),
+                    Paragraph("<b>QTY<br/>(SQFT)</b>", style_th),
+                    Paragraph("<b>RATE/SQFT<br/>(Rs.)</b>", style_th),
+                    Paragraph("<b>QTY<br/>(BOX/UNIT)</b>", style_th),
+                    Paragraph("<b>RATE/UNIT<br/>(Rs.)</b>", style_th),
+                    Paragraph("<b>TOTAL<br/>(Rs.)</b>", style_th),
+                ]
+            ]
+            span_cols = 9
 
         table_styles = [
             ('BACKGROUND', (0, 0), (-1, 0), cls.PRIMARY_COLOR),
@@ -604,17 +630,33 @@ class CeramicPDFGenerator:
         current_row = 1
         areas = list(quote.areas.order_by(QuotationArea.display_order))
 
+        # Encrypted Product Code Map: ensures consistency for identical products in the same quotation
+        enc_code_map = {}
+        used_enc_codes = set()
+
+        def get_encrypted_product_code(key: str) -> str:
+            if key not in enc_code_map:
+                while True:
+                    k_len = random.choice([4, 5])
+                    letters = "".join(random.choices(string.ascii_uppercase, k=k_len))
+                    code = f"{letters}-AMA"
+                    if code not in used_enc_codes:
+                        used_enc_codes.add(code)
+                        enc_code_map[key] = code
+                        break
+            return enc_code_map[key]
+
         for area in areas:
             area_title = f"✦ AREA: {area.area_name.upper()}"
             area_cell = Paragraph(f"<b>{area_title}</b>", style_area_title)
-            table_data.append([area_cell, "", "", "", "", "", "", "", "", ""])
+            table_data.append([area_cell] + ([""] * span_cols))
 
-            table_styles.append(('SPAN', (0, current_row), (9, current_row)))
-            table_styles.append(('BACKGROUND', (0, current_row), (9, current_row), colors.HexColor("#F8FAFC")))
-            table_styles.append(('LINEBELOW', (0, current_row), (9, current_row), 0.5, cls.DIVIDER_COLOR))
-            table_styles.append(('LINEABOVE', (0, current_row), (9, current_row), 0.5, cls.DIVIDER_COLOR))
-            table_styles.append(('TOPPADDING', (0, current_row), (9, current_row), 3.5))
-            table_styles.append(('BOTTOMPADDING', (0, current_row), (9, current_row), 3.5))
+            table_styles.append(('SPAN', (0, current_row), (span_cols, current_row)))
+            table_styles.append(('BACKGROUND', (0, current_row), (span_cols, current_row), colors.HexColor("#F8FAFC")))
+            table_styles.append(('LINEBELOW', (0, current_row), (span_cols, current_row), 0.5, cls.DIVIDER_COLOR))
+            table_styles.append(('LINEABOVE', (0, current_row), (span_cols, current_row), 0.5, cls.DIVIDER_COLOR))
+            table_styles.append(('TOPPADDING', (0, current_row), (span_cols, current_row), 3.5))
+            table_styles.append(('BOTTOMPADDING', (0, current_row), (span_cols, current_row), 3.5))
             current_row += 1
 
             items = list(area.items.order_by(QuotationItem.sl_no))
@@ -661,18 +703,37 @@ class CeramicPDFGenerator:
                     qty_box_str = f"{item.quantity_boxes:,.1f}" if item.quantity_boxes > 0 else "-"
                     rate_box_str = f"<b>{item.rate_per_box:,.2f}</b><br/><font size='5.5' color='#64748B'>{tax_tag}</font>" if item.rate_per_box > 0 else "-"
 
-                table_data.append([
-                    Paragraph(f"{item.sl_no:02d}", style_td_center),
-                    Paragraph(f"<b>{item.description}</b>", style_td),
-                    Paragraph(item.size, style_td_center),
-                    Paragraph(item_brand, style_td_center),
-                    Paragraph(cov_str, style_td_center),
-                    Paragraph(qty_sqft_str, style_td_right),
-                    Paragraph(rate_sqft_str, style_td_right),
-                    Paragraph(qty_box_str, style_td_right),
-                    Paragraph(rate_box_str, style_td_right),
-                    Paragraph(f"<b>{total_str}</b>", style_td_right),
-                ])
+                if encrypted:
+                    raw_key = (item.description or "").strip()
+                    if not raw_key:
+                        raw_key = f"{item.brand}_{item.size}_{item.product_type}_{item.id or item.sl_no}"
+                    disp_desc = get_encrypted_product_code(raw_key)
+
+                    table_data.append([
+                        Paragraph(f"{item.sl_no:02d}", style_td_center),
+                        Paragraph(f"<b>{disp_desc}</b>", style_td),
+                        Paragraph(item.size, style_td_center),
+                        Paragraph(cov_str, style_td_center),
+                        Paragraph(qty_sqft_str, style_td_right),
+                        Paragraph(rate_sqft_str, style_td_right),
+                        Paragraph(qty_box_str, style_td_right),
+                        Paragraph(rate_box_str, style_td_right),
+                        Paragraph(f"<b>{total_str}</b>", style_td_right),
+                    ])
+                else:
+                    disp_desc = item.description or f"AMA {item.size} Tile"
+                    table_data.append([
+                        Paragraph(f"{item.sl_no:02d}", style_td_center),
+                        Paragraph(f"<b>{disp_desc}</b>", style_td),
+                        Paragraph(item.size, style_td_center),
+                        Paragraph(item_brand, style_td_center),
+                        Paragraph(cov_str, style_td_center),
+                        Paragraph(qty_sqft_str, style_td_right),
+                        Paragraph(rate_sqft_str, style_td_right),
+                        Paragraph(qty_box_str, style_td_right),
+                        Paragraph(rate_box_str, style_td_right),
+                        Paragraph(f"<b>{total_str}</b>", style_td_right),
+                    ])
                 current_row += 1
 
         items_table = Table(table_data, colWidths=col_widths, repeatRows=1)

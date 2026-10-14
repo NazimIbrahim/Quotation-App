@@ -1259,6 +1259,19 @@ class QuotationEditorView(ctk.CTkFrame):
         )
         self.top_save_pdf_btn.pack(side="left", padx=4)
 
+        self.top_save_enc_pdf_btn = ctk.CTkButton(
+            btn_box,
+            text="🔒 Encrypted Export",
+            font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11, weight="bold"),
+            fg_color=("#475569", "#334155"),
+            border_width=Theme.BORDER_WIDTH_BUTTON,
+            corner_radius=Theme.RADIUS_PILL,
+            hover_color=("#334155", "#1E293B"),
+            command=self.save_and_export_encrypted_pdf,
+            height=36
+        )
+        self.top_save_enc_pdf_btn.pack(side="left", padx=4)
+
         self.top_back_btn = ctk.CTkButton(
             btn_box,
             text="← Back to List",
@@ -1363,6 +1376,19 @@ class QuotationEditorView(ctk.CTkFrame):
             height=36
         )
         self.footer_save_pdf_btn.pack(side="right", padx=(6, 0))
+
+        self.footer_save_enc_pdf_btn = ctk.CTkButton(
+            footer_right,
+            text="🔒 Encrypted Export",
+            font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11, weight="bold"),
+            fg_color=("#475569", "#334155"),
+            hover_color=("#334155", "#1E293B"),
+            border_width=Theme.BORDER_WIDTH_BUTTON,
+            corner_radius=Theme.RADIUS_PILL,
+            command=self.save_and_export_encrypted_pdf,
+            height=36
+        )
+        self.footer_save_enc_pdf_btn.pack(side="right", padx=(6, 0))
 
         self.footer_back_btn = ctk.CTkButton(
             footer_right,
@@ -1935,6 +1961,19 @@ class QuotationEditorView(ctk.CTkFrame):
             command=self.save_and_export_pdf
         )
         self.body_save_pdf_btn.pack(side="left", padx=8)
+
+        self.body_save_enc_pdf_btn = ctk.CTkButton(
+            ac_btn_box,
+            text="🔒 Encrypted Export",
+            font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=13, weight="bold"),
+            fg_color=("#475569", "#334155"),
+            hover_color=("#334155", "#1E293B"),
+            border_width=Theme.BORDER_WIDTH_BUTTON,
+            corner_radius=Theme.RADIUS_PILL,
+            height=42,
+            command=self.save_and_export_encrypted_pdf
+        )
+        self.body_save_enc_pdf_btn.pack(side="left", padx=8)
 
         self.body_back_btn = ctk.CTkButton(
             ac_btn_box,
@@ -3183,3 +3222,24 @@ class QuotationEditorView(ctk.CTkFrame):
                     pass
             except Exception as e:
                 msgbox.showerror("PDF Export Error", f"Failed to generate PDF:\n{str(e)}")
+
+    def save_and_export_encrypted_pdf(self):
+        quote = self.save_quotation()
+        if quote:
+            try:
+                pdf_path = CeramicPDFGenerator.generate_quotation_pdf(quote.id, encrypted=True)
+                msgbox.showinfo(
+                    "Encrypted PDF Export Complete",
+                    f"Encrypted Quotation PDF generated successfully!\n\n"
+                    f"• Brands have been removed.\n"
+                    f"• Product names masked with AMA codes (e.g. HSDS-AMA).\n"
+                    f"• Original database records remain 100% untouched.\n\n"
+                    f"Location:\n{pdf_path}"
+                )
+                try:
+                    import os
+                    os.startfile(pdf_path)
+                except Exception:
+                    pass
+            except Exception as e:
+                msgbox.showerror("Encrypted PDF Export Error", f"Failed to generate encrypted PDF:\n{str(e)}")
