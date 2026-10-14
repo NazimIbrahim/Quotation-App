@@ -773,5 +773,9 @@ def init_database():
         db.execute_sql("CREATE INDEX IF NOT EXISTS idx_sales_target_sp_type ON sales_targets(sales_person_id, target_type, year, month)")
         db.execute_sql("CREATE INDEX IF NOT EXISTS idx_sales_target_period ON sales_targets(sales_person_id, start_date, end_date)")
         db.execute_sql("CREATE INDEX IF NOT EXISTS idx_brand_size ON brand_size_coverages(brand_id, size)")
+        db.execute_sql("CREATE INDEX IF NOT EXISTS idx_customer_mobile ON customers(mobile_number)")
+        db.execute_sql("CREATE INDEX IF NOT EXISTS idx_customer_name ON customers(name)")
+        db.execute_sql("CREATE INDEX IF NOT EXISTS idx_quote_date ON quotations(quotation_date)")
+        db.execute_sql("CREATE INDEX IF NOT EXISTS idx_quote_num ON quotations(quotation_number)")
     except Exception:
         pass

@@ -2,7 +2,7 @@
 ; AMA Ceramics Quotation Management System Installer
 
 #define MyAppName "AMA Ceramics Quotation Management System"
-#define MyAppVersion "1.0"
+#define MyAppVersion "2.0"
 #define MyAppPublisher "AMA Ceramics Pvt Ltd"
 #define MyAppURL "https://www.amaceramics.com"
 #define MyAppExeName "AMA_Ceramics_Quotation.exe"
@@ -23,17 +23,17 @@ DisableProgramGroupPage=yes
 PrivilegesRequired=lowest
 PrivilegesRequiredOverridesAllowed=dialog
 OutputDir=dist_installer
-OutputBaseFilename=AMA_Ceramics_Quotation_Setup_v1.0
+OutputBaseFilename=AMA_Ceramics_Quotation_Setup_v2.0
 SetupIconFile=assets\app_icon.ico
 UninstallDisplayIcon={app}\{#MyAppExeName}
 Compression=lzma2/ultra64
 SolidCompression=yes
 WizardStyle=modern
 ArchitecturesInstallIn64BitMode=x64compatible
-VersionInfoVersion=1.0.0.0
+VersionInfoVersion=2.0.0.0
 VersionInfoCompany=AMA Ceramics Pvt Ltd
 VersionInfoDescription=AMA Ceramics Quotation Management System Installer
-VersionInfoProductVersion=1.0.0.0
+VersionInfoProductVersion=2.0.0.0
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"

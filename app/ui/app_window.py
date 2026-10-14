@@ -5,7 +5,7 @@ navigation sidebar, user role switcher, and dynamic view router.
 import tkinter.messagebox as msgbox
 import customtkinter as ctk
 
-from app.config import ASSETS_DIR
+from app.config import ASSETS_DIR, APP_VERSION
 from app.ui.theme import Theme
 from app.database.models import SalesPerson, CompanySetting, init_database
 from app.database.seed_data import seed_database
@@ -26,7 +26,7 @@ class AppWindow(ctk.CTk):
         super().__init__()
 
         # Window Configuration
-        self.title("AMA Ceramics Pvt Ltd - Ceramic & Tile Quotation Management System")
+        self.title(f"AMA Ceramics Pvt Ltd - Quotation App v{APP_VERSION}")
         self.geometry("1320x840")
         self.minsize(1080, 680)
 
@@ -196,10 +196,10 @@ class AppWindow(ctk.CTk):
         bottom_box = ctk.CTkFrame(self.sidebar, fg_color="transparent")
         bottom_box.pack(side="bottom", fill="x", padx=14, pady=16)
 
-        # Database Status
+        # Database Status & App Version
         ctk.CTkLabel(
             bottom_box,
-            text="● SQLite Database Connected",
+            text=f"● Quotation App v{APP_VERSION} • Online",
             font=ctk.CTkFont(size=10, weight="bold"),
             text_color=Theme.SUCCESS
         ).pack(anchor="w", pady=(0, 8))

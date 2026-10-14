@@ -1,11 +1,12 @@
 """
 Configuration and constants for AMA Ceramics Quotation Management System.
 """
-from pathlib import Path
-
 import sys
 import os
 from pathlib import Path
+
+APP_VERSION = "2.0.0"
+APP_NAME = "Quotation App"
 
 # Runtime directory resolution (dev vs frozen executable)
 if getattr(sys, "frozen", False):

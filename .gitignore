@@ -15,6 +15,7 @@ Thumbs.db
 # Generated test and runtime PDF exports
 output_pdfs/*.pdf
 output_pdfs/*.csv
+output_pdfs/*.png
 
 # Build and Distribution artifacts
 build/

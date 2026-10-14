@@ -1,4 +1,4 @@
-# ✦ AMA Ceramics Pvt Ltd — Ceramic & Tile Quotation Management System
+# ✦ AMA Ceramics Pvt Ltd — Ceramic & Tile Quotation Management System (v2.0)
 
 A standalone, modern desktop enterprise application built in Python for **AMA Ceramics Pvt Ltd** to streamline the lifecycle of ceramic and vitrified tile quotations, multi-area project estimation, payment tracking, salesperson target performance, and printable PDF generation.
 
@@ -203,6 +203,15 @@ Navigate to **🏷️ Brands & Coverage** in the left sidebar to manage tile bra
   - **Inline Quick-Add**: Select `+ Add New Size...` directly in any item row's Size dropdown to add a new packaging size on the fly.
   - **Auto-Calculations**: Selecting Brand and Size auto-fills the exact Coverage Area (Sqft/Box), default rates, and live box/sqft calculations.
 
+### 8. What's New in Version 2.0 (v2.0 Release Highlights)
+- 📦 **Multi-Unit Product Types**: Full native support for **Box**, **Sqft**, **Pieces**, **Bags**, and **Nos** in Brand catalogs, quotation rows, calculations, and PDF generation (`QTY (BOX/UNIT)`).
+- 🔒 **Encrypted Quotation Export**: 1-click masked quote PDF (`[🔒 Enc]`) generating 4-5 random letter AMA codes (e.g. `HSDS-AMA`) with brand names stripped, strictly preserving original database records.
+- 🎯 **Smart Lump-Sum Discounting with CERA Exclusion**: Distribute overall lump-sum discounts evenly across item rates so the final customer PDF displays clean rates without negative discount lines, while strictly leaving CERA brand items at 0% discount.
+- 👥 **Assisted Salesperson Collaboration & Deal Splits**: Assign secondary sales executives with custom percentage or fixed-amount commission splits. Both reps appear on quotes and earn proper target achievement credit.
+- 📊 **Periodic Quotations Audit & Filtered Export**: Export quotations filtered by time period (Today, This Week, This Month, Last Month, Last 30 Days, This Year, All Time, or Custom), Salesperson, and Status (`Only Won`, `Only Open`, `Only In-Review`, `Only Lost`) to executive PDF or CSV.
+- 🔍 **Customer Auto-Popup & Phone Match**: Typing a customer's phone or name automatically searches the database and populates delivery address, site, and profile.
+- ⚡ **High-Performance Architecture**: SQLite WAL mode, composite indexes, 64MB cache, memory-mapped I/O, and batch pre-fetching for instant response times.
+
 ---
 
 ## 🗄️ Preloaded Demo Seed Data
@@ -234,17 +243,16 @@ The application comes preloaded with ready-to-test data:
 The application is fully bundled as a standalone Windows desktop distribution. **No Python installation or command line knowledge is required on the target computer.**
 
 ### Option 1: Official Windows Installer (Recommended)
-1. Download **[`AMA_Ceramics_Quotation_Setup_v1.0.exe`](https://github.com/NazimIbrahim/Quotation-App/releases/download/v1.0/AMA_Ceramics_Quotation_Setup_v1.0.exe)** from [GitHub Releases v1.0](https://github.com/NazimIbrahim/Quotation-App/releases/tag/v1.0).
-2. Double-click `AMA_Ceramics_Quotation_Setup_v1.0.exe` to run the setup wizard.
+1. Download **[`AMA_Ceramics_Quotation_Setup_v2.0.exe`](https://github.com/NazimIbrahim/Quotation-App/releases/download/v2.0/AMA_Ceramics_Quotation_Setup_v2.0.exe)** from [GitHub Releases v2.0](https://github.com/NazimIbrahim/Quotation-App/releases/tag/v2.0).
+2. Double-click `AMA_Ceramics_Quotation_Setup_v2.0.exe` to run the setup wizard.
 3. Choose your installation location (defaults to your user profile or Program Files without requiring admin elevation).
 4. Check **Create Desktop Icon**.
 5. Click **Install**.
 6. The setup wizard creates a desktop shortcut with the official AMA Ceramics icon and launches the system immediately.
 
-### Option 2: Portable ZIP Package
-1. Download **[`AMA_Ceramics_Quotation_Portable_v1.0.zip`](https://github.com/NazimIbrahim/Quotation-App/releases/download/v1.0/AMA_Ceramics_Quotation_Portable_v1.0.zip)**.
-2. Extract the archive to any folder or USB drive.
-3. Double-click `AMA_Ceramics_Quotation.exe` to launch directly.
+### Option 2: Standalone Portable Executable
+1. Download **[`AMA_Ceramics_Quotation.exe`](https://github.com/NazimIbrahim/Quotation-App/releases/download/v2.0/AMA_Ceramics_Quotation.exe)**.
+2. Double-click `AMA_Ceramics_Quotation.exe` to launch directly from any folder or USB drive.
 
 ### Building the Setup Installer from Source
 To recompile the standalone binary and setup installer at any time:
@@ -252,3 +260,4 @@ To recompile the standalone binary and setup installer at any time:
 build_setup.bat
 ```
 This runs the full PyInstaller compilation and Inno Setup package generator in `dist_installer/`.
+
