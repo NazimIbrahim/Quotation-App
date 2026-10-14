@@ -93,10 +93,17 @@ def seed_brands_and_sizes():
 
     for b in brand_data:
         brand_obj = TileBrand.create(name=b["name"], description=b["description"])
-        for sz, cov, pcs, r_sqft, r_box in b["sizes"]:
+        for item in b["sizes"]:
+            sz = item[0]
+            cov = item[1]
+            pcs = item[2]
+            r_sqft = item[3]
+            r_box = item[4]
+            ptype = item[5] if len(item) > 5 else "Box"
             BrandSizeCoverage.create(
                 brand=brand_obj,
                 size=sz,
+                product_type=ptype,
                 coverage_sqft=cov,
                 pieces_per_box=pcs,
                 default_rate_sqft=r_sqft,

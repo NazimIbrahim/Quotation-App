@@ -290,10 +290,16 @@ class QuotationService:
                     item_tax_mode = item_data.get("tax_mode") or quote_tax_mode or "inclusive"
                     tax_percent = float(item_data.get("tax_percent", 18.0) or 18.0)
 
+                    ptype = item_data.get("product_type") or "Box"
+
                     # Calculate item total
                     item_total = float(item_data.get("total_amount") or 0.0)
                     if item_total <= 0:
-                        if qty_sqft > 0 and rate_sqft > 0:
+                        if ptype == "Sqft" and qty_sqft > 0 and rate_sqft > 0:
+                            item_total = round(qty_sqft * rate_sqft, 2)
+                        elif ptype in ["Pieces", "Bags", "Nos"] and qty_boxes > 0 and rate_box > 0:
+                            item_total = round(qty_boxes * rate_box, 2)
+                        elif qty_sqft > 0 and rate_sqft > 0:
                             item_total = round(qty_sqft * rate_sqft, 2)
                         elif qty_boxes > 0 and rate_box > 0:
                             item_total = round(qty_boxes * rate_box, 2)
@@ -319,6 +325,7 @@ class QuotationService:
                         description=desc,
                         size=size,
                         brand=brand,
+                        product_type=ptype,
                         coverage_area=coverage_area,
                         quantity_sqft=qty_sqft,
                         rate_per_sqft=rate_sqft,

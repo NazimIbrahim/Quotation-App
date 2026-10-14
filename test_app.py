@@ -555,6 +555,130 @@ def test_system():
     assert asst_sp.name in pdf_split_text
     print(f" -> PASS: Assisted deal split verified (50% -> ₹30k/₹30k, Amount -> ₹40k/₹20k). Both reps credited and PDF verified: {os.path.basename(pdf_split)}")
 
+    # -------------------------------------------------------------
+    # 19. PRODUCT TYPES (BOX, SQFT, PIECES, BAGS, NOS) IN BRAND CATALOG & QUOTATION
+    # -------------------------------------------------------------
+    print("\n[TEST 19] Verifying Product Types (Box, Sqft, Pieces, Bags, Nos) in Brand Catalog, Quotation Calculations, and PDF Output...")
+    chem_brand = TileBrand.create(name="Kajaria Supreme & Construction Chemicals", description="Vitrified slabs, adhesives & installation tools")
+    
+    # Configure sizes for each product type
+    sc_box = BrandSizeCoverage.create(
+        brand=chem_brand, size="1200X1800", product_type="Box", coverage_sqft=23.25, pieces_per_box=1, default_rate_sqft=120.0, default_rate_box=2790.0
+    )
+    sc_sqft = BrandSizeCoverage.create(
+        brand=chem_brand, size="Custom Cut Slab", product_type="Sqft", coverage_sqft=1.0, pieces_per_box=1, default_rate_sqft=150.0, default_rate_box=0.0
+    )
+    sc_pcs = BrandSizeCoverage.create(
+        brand=chem_brand, size="Metallic Trim 1200MM", product_type="Pieces", coverage_sqft=1.0, pieces_per_box=1, default_rate_sqft=0.0, default_rate_box=450.0
+    )
+    sc_bags = BrandSizeCoverage.create(
+        brand=chem_brand, size="Tile Adhesive 20Kg Bag", product_type="Bags", coverage_sqft=1.0, pieces_per_box=1, default_rate_sqft=0.0, default_rate_box=600.0
+    )
+    sc_nos = BrandSizeCoverage.create(
+        brand=chem_brand, size="Levelling Spacer Clip", product_type="Nos", coverage_sqft=1.0, pieces_per_box=1, default_rate_sqft=0.0, default_rate_box=25.0
+    )
+
+    assert sc_box.product_type == "Box"
+    assert sc_sqft.product_type == "Sqft"
+    assert sc_pcs.product_type == "Pieces"
+    assert sc_bags.product_type == "Bags"
+    assert sc_nos.product_type == "Nos"
+
+    multi_type_payload = {
+        "quotation_number": "AMA-2026-MULTI-TYPE",
+        "customer_id": cust.id,
+        "sales_person_id": lead_sp.id,
+        "tax_mode": "exclusive",
+        "round_off": 0.0,
+        "areas": [
+            {
+                "area_name": "Full Project Supply",
+                "items": [
+                    {
+                        "description": "Floor Tile Slab (Box Unit)",
+                        "size": "1200X1800",
+                        "brand": chem_brand.name,
+                        "product_type": "Box",
+                        "coverage_area": 23.25,
+                        "quantity_sqft": 232.5,
+                        "rate_per_sqft": 120.0,
+                        "quantity_boxes": 10.0,
+                        "rate_per_box": 2790.0,
+                        "tax_mode": "exclusive",
+                        "total_amount": 27900.0  # 10 boxes * 2790
+                    },
+                    {
+                        "description": "Granite Riser Steps (Sqft Unit)",
+                        "size": "Custom Cut Slab",
+                        "brand": chem_brand.name,
+                        "product_type": "Sqft",
+                        "coverage_area": 0.0,
+                        "quantity_sqft": 100.0,
+                        "rate_per_sqft": 150.0,
+                        "tax_mode": "exclusive",
+                        "total_amount": 15000.0  # 100 sqft * 150
+                    },
+                    {
+                        "description": "Decorative Gold Border (Pieces Unit)",
+                        "size": "Metallic Trim 1200MM",
+                        "brand": chem_brand.name,
+                        "product_type": "Pieces",
+                        "coverage_area": 0.0,
+                        "quantity_boxes": 20.0,
+                        "rate_per_box": 450.0,
+                        "tax_mode": "exclusive",
+                        "total_amount": 9000.0  # 20 pcs * 450
+                    },
+                    {
+                        "description": "Heavy Duty Tile Adhesive (Bags Unit)",
+                        "size": "Tile Adhesive 20Kg Bag",
+                        "brand": chem_brand.name,
+                        "product_type": "Bags",
+                        "coverage_area": 0.0,
+                        "quantity_boxes": 15.0,
+                        "rate_per_box": 600.0,
+                        "tax_mode": "exclusive",
+                        "total_amount": 9000.0  # 15 bags * 600
+                    },
+                    {
+                        "description": "Tile Floor Leveller Clips (Nos Unit)",
+                        "size": "Levelling Spacer Clip",
+                        "brand": chem_brand.name,
+                        "product_type": "Nos",
+                        "coverage_area": 0.0,
+                        "quantity_boxes": 40.0,
+                        "rate_per_box": 25.0,
+                        "tax_mode": "exclusive",
+                        "total_amount": 1000.0  # 40 nos * 25
+                    }
+                ]
+            }
+        ]
+    }
+    q_multi = QuotationService.save_quotation(multi_type_payload)
+    items_created = list(QuotationItem.select().where(QuotationItem.quotation == q_multi).order_by(QuotationItem.sl_no))
+    assert len(items_created) == 5
+    assert items_created[0].product_type == "Box"
+    assert items_created[1].product_type == "Sqft"
+    assert items_created[2].product_type == "Pieces"
+    assert items_created[3].product_type == "Bags"
+    assert items_created[4].product_type == "Nos"
+
+    # Verify taxable & net amounts: 27900 + 15000 + 9000 + 9000 + 1000 = 61900 (+ 18% GST = 11142) -> Gross = 73042
+    assert abs(q_multi.taxable_amount - 61900.0) < 0.01
+    assert abs(q_multi.gross_total - 73042.0) < 0.01
+
+    # Generate and verify PDF
+    pdf_multi = CeramicPDFGenerator.generate_quotation_pdf(q_multi.id)
+    pdf_multi_doc = pdfium.PdfDocument(pdf_multi)
+    pdf_multi_text = "".join(p.get_textpage().get_text_range() for p in pdf_multi_doc)
+    assert "BOX/UNIT" in pdf_multi_text
+    assert "Sqft" in pdf_multi_text
+    assert "Pcs" in pdf_multi_text
+    assert "Bags" in pdf_multi_text
+    assert "Nos" in pdf_multi_text
+    print(f" -> PASS: Created quotation with all 5 product types (Box, Sqft, Pieces, Bags, Nos). Math verified (Taxable: ₹61,900, Gross: ₹73,042), and PDF verified: {os.path.basename(pdf_multi)}")
+
     print("\n" + "=" * 65)
     print("  ALL CORE MODULES AND TESTS COMPLETED WITH 100% SUCCESS!")
     print("=" * 65)

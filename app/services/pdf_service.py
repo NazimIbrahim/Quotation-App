@@ -581,8 +581,8 @@ class CeramicPDFGenerator:
                 Paragraph("<b>COV.<br/>(SQFT/BX)</b>", style_th),
                 Paragraph("<b>QTY<br/>(SQFT)</b>", style_th),
                 Paragraph("<b>RATE/SQFT<br/>(Rs.)</b>", style_th),
-                Paragraph("<b>QTY<br/>(BOXES)</b>", style_th),
-                Paragraph("<b>RATE/BOX<br/>(Rs.)</b>", style_th),
+                Paragraph("<b>QTY<br/>(BOX/UNIT)</b>", style_th),
+                Paragraph("<b>RATE/UNIT<br/>(Rs.)</b>", style_th),
                 Paragraph("<b>TOTAL<br/>(Rs.)</b>", style_th),
             ]
         ]
@@ -622,18 +622,44 @@ class CeramicPDFGenerator:
                 row_bg = colors.HexColor("#FAFAFA") if current_row % 2 == 1 else colors.white
                 table_styles.append(('BACKGROUND', (0, current_row), (-1, current_row), row_bg))
 
+                ptype = (getattr(item, "product_type", "Box") or "Box").strip()
                 item_brand = getattr(item, "brand", "") or "-"
                 cov_val = float(getattr(item, "coverage_area", 0.0) or 0.0)
-                cov_str = f"{cov_val:.2f}" if cov_val > 0 else "-"
-
-                qty_sqft_str = f"{item.quantity_sqft:,.2f}" if item.quantity_sqft > 0 else "-"
-                rate_sqft_str = f"{item.rate_per_sqft:,.2f}" if item.rate_per_sqft > 0 else "-"
-                qty_box_str = f"{item.quantity_boxes:,.1f}" if item.quantity_boxes > 0 else "-"
-                rate_box_str = f"{item.rate_per_box:,.2f}" if item.rate_per_box > 0 else "-"
-                total_str = f"{item.total_amount:,.2f}"
 
                 t_mode = getattr(item, "tax_mode", "exclusive") or "exclusive"
                 tax_tag = "(Incl. 18%)" if t_mode == "inclusive" else "(+18% GST)"
+                total_str = f"{item.total_amount:,.2f}"
+
+                if ptype.lower() == "sqft":
+                    cov_str = "-"
+                    qty_sqft_str = f"{item.quantity_sqft:,.2f} Sqft"
+                    rate_sqft_str = f"<b>{item.rate_per_sqft:,.2f}</b><br/><font size='5.5' color='#64748B'>{tax_tag}</font>"
+                    qty_box_str = "-"
+                    rate_box_str = "-"
+                elif ptype.lower() in ("pieces", "piece", "pcs"):
+                    cov_str = "-"
+                    qty_sqft_str = "-"
+                    rate_sqft_str = "-"
+                    qty_box_str = f"{item.quantity_boxes:g} Pcs"
+                    rate_box_str = f"<b>{item.rate_per_box:,.2f}</b><br/><font size='5.5' color='#64748B'>{tax_tag}</font>"
+                elif ptype.lower() in ("bags", "bag"):
+                    cov_str = "-"
+                    qty_sqft_str = "-"
+                    rate_sqft_str = "-"
+                    qty_box_str = f"{item.quantity_boxes:g} Bags"
+                    rate_box_str = f"<b>{item.rate_per_box:,.2f}</b><br/><font size='5.5' color='#64748B'>{tax_tag}</font>"
+                elif ptype.lower() in ("nos", "no"):
+                    cov_str = "-"
+                    qty_sqft_str = "-"
+                    rate_sqft_str = "-"
+                    qty_box_str = f"{item.quantity_boxes:g} Nos"
+                    rate_box_str = f"<b>{item.rate_per_box:,.2f}</b><br/><font size='5.5' color='#64748B'>{tax_tag}</font>"
+                else:  # Box
+                    cov_str = f"{cov_val:.2f}" if cov_val > 0 else "-"
+                    qty_sqft_str = f"{item.quantity_sqft:,.2f}" if item.quantity_sqft > 0 else "-"
+                    rate_sqft_str = f"<b>{item.rate_per_sqft:,.2f}</b><br/><font size='5.5' color='#64748B'>{tax_tag}</font>" if item.rate_per_sqft > 0 else "-"
+                    qty_box_str = f"{item.quantity_boxes:,.1f}" if item.quantity_boxes > 0 else "-"
+                    rate_box_str = f"<b>{item.rate_per_box:,.2f}</b><br/><font size='5.5' color='#64748B'>{tax_tag}</font>" if item.rate_per_box > 0 else "-"
 
                 table_data.append([
                     Paragraph(f"{item.sl_no:02d}", style_td_center),
@@ -642,9 +668,9 @@ class CeramicPDFGenerator:
                     Paragraph(item_brand, style_td_center),
                     Paragraph(cov_str, style_td_center),
                     Paragraph(qty_sqft_str, style_td_right),
-                    Paragraph(f"<b>{rate_sqft_str}</b><br/><font size='5.5' color='#64748B'>{tax_tag}</font>", style_td_right),
+                    Paragraph(rate_sqft_str, style_td_right),
                     Paragraph(qty_box_str, style_td_right),
-                    Paragraph(f"<b>{rate_box_str}</b><br/><font size='5.5' color='#64748B'>{tax_tag}</font>", style_td_right),
+                    Paragraph(rate_box_str, style_td_right),
                     Paragraph(f"<b>{total_str}</b>", style_td_right),
                 ])
                 current_row += 1

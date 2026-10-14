@@ -246,11 +246,11 @@ class BrandCatalogView(ctk.CTkFrame):
         # Table Header Row (Stone)
         h_frame = ctk.CTkFrame(self.brand_detail_container, fg_color=(Theme.STONE, "#242220"), height=36, corner_radius=10)
         h_frame.pack(fill="x", padx=(6, 23), pady=(6, 4))
-        weights = [2, 3, 2, 2, 2, 2]
+        weights = [2, 2, 3, 2, 2, 2, 2]
         for idx, w in enumerate(weights):
             h_frame.grid_columnconfigure(idx, weight=w, uniform="brand_sizes")
 
-        cols = ["TILE SIZE", "COVERAGE (SQFT/BOX)", "PCS / BOX", "RATE / SQFT", "BOX PRICE (₹)", "ACTIONS"]
+        cols = ["TILE / ITEM SIZE", "TYPE", "COVERAGE (SQFT/BOX)", "PCS / BOX", "RATE / SQFT", "UNIT / BOX PRICE", "ACTIONS"]
         for idx, text in enumerate(cols):
             ctk.CTkLabel(
                 h_frame,
@@ -280,6 +280,9 @@ class BrandCatalogView(ctk.CTkFrame):
             for idx, w in enumerate(weights):
                 rf.grid_columnconfigure(idx, weight=w, uniform="brand_sizes")
 
+            ptype = getattr(sc, "product_type", "Box") or "Box"
+            type_color = Theme.PRIMARY if ptype == "Box" else (Theme.SUCCESS if ptype == "Sqft" else Theme.SECONDARY)
+
             # Col 0: Size
             ctk.CTkLabel(
                 rf,
@@ -288,41 +291,56 @@ class BrandCatalogView(ctk.CTkFrame):
                 text_color=(Theme.BLACK, Theme.PAPER)
             ).grid(row=0, column=0, padx=8, pady=6, sticky="w")
 
-            # Col 1: Coverage
+            # Col 1: Product Type
             ctk.CTkLabel(
                 rf,
-                text=f"{sc.coverage_sqft:.2f} Sqft",
-                font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=12, weight="bold"),
-                text_color=Theme.PRIMARY
+                text=ptype,
+                font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11, weight="bold"),
+                text_color=type_color
             ).grid(row=0, column=1, padx=8, pady=6, sticky="w")
 
-            # Col 2: Pcs / box
+            # Col 2: Coverage
+            cov_txt = f"{sc.coverage_sqft:.2f} Sqft" if ptype == "Box" else "—"
             ctk.CTkLabel(
                 rf,
-                text=f"{sc.pieces_per_box} pcs",
-                font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11),
-                text_color=("#615D56", "#A8A297")
+                text=cov_txt,
+                font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11, weight="bold" if ptype == "Box" else "normal"),
+                text_color=Theme.PRIMARY if ptype == "Box" else ("#615D56", "#A8A297")
             ).grid(row=0, column=2, padx=8, pady=6, sticky="w")
 
-            # Col 3: Rate per Sqft
+            # Col 3: Pcs / box
+            pcs_txt = f"{sc.pieces_per_box} pcs" if ptype == "Box" else "—"
             ctk.CTkLabel(
                 rf,
-                text=f"₹ {sc.default_rate_sqft:,.2f}" if sc.default_rate_sqft > 0 else "-",
+                text=pcs_txt,
                 font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11),
-                text_color=(Theme.BLACK, Theme.PAPER)
+                text_color=("#615D56", "#A8A297")
             ).grid(row=0, column=3, padx=8, pady=6, sticky="w")
 
-            # Col 4: Box Price
+            # Col 4: Rate per Sqft
+            r_sqft_txt = f"₹ {sc.default_rate_sqft:,.2f}" if (ptype in ("Box", "Sqft") and sc.default_rate_sqft > 0) else "—"
             ctk.CTkLabel(
                 rf,
-                text=f"₹ {sc.default_rate_box:,.2f}" if sc.default_rate_box > 0 else "-",
-                font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11, weight="bold"),
-                text_color=Theme.SUCCESS
+                text=r_sqft_txt,
+                font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11),
+                text_color=(Theme.BLACK, Theme.PAPER)
             ).grid(row=0, column=4, padx=8, pady=6, sticky="w")
 
-            # Col 5: Actions
+            # Col 5: Unit / Box Price
+            unit_suffix = "/Bx" if ptype == "Box" else (f"/{ptype[:3]}" if ptype != "Sqft" else "/Sqft")
+            box_txt = f"₹ {sc.default_rate_box:,.2f} {unit_suffix}" if sc.default_rate_box > 0 else (
+                f"₹ {sc.default_rate_sqft:,.2f} /Sqft" if (ptype == "Sqft" and sc.default_rate_sqft > 0) else "—"
+            )
+            ctk.CTkLabel(
+                rf,
+                text=box_txt,
+                font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11, weight="bold"),
+                text_color=Theme.SUCCESS
+            ).grid(row=0, column=5, padx=8, pady=6, sticky="w")
+
+            # Col 6: Actions
             act_f = ctk.CTkFrame(rf, fg_color="transparent")
-            act_f.grid(row=0, column=5, padx=8, pady=4, sticky="w")
+            act_f.grid(row=0, column=6, padx=8, pady=4, sticky="w")
 
             ctk.CTkButton(
                 act_f,
@@ -452,17 +470,38 @@ class BrandCatalogView(ctk.CTkFrame):
 
         dialog = ctk.CTkToplevel(self)
         dialog.title("Edit Size & Coverage" if size_entry else f"Add Size to {self.selected_brand.name}")
-        dialog.geometry("460x460")
+        dialog.geometry("480x550")
         dialog.transient(self.winfo_toplevel())
         dialog.grab_set()
 
-        ctk.CTkLabel(dialog, text="Tile Size & Box Coverage Spec", font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=16, weight="bold")).pack(pady=(16, 12))
+        ctk.CTkLabel(dialog, text="Tile Size & Box Coverage Spec", font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=16, weight="bold")).pack(pady=(16, 10))
 
         f = ctk.CTkFrame(dialog, fg_color="transparent")
         f.pack(fill="both", expand=True, padx=24)
 
-        # Tile Size
-        ctk.CTkLabel(f, text="Tile Size:", font=ctk.CTkFont(size=11, weight="bold")).pack(anchor="w")
+        # 0. Product Type / Unit
+        ctk.CTkLabel(f, text="Product Type / Unit:", font=ctk.CTkFont(size=11, weight="bold")).pack(anchor="w")
+        init_ptype = getattr(size_entry, "product_type", "Box") if size_entry else "Box"
+        if not init_ptype:
+            init_ptype = "Box"
+
+        ptype_menu = ctk.CTkOptionMenu(
+            f,
+            values=["Box", "Pieces", "Sqft", "Bags", "Nos"],
+            height=34,
+            corner_radius=Theme.RADIUS_INPUT,
+            fg_color=Theme.BTN_SECONDARY_BG,
+            button_color=Theme.PRIMARY,
+            button_hover_color=Theme.PRIMARY_HOVER,
+            text_color=(Theme.BLACK, Theme.PAPER),
+            font=ctk.CTkFont(size=11, weight="bold")
+        )
+        ptype_menu.set(init_ptype)
+        ptype_menu.pack(fill="x", pady=(2, 6))
+
+        # 1. Tile Size / Item Spec
+        size_lbl = ctk.CTkLabel(f, text="Item / Tile Size:", font=ctk.CTkFont(size=11, weight="bold"))
+        size_lbl.pack(anchor="w")
         all_existing_sizes = []
         try:
             for s in BrandSizeCoverage.select(BrandSizeCoverage.size).distinct():
@@ -482,8 +521,9 @@ class BrandCatalogView(ctk.CTkFrame):
             size_combo.set(size_entry.size)
         size_combo.pack(fill="x", pady=(2, 6))
 
-        # Pieces per box
-        ctk.CTkLabel(f, text="Pieces Per Box:", font=ctk.CTkFont(size=11, weight="bold")).pack(anchor="w")
+        # 2. Pieces per box
+        pcs_lbl = ctk.CTkLabel(f, text="Pieces Per Box:", font=ctk.CTkFont(size=11, weight="bold"))
+        pcs_lbl.pack(anchor="w")
         pcs_ent = ctk.CTkEntry(
             f,
             height=34,
@@ -496,8 +536,9 @@ class BrandCatalogView(ctk.CTkFrame):
         pcs_ent.insert(0, str(size_entry.pieces_per_box) if size_entry else "2")
         pcs_ent.pack(fill="x", pady=(2, 6))
 
-        # Coverage Area in Sqft
-        ctk.CTkLabel(f, text="Coverage Area in Sqft Per Box:", font=ctk.CTkFont(size=11, weight="bold")).pack(anchor="w")
+        # 3. Coverage Area in Sqft
+        cov_lbl = ctk.CTkLabel(f, text="Coverage Area in Sqft Per Box:", font=ctk.CTkFont(size=11, weight="bold"))
+        cov_lbl.pack(anchor="w")
         cov_ent = ctk.CTkEntry(
             f,
             height=34,
@@ -510,8 +551,9 @@ class BrandCatalogView(ctk.CTkFrame):
         cov_ent.insert(0, f"{size_entry.coverage_sqft:.2f}" if size_entry else "15.50")
         cov_ent.pack(fill="x", pady=(2, 6))
 
-        # Default Rate per Sqft
-        ctk.CTkLabel(f, text="Default Rate Per Sqft (₹):", font=ctk.CTkFont(size=11, weight="bold")).pack(anchor="w")
+        # 4. Default Rate per Sqft
+        r_sqft_lbl = ctk.CTkLabel(f, text="Default Rate Per Sqft (₹):", font=ctk.CTkFont(size=11, weight="bold"))
+        r_sqft_lbl.pack(anchor="w")
         rate_sqft_ent = ctk.CTkEntry(
             f,
             height=34,
@@ -524,8 +566,9 @@ class BrandCatalogView(ctk.CTkFrame):
         rate_sqft_ent.insert(0, f"{size_entry.default_rate_sqft:.2f}" if (size_entry and size_entry.default_rate_sqft > 0) else "")
         rate_sqft_ent.pack(fill="x", pady=(2, 6))
 
-        # Default Box Price
-        ctk.CTkLabel(f, text="Default Box Price (₹) (Auto-calculated):", font=ctk.CTkFont(size=11, weight="bold")).pack(anchor="w")
+        # 5. Default Unit / Box Price
+        r_box_lbl = ctk.CTkLabel(f, text="Default Box Price (₹) (Auto-calculated):", font=ctk.CTkFont(size=11, weight="bold"))
+        r_box_lbl.pack(anchor="w")
         rate_box_ent = ctk.CTkEntry(
             f,
             height=34,
@@ -536,16 +579,48 @@ class BrandCatalogView(ctk.CTkFrame):
             placeholder_text="e.g. 1705.00"
         )
         rate_box_ent.insert(0, f"{size_entry.default_rate_box:.2f}" if (size_entry and size_entry.default_rate_box > 0) else "")
-        rate_box_ent.pack(fill="x", pady=(2, 12))
+        rate_box_ent.pack(fill="x", pady=(2, 10))
+
+        def on_modal_ptype_changed(val):
+            if val == "Box":
+                cov_lbl.configure(text="Coverage Area in Sqft Per Box:")
+                pcs_lbl.configure(text="Pieces Per Box:")
+                r_sqft_lbl.configure(text="Default Rate Per Sqft (₹):")
+                r_box_lbl.configure(text="Default Box Price (₹) (Auto-calculated):")
+            elif val == "Sqft":
+                cov_lbl.configure(text="Coverage Area (Not required for Sqft):")
+                pcs_lbl.configure(text="Pieces (Not required for Sqft):")
+                r_sqft_lbl.configure(text="Default Rate Per Sqft (₹):")
+                r_box_lbl.configure(text="Optional Unit Price (₹):")
+            elif val == "Pieces":
+                cov_lbl.configure(text="Coverage Area (Not required for Pieces):")
+                pcs_lbl.configure(text="Pieces Per Unit (Default: 1):")
+                r_sqft_lbl.configure(text="Rate / Sqft (Optional):")
+                r_box_lbl.configure(text="Default Rate Per Piece (₹):")
+            elif val == "Bags":
+                cov_lbl.configure(text="Coverage Area (Not required for Bags):")
+                pcs_lbl.configure(text="Units (Default: 1):")
+                r_sqft_lbl.configure(text="Rate / Sqft (Optional):")
+                r_box_lbl.configure(text="Default Rate Per Bag (₹):")
+            elif val == "Nos":
+                cov_lbl.configure(text="Coverage Area (Not required for Nos):")
+                pcs_lbl.configure(text="Units (Default: 1):")
+                r_sqft_lbl.configure(text="Rate / Sqft (Optional):")
+                r_box_lbl.configure(text="Default Rate Per No (₹):")
+
+        ptype_menu.configure(command=on_modal_ptype_changed)
+        on_modal_ptype_changed(init_ptype)
 
         def auto_calc_box(e=None):
             try:
-                cov = float(cov_ent.get().strip() or 0.0)
-                r_sqft = float(rate_sqft_ent.get().strip() or 0.0)
-                if cov > 0 and r_sqft > 0:
-                    box_p = round(cov * r_sqft, 2)
-                    rate_box_ent.delete(0, "end")
-                    rate_box_ent.insert(0, f"{box_p:.2f}")
+                curr_type = ptype_menu.get().strip()
+                if curr_type == "Box":
+                    cov = float(cov_ent.get().strip() or 0.0)
+                    r_sqft = float(rate_sqft_ent.get().strip() or 0.0)
+                    if cov > 0 and r_sqft > 0:
+                        box_p = round(cov * r_sqft, 2)
+                        rate_box_ent.delete(0, "end")
+                        rate_box_ent.insert(0, f"{box_p:.2f}")
             except Exception:
                 pass
 
@@ -554,23 +629,25 @@ class BrandCatalogView(ctk.CTkFrame):
 
         def save_sz():
             sz = size_combo.get().strip()
+            chosen_type = ptype_menu.get().strip()
             try:
-                pcs = int(pcs_ent.get().strip() or 2)
-                cov = float(cov_ent.get().strip() or 15.5)
+                pcs = int(pcs_ent.get().strip() or 1)
+                cov = float(cov_ent.get().strip() or (15.5 if chosen_type == "Box" else 1.0))
                 r_sqft = float(rate_sqft_ent.get().strip() or 0.0)
                 r_box = float(rate_box_ent.get().strip() or 0.0)
-                if r_box <= 0 and r_sqft > 0 and cov > 0:
+                if chosen_type == "Box" and r_box <= 0 and r_sqft > 0 and cov > 0:
                     r_box = round(r_sqft * cov, 2)
             except ValueError:
                 msgbox.showerror("Error", "Please enter valid numeric values.", parent=dialog)
                 return
 
             if not sz:
-                msgbox.showwarning("Notice", "Size is required.", parent=dialog)
+                msgbox.showwarning("Notice", "Size / item specification is required.", parent=dialog)
                 return
 
             if size_entry:
                 size_entry.size = sz
+                size_entry.product_type = chosen_type
                 size_entry.pieces_per_box = pcs
                 size_entry.coverage_sqft = cov
                 size_entry.default_rate_sqft = r_sqft
@@ -580,6 +657,7 @@ class BrandCatalogView(ctk.CTkFrame):
                 BrandSizeCoverage.create(
                     brand=self.selected_brand,
                     size=sz,
+                    product_type=chosen_type,
                     pieces_per_box=pcs,
                     coverage_sqft=cov,
                     default_rate_sqft=r_sqft,
@@ -587,6 +665,13 @@ class BrandCatalogView(ctk.CTkFrame):
                 )
 
             dialog.destroy()
+            try:
+                from app.ui.views.quotation_editor_view import ItemRowWidget
+                ItemRowWidget.invalidate_catalog_cache()
+            except Exception:
+                pass
+            self.load_brands()
+            self.render_brand_detail()
             try:
                 from app.ui.views.quotation_editor_view import ItemRowWidget
                 ItemRowWidget.invalidate_catalog_cache()

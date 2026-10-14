@@ -367,12 +367,20 @@ class QuotationArea(BaseModel):
 
 class QuotationItem(BaseModel):
     """Individual line item within an area section."""
+    TYPE_BOX = "Box"
+    TYPE_PIECES = "Pieces"
+    TYPE_SQFT = "Sqft"
+    TYPE_BAGS = "Bags"
+    TYPE_NOS = "Nos"
+    ALL_PRODUCT_TYPES = [TYPE_BOX, TYPE_PIECES, TYPE_SQFT, TYPE_BAGS, TYPE_NOS]
+
     area = ForeignKeyField(QuotationArea, backref="items", on_delete="CASCADE")
     quotation = ForeignKeyField(Quotation, backref="items", on_delete="CASCADE")
     sl_no = IntegerField(default=1)
     description = CharField(max_length=255)
     size = CharField(max_length=60)  # e.g., "1200X1800", "600X600"
     brand = CharField(max_length=120, default="")  # e.g., "Kajaria", "Simpolo"
+    product_type = CharField(max_length=30, default="Box")  # 'Box', 'Pieces', 'Sqft', 'Bags', 'Nos'
     coverage_area = FloatField(default=0.0)  # Sqft coverage per box
     quantity_sqft = FloatField(default=0.0)
     rate_per_sqft = FloatField(default=0.0)
@@ -401,8 +409,16 @@ class TileBrand(BaseModel):
 
 class BrandSizeCoverage(BaseModel):
     """Tile size and box coverage area specification for a brand."""
+    TYPE_BOX = "Box"
+    TYPE_PIECES = "Pieces"
+    TYPE_SQFT = "Sqft"
+    TYPE_BAGS = "Bags"
+    TYPE_NOS = "Nos"
+    ALL_PRODUCT_TYPES = [TYPE_BOX, TYPE_PIECES, TYPE_SQFT, TYPE_BAGS, TYPE_NOS]
+
     brand = ForeignKeyField(TileBrand, backref="size_coverages", on_delete="CASCADE")
     size = CharField(max_length=80)  # e.g., "1200X1800"
+    product_type = CharField(max_length=30, default="Box")  # 'Box', 'Pieces', 'Sqft', 'Bags', 'Nos'
     coverage_sqft = FloatField(default=15.5)  # Coverage Area in Sqft per box
     pieces_per_box = IntegerField(default=2)
     default_rate_sqft = FloatField(default=0.0)
@@ -703,8 +719,17 @@ def init_database():
             db.execute_sql("ALTER TABLE quotation_items ADD COLUMN tax_percent REAL DEFAULT 18.0")
         if "taxable_amount" not in cols:
             db.execute_sql("ALTER TABLE quotation_items ADD COLUMN taxable_amount REAL DEFAULT 0.0")
-        if "gst_amount" not in cols:
-            db.execute_sql("ALTER TABLE quotation_items ADD COLUMN gst_amount REAL DEFAULT 0.0")
+        if "product_type" not in cols:
+            db.execute_sql("ALTER TABLE quotation_items ADD COLUMN product_type VARCHAR(30) DEFAULT 'Box'")
+    except Exception:
+        pass
+
+    # Safe column migration for brand_size_coverages
+    try:
+        cursor_b = db.execute_sql("PRAGMA table_info(brand_size_coverages)")
+        cols_b = [row[1] for row in cursor_b.fetchall()]
+        if "product_type" not in cols_b:
+            db.execute_sql("ALTER TABLE brand_size_coverages ADD COLUMN product_type VARCHAR(30) DEFAULT 'Box'")
     except Exception:
         pass
 

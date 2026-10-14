@@ -25,20 +25,21 @@ class ItemRowWidget(ctk.CTkFrame):
 
         data = data or {}
 
-        # 12 columns in grid:
+        # 13 columns in grid:
         # 0: Sl (weight 1)
         # 1: Description (weight 5)
         # 2: Size (weight 2)
         # 3: Brand (weight 3)
-        # 4: Coverage Area (Sqft/Box) (weight 2)
-        # 5: Qty Sqft (weight 2)
-        # 6: Rate Sqft (weight 2)
-        # 7: Tax Mode (18%) (weight 2)
-        # 8: Qty Box (weight 2)
-        # 9: Rate Box (weight 2)
-        # 10: Total Amount (weight 2)
-        # 11: Delete (weight 1)
-        item_col_weights = [1, 5, 2, 3, 2, 2, 2, 2, 2, 2, 2, 1]
+        # 4: Type (weight 2)
+        # 5: Coverage Area (Sqft/Box) (weight 2)
+        # 6: Qty Sqft (weight 2)
+        # 7: Rate Sqft (weight 2)
+        # 8: Tax Mode (18%) (weight 2)
+        # 9: Qty Box/Unit (weight 2)
+        # 10: Rate Box/Unit (weight 2)
+        # 11: Total Amount (weight 2)
+        # 12: Delete (weight 1)
+        item_col_weights = [1, 5, 2, 3, 2, 2, 2, 2, 2, 2, 2, 2, 1]
         for idx, w in enumerate(item_col_weights):
             self.grid_columnconfigure(idx, weight=w, uniform="area_item_cols")
 
@@ -98,53 +99,73 @@ class ItemRowWidget(ctk.CTkFrame):
         # Hook dropdown menus so they auto-query fresh database records on every click
         self._setup_dynamic_dropdown_auto_refresh()
 
-        # 4. Coverage Area (Sqft/Box) Entry
+        # 4. Product Type Combo (Default Box, options: Box, Pieces, Sqft, Bags, Nos)
+        init_type = data.get("product_type") or "Box"
+        self.type_combo = ctk.CTkOptionMenu(
+            self,
+            values=["Box", "Pieces", "Sqft", "Bags", "Nos"],
+            height=28,
+            width=68,
+            font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=10, weight="bold"),
+            fg_color=(Theme.STONE, "#2B2824"),
+            text_color=(Theme.BLACK, Theme.PAPER),
+            button_color=Theme.PRIMARY,
+            button_hover_color=Theme.PRIMARY_HOVER,
+            dropdown_fg_color=(Theme.PAPER, "#201E1C"),
+            dropdown_text_color=(Theme.BLACK, Theme.PAPER),
+            dropdown_hover_color=(Theme.STONE, "#332F2A"),
+            command=self.on_type_changed
+        )
+        self.type_combo.set(init_type)
+        self.type_combo.grid(row=0, column=4, padx=2, pady=3, sticky="ew")
+
+        # 5. Coverage Area (Sqft/Box) Entry
         self.cov_entry = ctk.CTkEntry(
             self,
             placeholder_text="Sqft/Bx",
             height=28,
-            width=65,
+            width=60,
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11)
         )
         if data.get("coverage_area"):
             self.cov_entry.insert(0, f"{float(data['coverage_area']):g}")
-        self.cov_entry.grid(row=0, column=4, padx=2, pady=3, sticky="ew")
+        self.cov_entry.grid(row=0, column=5, padx=2, pady=3, sticky="ew")
         self.cov_entry.bind("<KeyRelease>", lambda e: self.recalculate_amount("cov"))
 
-        # 5. Quantity in Sqft
+        # 6. Quantity in Sqft
         self.sqft_entry = ctk.CTkEntry(
             self,
             placeholder_text="Sqft",
             height=28,
-            width=60,
+            width=58,
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11)
         )
         if data.get("quantity_sqft"):
             self.sqft_entry.insert(0, str(data["quantity_sqft"]))
-        self.sqft_entry.grid(row=0, column=5, padx=2, pady=3, sticky="ew")
+        self.sqft_entry.grid(row=0, column=6, padx=2, pady=3, sticky="ew")
         self.sqft_entry.bind("<KeyRelease>", lambda e: self.recalculate_amount("sqft"))
 
-        # 6. Rate per Sqft
+        # 7. Rate per Sqft
         self.rate_sqft_entry = ctk.CTkEntry(
             self,
             placeholder_text="₹/Sqft",
             height=28,
-            width=60,
+            width=58,
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11)
         )
         if data.get("rate_per_sqft"):
             self.rate_sqft_entry.insert(0, str(data["rate_per_sqft"]))
-        self.rate_sqft_entry.grid(row=0, column=6, padx=2, pady=3, sticky="ew")
+        self.rate_sqft_entry.grid(row=0, column=7, padx=2, pady=3, sticky="ew")
         self.rate_sqft_entry.bind("<KeyRelease>", lambda e: self.recalculate_amount("rate_sqft"))
 
-        # 7. Tax Mode (18%) Option
+        # 8. Tax Mode (18%) Option
         init_tax_mode = data.get("tax_mode", "exclusive")
         tax_str = "Incl. 18%" if init_tax_mode == "inclusive" else "Excl. 18%"
         self.tax_combo = ctk.CTkOptionMenu(
             self,
             values=["Excl. 18%", "Incl. 18%"],
             height=28,
-            width=82,
+            width=80,
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=10, weight="bold"),
             fg_color=(Theme.STONE, "#2B2824"),
             text_color=(Theme.BLACK, Theme.PAPER),
@@ -156,62 +177,65 @@ class ItemRowWidget(ctk.CTkFrame):
             command=self.on_tax_mode_changed
         )
         self.tax_combo.set(tax_str)
-        self.tax_combo.grid(row=0, column=7, padx=2, pady=3, sticky="ew")
+        self.tax_combo.grid(row=0, column=8, padx=2, pady=3, sticky="ew")
 
-        # 8. Quantity in Boxes
+        # 9. Quantity in Boxes / Units (Bags, Pieces, Nos)
         self.box_entry = ctk.CTkEntry(
             self,
             placeholder_text="Boxes",
             height=28,
-            width=60,
+            width=58,
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11)
         )
         if data.get("quantity_boxes"):
             self.box_entry.insert(0, str(data["quantity_boxes"]))
-        self.box_entry.grid(row=0, column=8, padx=2, pady=3, sticky="ew")
+        self.box_entry.grid(row=0, column=9, padx=2, pady=3, sticky="ew")
         self.box_entry.bind("<KeyRelease>", lambda e: self.recalculate_amount("box"))
 
-        # 9. Rate per Box
+        # 10. Rate per Box / Unit
         self.rate_box_entry = ctk.CTkEntry(
             self,
             placeholder_text="₹/Box",
             height=28,
-            width=60,
+            width=58,
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11)
         )
         if data.get("rate_per_box"):
             self.rate_box_entry.insert(0, str(data["rate_per_box"]))
-        self.rate_box_entry.grid(row=0, column=9, padx=2, pady=3, sticky="ew")
+        self.rate_box_entry.grid(row=0, column=10, padx=2, pady=3, sticky="ew")
         self.rate_box_entry.bind("<KeyRelease>", lambda e: self.recalculate_amount("rate_box"))
 
-        # 10. Total Amount Entry
+        # 11. Total Amount Entry
         self.total_entry = ctk.CTkEntry(
             self,
             placeholder_text="Total ₹",
             height=28,
-            width=75,
+            width=72,
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11, weight="bold")
         )
         if data.get("total_amount"):
             self.total_entry.insert(0, f"{float(data['total_amount']):.2f}")
-        self.total_entry.grid(row=0, column=10, padx=2, pady=3, sticky="ew")
+        self.total_entry.grid(row=0, column=11, padx=2, pady=3, sticky="ew")
         self.total_entry.bind("<KeyRelease>", lambda e: self.on_recalc())
 
-        # 11. Delete Button
+        # 12. Delete Button
         del_btn = ctk.CTkButton(
             self,
             text="✕",
-            width=26,
+            width=24,
             height=26,
             fg_color="transparent",
             text_color=Theme.DANGER,
             hover_color=("#FEE2E2", "#7F1D1D"),
             command=self.delete_self
         )
-        del_btn.grid(row=0, column=11, padx=2, pady=3)
+        del_btn.grid(row=0, column=12, padx=2, pady=3)
+
+        # Update entry states according to product type
+        self.update_type_ui(init_type)
 
         # If coverage was not provided in data, look up from catalog
-        if not data.get("coverage_area"):
+        if not data.get("coverage_area") and not data.get("product_type"):
             self.apply_catalog_specs(self.brand_combo.get().strip(), self.size_combo.get().strip())
 
     _brands_cache = None
@@ -361,14 +385,30 @@ class ItemRowWidget(ctk.CTkFrame):
         b_name = (brand_name or "Brand").strip()
         dialog = ctk.CTkToplevel(self)
         dialog.title(f"Add New Size to {b_name}")
-        dialog.geometry("450x420")
+        dialog.geometry("450x480")
         dialog.transient(self.winfo_toplevel())
         dialog.grab_set()
 
-        ctk.CTkLabel(dialog, text=f"Add Size for '{b_name}'", font=ctk.CTkFont(size=16, weight="bold")).pack(pady=(16, 12))
+        ctk.CTkLabel(dialog, text=f"Add Size for '{b_name}'", font=ctk.CTkFont(size=16, weight="bold")).pack(pady=(16, 10))
 
         f = ctk.CTkFrame(dialog, fg_color="transparent")
         f.pack(fill="both", expand=True, padx=24)
+
+        # 0. Product Type
+        ctk.CTkLabel(f, text="Product Type / Unit:", font=ctk.CTkFont(size=11, weight="bold")).pack(anchor="w")
+        ptype_menu = ctk.CTkOptionMenu(
+            f,
+            values=["Box", "Pieces", "Sqft", "Bags", "Nos"],
+            height=32,
+            corner_radius=Theme.RADIUS_INPUT,
+            fg_color=Theme.BTN_SECONDARY_BG,
+            button_color=Theme.PRIMARY,
+            button_hover_color=Theme.PRIMARY_HOVER,
+            text_color=(Theme.BLACK, Theme.PAPER),
+            font=ctk.CTkFont(size=11, weight="bold")
+        )
+        ptype_menu.set("Box")
+        ptype_menu.pack(fill="x", pady=(2, 6))
 
         # Tile Size
         ctk.CTkLabel(f, text="Tile Size (e.g. 1200X1800 15MM):", font=ctk.CTkFont(size=11, weight="bold")).pack(anchor="w")
@@ -376,26 +416,46 @@ class ItemRowWidget(ctk.CTkFrame):
         size_ent.pack(fill="x", pady=(2, 6))
 
         # Pieces per box
-        ctk.CTkLabel(f, text="Pieces Per Box:", font=ctk.CTkFont(size=11, weight="bold")).pack(anchor="w")
+        pcs_ent_lbl = ctk.CTkLabel(f, text="Pieces Per Box:", font=ctk.CTkFont(size=11, weight="bold"))
+        pcs_ent_lbl.pack(anchor="w")
         pcs_ent = ctk.CTkEntry(f, placeholder_text="e.g. 2")
         pcs_ent.insert(0, "2")
         pcs_ent.pack(fill="x", pady=(2, 6))
 
         # Coverage Area in Sqft
-        ctk.CTkLabel(f, text="Coverage Area in Sqft Per Box:", font=ctk.CTkFont(size=11, weight="bold")).pack(anchor="w")
+        cov_ent_lbl = ctk.CTkLabel(f, text="Coverage Area in Sqft Per Box:", font=ctk.CTkFont(size=11, weight="bold"))
+        cov_ent_lbl.pack(anchor="w")
         cov_ent = ctk.CTkEntry(f, placeholder_text="e.g. 23.25")
         cov_ent.insert(0, "15.50")
         cov_ent.pack(fill="x", pady=(2, 6))
 
         # Default Rate per Sqft
-        ctk.CTkLabel(f, text="Default Rate Per Sqft (₹):", font=ctk.CTkFont(size=11, weight="bold")).pack(anchor="w")
         rate_sqft_ent = ctk.CTkEntry(f, placeholder_text="e.g. 145.00")
+        rate_sqft_lbl = ctk.CTkLabel(f, text="Default Rate Per Sqft (₹):", font=ctk.CTkFont(size=11, weight="bold"))
+        rate_sqft_lbl.pack(anchor="w")
         rate_sqft_ent.pack(fill="x", pady=(2, 6))
 
         # Default Box Price
-        ctk.CTkLabel(f, text="Default Box Price (₹) (Auto-calculated):", font=ctk.CTkFont(size=11, weight="bold")).pack(anchor="w")
+        rate_box_lbl = ctk.CTkLabel(f, text="Default Box Price (₹) (Auto-calculated):", font=ctk.CTkFont(size=11, weight="bold"))
+        rate_box_lbl.pack(anchor="w")
         rate_box_ent = ctk.CTkEntry(f, placeholder_text="e.g. 3371.25")
-        rate_box_ent.pack(fill="x", pady=(2, 12))
+        rate_box_ent.pack(fill="x", pady=(2, 10))
+
+        def on_quick_ptype_changed(val):
+            if val == "Box":
+                cov_ent_lbl.configure(text="Coverage Area in Sqft Per Box:")
+                pcs_ent_lbl.configure(text="Pieces Per Box:")
+                rate_box_lbl.configure(text="Default Box Price (₹) (Auto-calculated):")
+            elif val == "Sqft":
+                cov_ent_lbl.configure(text="Coverage Area (Not required):")
+                pcs_ent_lbl.configure(text="Pieces (Not required):")
+                rate_box_lbl.configure(text="Optional Unit Price (₹):")
+            else:
+                cov_ent_lbl.configure(text="Coverage Area (Not required):")
+                pcs_ent_lbl.configure(text="Units (Default: 1):")
+                rate_box_lbl.configure(text=f"Default Rate Per {val[:-1] if val.endswith('s') else val} (₹):")
+
+        ptype_menu.configure(command=on_quick_ptype_changed)
 
         def auto_calc_box(e=None):
             try:
@@ -413,16 +473,17 @@ class ItemRowWidget(ctk.CTkFrame):
 
         def save_quick_size():
             sz = size_ent.get().strip()
+            chosen_type = ptype_menu.get().strip()
             if not sz:
                 msgbox.showwarning("Notice", "Size name is required.", parent=dialog)
                 return
 
             try:
-                pcs = int(pcs_ent.get().strip() or 2)
-                cov = float(cov_ent.get().strip() or 15.5)
+                pcs = int(pcs_ent.get().strip() or 1)
+                cov = float(cov_ent.get().strip() or (15.5 if chosen_type == "Box" else 1.0))
                 r_sqft = float(rate_sqft_ent.get().strip() or 0.0)
                 r_box = float(rate_box_ent.get().strip() or 0.0)
-                if r_box <= 0 and r_sqft > 0 and cov > 0:
+                if chosen_type == "Box" and r_box <= 0 and r_sqft > 0 and cov > 0:
                     r_box = round(r_sqft * cov, 2)
             except ValueError:
                 msgbox.showerror("Error", "Please enter valid numeric numbers.", parent=dialog)
@@ -440,6 +501,7 @@ class ItemRowWidget(ctk.CTkFrame):
                 (BrandSizeCoverage.size.ilike(sz))
             ).first()
             if existing:
+                existing.product_type = chosen_type
                 existing.coverage_sqft = cov
                 existing.pieces_per_box = pcs
                 existing.default_rate_sqft = r_sqft
@@ -449,6 +511,7 @@ class ItemRowWidget(ctk.CTkFrame):
                 BrandSizeCoverage.create(
                     brand=brand_obj,
                     size=sz,
+                    product_type=chosen_type,
                     pieces_per_box=pcs,
                     coverage_sqft=cov,
                     default_rate_sqft=r_sqft,
@@ -513,120 +576,209 @@ class ItemRowWidget(ctk.CTkFrame):
             )
 
         if rec:
+            ptype = getattr(rec, "product_type", "Box") or "Box"
+            self.type_combo.set(ptype)
+            self.update_type_ui(ptype)
+
             cov = rec.coverage_sqft or 0.0
-            if cov > 0:
+            if ptype == "Box" and cov > 0:
                 self.cov_entry.delete(0, "end")
                 self.cov_entry.insert(0, f"{cov:g}")
 
-            if not self.rate_sqft_entry.get().strip() and (rec.default_rate_sqft or 0.0) > 0:
+            if (rec.default_rate_sqft or 0.0) > 0:
                 self.rate_sqft_entry.delete(0, "end")
                 self.rate_sqft_entry.insert(0, f"{rec.default_rate_sqft:.2f}")
 
-            if not self.rate_box_entry.get().strip() and (rec.default_rate_box or 0.0) > 0:
+            if (rec.default_rate_box or 0.0) > 0:
                 self.rate_box_entry.delete(0, "end")
                 self.rate_box_entry.insert(0, f"{rec.default_rate_box:.2f}")
 
-            self.recalculate_amount("cov")
+            self.recalculate_amount("cov" if ptype == "Box" else "type")
+
+    def get_product_type(self) -> str:
+        if not hasattr(self, "type_combo"):
+            return "Box"
+        val = (self.type_combo.get() or "Box").strip()
+        for opt in ["Box", "Pieces", "Sqft", "Bags", "Nos"]:
+            if opt.lower() == val.lower() or opt.lower() + "es" == val.lower() or opt.lower() + "s" == val.lower():
+                return opt
+        return "Box"
+
+    def _set_entry_state(self, entry, enabled: bool, placeholder: str):
+        if enabled:
+            entry.configure(state="normal", fg_color=Theme.INSET_BG, text_color=(Theme.BLACK, Theme.PAPER))
+            curr = entry.get()
+            if curr == "—":
+                entry.delete(0, "end")
+            entry.configure(placeholder_text=placeholder)
+        else:
+            entry.configure(state="normal")
+            entry.delete(0, "end")
+            entry.insert(0, "—")
+            entry.configure(state="disabled", fg_color=("#EFECE6", "#1E1C1A"), text_color=("#A8A297", "#615D56"), placeholder_text="")
+
+    def update_type_ui(self, ptype=None):
+        t = (ptype or self.get_product_type()).strip()
+        if t == "Box":
+            self._set_entry_state(self.cov_entry, True, "Sqft/Bx")
+            self._set_entry_state(self.sqft_entry, True, "Sqft")
+            self._set_entry_state(self.rate_sqft_entry, True, "₹/Sqft")
+            self._set_entry_state(self.box_entry, True, "Boxes")
+            self._set_entry_state(self.rate_box_entry, True, "₹/Box")
+        elif t == "Sqft":
+            self._set_entry_state(self.cov_entry, False, "—")
+            self._set_entry_state(self.sqft_entry, True, "Sqft")
+            self._set_entry_state(self.rate_sqft_entry, True, "₹/Sqft")
+            self._set_entry_state(self.box_entry, False, "—")
+            self._set_entry_state(self.rate_box_entry, False, "—")
+        elif t == "Pieces":
+            self._set_entry_state(self.cov_entry, False, "—")
+            self._set_entry_state(self.sqft_entry, False, "—")
+            self._set_entry_state(self.rate_sqft_entry, False, "—")
+            self._set_entry_state(self.box_entry, True, "Pieces")
+            self._set_entry_state(self.rate_box_entry, True, "₹/Pcs")
+        elif t == "Bags":
+            self._set_entry_state(self.cov_entry, False, "—")
+            self._set_entry_state(self.sqft_entry, False, "—")
+            self._set_entry_state(self.rate_sqft_entry, False, "—")
+            self._set_entry_state(self.box_entry, True, "Bags")
+            self._set_entry_state(self.rate_box_entry, True, "₹/Bag")
+        elif t == "Nos":
+            self._set_entry_state(self.cov_entry, False, "—")
+            self._set_entry_state(self.sqft_entry, False, "—")
+            self._set_entry_state(self.rate_sqft_entry, False, "—")
+            self._set_entry_state(self.box_entry, True, "Nos")
+            self._set_entry_state(self.rate_box_entry, True, "₹/Nos")
+
+    def on_type_changed(self, chosen_val=None):
+        self.update_type_ui(chosen_val)
+        self.recalculate_amount("type")
 
     def on_tax_mode_changed(self, chosen_val=None):
         self.recalculate_amount("tax_mode")
 
     def recalculate_amount(self, trigger_source="sqft"):
-        """Auto calculates Sqft <-> Boxes and Rates using Coverage Area."""
+        """Auto calculates totals and units based on product type."""
         if self._is_updating:
             return
         self._is_updating = True
         try:
-            sqft_txt = self.sqft_entry.get().strip()
-            rate_sqft_txt = self.rate_sqft_entry.get().strip()
-            box_txt = self.box_entry.get().strip()
-            rate_box_txt = self.rate_box_entry.get().strip()
-            cov_txt = self.cov_entry.get().strip()
+            ptype = self.get_product_type()
 
-            cov = float(cov_txt) if cov_txt else 0.0
-            q_sqft = float(sqft_txt) if sqft_txt else 0.0
-            r_sqft = float(rate_sqft_txt) if rate_sqft_txt else 0.0
-            q_box = float(box_txt) if box_txt else 0.0
-            r_box = float(rate_box_txt) if rate_box_txt else 0.0
+            if ptype == "Sqft":
+                # Total = total sqft * rate per sqft
+                sqft_txt = self.sqft_entry.get().strip() if self.sqft_entry.get() != "—" else ""
+                rate_sqft_txt = self.rate_sqft_entry.get().strip() if self.rate_sqft_entry.get() != "—" else ""
+                q_sqft = float(sqft_txt) if sqft_txt else 0.0
+                r_sqft = float(rate_sqft_txt) if rate_sqft_txt else 0.0
+                calc_amount = round(q_sqft * r_sqft, 2)
+                if calc_amount > 0:
+                    self.total_entry.delete(0, "end")
+                    self.total_entry.insert(0, f"{calc_amount:.2f}")
 
-            calc_amount = 0.0
+            elif ptype in ["Pieces", "Bags", "Nos"]:
+                # Total = quantity (bags/pieces/nos) * rate per (bag/pcs/nos)
+                qty_txt = self.box_entry.get().strip() if self.box_entry.get() != "—" else ""
+                rate_txt = self.rate_box_entry.get().strip() if self.rate_box_entry.get() != "—" else ""
+                qty = float(qty_txt) if qty_txt else 0.0
+                rate = float(rate_txt) if rate_txt else 0.0
+                calc_amount = round(qty * rate, 2)
+                if calc_amount > 0:
+                    self.total_entry.delete(0, "end")
+                    self.total_entry.insert(0, f"{calc_amount:.2f}")
 
-            if trigger_source in ["sqft", "tax_mode"]:
-                if cov > 0 and q_sqft > 0:
-                    q_box = round(q_sqft / cov, 2)
-                    self.box_entry.delete(0, "end")
-                    self.box_entry.insert(0, f"{q_box:g}")
-                if cov > 0 and r_sqft > 0 and (r_box == 0 or not rate_box_txt or trigger_source == "tax_mode"):
-                    r_box = round(r_sqft * cov, 2)
-                    self.rate_box_entry.delete(0, "end")
-                    self.rate_box_entry.insert(0, f"{r_box:.2f}")
-                if q_sqft > 0 and r_sqft > 0:
-                    calc_amount = round(q_sqft * r_sqft, 2)
-                elif q_box > 0 and r_box > 0:
-                    calc_amount = round(q_box * r_box, 2)
+            else:
+                # Default Box calculation
+                sqft_txt = self.sqft_entry.get().strip()
+                rate_sqft_txt = self.rate_sqft_entry.get().strip()
+                box_txt = self.box_entry.get().strip()
+                rate_box_txt = self.rate_box_entry.get().strip()
+                cov_txt = self.cov_entry.get().strip()
 
-            elif trigger_source == "box":
-                if cov > 0 and q_box > 0:
-                    q_sqft = round(q_box * cov, 2)
-                    self.sqft_entry.delete(0, "end")
-                    self.sqft_entry.insert(0, f"{q_sqft:g}")
-                if cov > 0 and r_box > 0 and (r_sqft == 0 or not rate_sqft_txt):
-                    r_sqft = round(r_box / cov, 2)
-                    self.rate_sqft_entry.delete(0, "end")
-                    self.rate_sqft_entry.insert(0, f"{r_sqft:.2f}")
-                if q_box > 0 and r_box > 0:
-                    calc_amount = round(q_box * r_box, 2)
-                elif q_sqft > 0 and r_sqft > 0:
-                    calc_amount = round(q_sqft * r_sqft, 2)
+                cov = float(cov_txt) if cov_txt and cov_txt != "—" else 0.0
+                q_sqft = float(sqft_txt) if sqft_txt and sqft_txt != "—" else 0.0
+                r_sqft = float(rate_sqft_txt) if rate_sqft_txt and rate_sqft_txt != "—" else 0.0
+                q_box = float(box_txt) if box_txt and box_txt != "—" else 0.0
+                r_box = float(rate_box_txt) if rate_box_txt and rate_box_txt != "—" else 0.0
 
-            elif trigger_source == "rate_sqft":
-                if cov > 0 and r_sqft > 0:
-                    r_box = round(r_sqft * cov, 2)
-                    self.rate_box_entry.delete(0, "end")
-                    self.rate_box_entry.insert(0, f"{r_box:.2f}")
-                if q_sqft > 0 and r_sqft > 0:
-                    calc_amount = round(q_sqft * r_sqft, 2)
-                elif q_box > 0 and r_box > 0:
-                    calc_amount = round(q_box * r_box, 2)
+                calc_amount = 0.0
 
-            elif trigger_source == "rate_box":
-                if cov > 0 and r_box > 0:
-                    r_sqft = round(r_box / cov, 2)
-                    self.rate_sqft_entry.delete(0, "end")
-                    self.rate_sqft_entry.insert(0, f"{r_sqft:.2f}")
-                if q_box > 0 and r_box > 0:
-                    calc_amount = round(q_box * r_box, 2)
-                elif q_sqft > 0 and r_sqft > 0:
-                    calc_amount = round(q_sqft * r_sqft, 2)
-
-            elif trigger_source == "cov":
-                if cov > 0:
-                    if q_sqft > 0:
+                if trigger_source in ["sqft", "tax_mode"]:
+                    if cov > 0 and q_sqft > 0:
                         q_box = round(q_sqft / cov, 2)
                         self.box_entry.delete(0, "end")
                         self.box_entry.insert(0, f"{q_box:g}")
-                    elif q_box > 0:
-                        q_sqft = round(q_box * cov, 2)
-                        self.sqft_entry.delete(0, "end")
-                        self.sqft_entry.insert(0, f"{q_sqft:g}")
-
-                    if r_sqft > 0:
+                    if cov > 0 and r_sqft > 0 and (r_box == 0 or not rate_box_txt or trigger_source == "tax_mode"):
                         r_box = round(r_sqft * cov, 2)
                         self.rate_box_entry.delete(0, "end")
                         self.rate_box_entry.insert(0, f"{r_box:.2f}")
-                    elif r_box > 0:
+                    if q_sqft > 0 and r_sqft > 0:
+                        calc_amount = round(q_sqft * r_sqft, 2)
+                    elif q_box > 0 and r_box > 0:
+                        calc_amount = round(q_box * r_box, 2)
+
+                elif trigger_source == "box":
+                    if cov > 0 and q_box > 0:
+                        q_sqft = round(q_box * cov, 2)
+                        self.sqft_entry.delete(0, "end")
+                        self.sqft_entry.insert(0, f"{q_sqft:g}")
+                    if cov > 0 and r_box > 0 and (r_sqft == 0 or not rate_sqft_txt):
                         r_sqft = round(r_box / cov, 2)
                         self.rate_sqft_entry.delete(0, "end")
                         self.rate_sqft_entry.insert(0, f"{r_sqft:.2f}")
+                    if q_box > 0 and r_box > 0:
+                        calc_amount = round(q_box * r_box, 2)
+                    elif q_sqft > 0 and r_sqft > 0:
+                        calc_amount = round(q_sqft * r_sqft, 2)
 
-                if q_sqft > 0 and r_sqft > 0:
-                    calc_amount = round(q_sqft * r_sqft, 2)
-                elif q_box > 0 and r_box > 0:
-                    calc_amount = round(q_box * r_box, 2)
+                elif trigger_source == "rate_sqft":
+                    if cov > 0 and r_sqft > 0:
+                        r_box = round(r_sqft * cov, 2)
+                        self.rate_box_entry.delete(0, "end")
+                        self.rate_box_entry.insert(0, f"{r_box:.2f}")
+                    if q_sqft > 0 and r_sqft > 0:
+                        calc_amount = round(q_sqft * r_sqft, 2)
+                    elif q_box > 0 and r_box > 0:
+                        calc_amount = round(q_box * r_box, 2)
 
-            if calc_amount > 0:
-                self.total_entry.delete(0, "end")
-                self.total_entry.insert(0, f"{calc_amount:.2f}")
+                elif trigger_source == "rate_box":
+                    if cov > 0 and r_box > 0:
+                        r_sqft = round(r_box / cov, 2)
+                        self.rate_sqft_entry.delete(0, "end")
+                        self.rate_sqft_entry.insert(0, f"{r_sqft:.2f}")
+                    if q_box > 0 and r_box > 0:
+                        calc_amount = round(q_box * r_box, 2)
+                    elif q_sqft > 0 and r_sqft > 0:
+                        calc_amount = round(q_sqft * r_sqft, 2)
+
+                elif trigger_source == "cov":
+                    if cov > 0:
+                        if q_sqft > 0:
+                            q_box = round(q_sqft / cov, 2)
+                            self.box_entry.delete(0, "end")
+                            self.box_entry.insert(0, f"{q_box:g}")
+                        elif q_box > 0:
+                            q_sqft = round(q_box * cov, 2)
+                            self.sqft_entry.delete(0, "end")
+                            self.sqft_entry.insert(0, f"{q_sqft:g}")
+
+                        if r_sqft > 0:
+                            r_box = round(r_sqft * cov, 2)
+                            self.rate_box_entry.delete(0, "end")
+                            self.rate_box_entry.insert(0, f"{r_box:.2f}")
+                        elif r_box > 0:
+                            r_sqft = round(r_box / cov, 2)
+                            self.rate_sqft_entry.delete(0, "end")
+                            self.rate_sqft_entry.insert(0, f"{r_sqft:.2f}")
+
+                    if q_sqft > 0 and r_sqft > 0:
+                        calc_amount = round(q_sqft * r_sqft, 2)
+                    elif q_box > 0 and r_box > 0:
+                        calc_amount = round(q_box * r_box, 2)
+
+                if calc_amount > 0:
+                    self.total_entry.delete(0, "end")
+                    self.total_entry.insert(0, f"{calc_amount:.2f}")
 
         except Exception:
             pass
@@ -641,24 +793,29 @@ class ItemRowWidget(ctk.CTkFrame):
             return
         self._is_updating = True
         try:
-            cov_txt = self.cov_entry.get().strip()
+            ptype = self.get_product_type()
+            cov_txt = self.cov_entry.get().strip() if self.cov_entry.get() != "—" else ""
             cov = float(cov_txt) if cov_txt else 0.0
-            sqft_txt = self.sqft_entry.get().strip()
+            sqft_txt = self.sqft_entry.get().strip() if self.sqft_entry.get() != "—" else ""
             sqft = float(sqft_txt) if sqft_txt else 0.0
-            box_txt = self.box_entry.get().strip()
+            box_txt = self.box_entry.get().strip() if self.box_entry.get() != "—" else ""
             boxes = float(box_txt) if box_txt else 0.0
 
-            rate_sqft_txt = self.rate_sqft_entry.get().strip()
+            rate_sqft_txt = self.rate_sqft_entry.get().strip() if self.rate_sqft_entry.get() != "—" else ""
             rate_sqft = float(rate_sqft_txt) if rate_sqft_txt else 0.0
 
-            rate_box_txt = self.rate_box_entry.get().strip()
+            rate_box_txt = self.rate_box_entry.get().strip() if self.rate_box_entry.get() != "—" else ""
             rate_box = float(rate_box_txt) if rate_box_txt else 0.0
 
             tot_txt = self.total_entry.get().strip()
             tot = float(tot_txt) if tot_txt else 0.0
 
             if tot <= 0:
-                if sqft > 0 and rate_sqft > 0:
+                if ptype == "Sqft" and sqft > 0 and rate_sqft > 0:
+                    tot = sqft * rate_sqft
+                elif ptype in ["Pieces", "Bags", "Nos"] and boxes > 0 and rate_box > 0:
+                    tot = boxes * rate_box
+                elif sqft > 0 and rate_sqft > 0:
                     tot = sqft * rate_sqft
                 elif boxes > 0 and rate_box > 0:
                     tot = boxes * rate_box
@@ -668,67 +825,127 @@ class ItemRowWidget(ctk.CTkFrame):
                 self.total_entry.delete(0, "end")
                 self.total_entry.insert(0, f"{new_tot:.2f}")
 
-                if sqft > 0:
-                    new_r_sqft = round(new_tot / sqft, 2)
-                    self.rate_sqft_entry.delete(0, "end")
-                    self.rate_sqft_entry.insert(0, f"{new_r_sqft:.2f}")
-                    if cov > 0:
-                        new_r_box = round(new_r_sqft * cov, 2)
-                        self.rate_box_entry.delete(0, "end")
-                        self.rate_box_entry.insert(0, f"{new_r_box:.2f}")
-                elif boxes > 0:
-                    new_r_box = round(new_tot / boxes, 2)
-                    self.rate_box_entry.delete(0, "end")
-                    self.rate_box_entry.insert(0, f"{new_r_box:.2f}")
-                    if cov > 0:
-                        new_r_sqft = round(new_r_box / cov, 2)
+                if ptype == "Sqft":
+                    if sqft > 0:
+                        new_r_sqft = round(new_tot / sqft, 2)
                         self.rate_sqft_entry.delete(0, "end")
                         self.rate_sqft_entry.insert(0, f"{new_r_sqft:.2f}")
-                elif rate_sqft > 0:
-                    new_r_sqft = round(rate_sqft * factor, 2)
-                    self.rate_sqft_entry.delete(0, "end")
-                    self.rate_sqft_entry.insert(0, f"{new_r_sqft:.2f}")
-                    if cov > 0:
-                        new_r_box = round(new_r_sqft * cov, 2)
+                    elif rate_sqft > 0:
+                        new_r_sqft = round(rate_sqft * factor, 2)
+                        self.rate_sqft_entry.delete(0, "end")
+                        self.rate_sqft_entry.insert(0, f"{new_r_sqft:.2f}")
+
+                elif ptype in ["Pieces", "Bags", "Nos"]:
+                    if boxes > 0:
+                        new_rate = round(new_tot / boxes, 2)
+                        self.rate_box_entry.delete(0, "end")
+                        self.rate_box_entry.insert(0, f"{new_rate:.2f}")
+                    elif rate_box > 0:
+                        new_rate = round(rate_box * factor, 2)
+                        self.rate_box_entry.delete(0, "end")
+                        self.rate_box_entry.insert(0, f"{new_rate:.2f}")
+
+                else: # Box
+                    if sqft > 0:
+                        new_r_sqft = round(new_tot / sqft, 2)
+                        self.rate_sqft_entry.delete(0, "end")
+                        self.rate_sqft_entry.insert(0, f"{new_r_sqft:.2f}")
+                        if cov > 0:
+                            new_r_box = round(new_r_sqft * cov, 2)
+                            self.rate_box_entry.delete(0, "end")
+                            self.rate_box_entry.insert(0, f"{new_r_box:.2f}")
+                    elif boxes > 0:
+                        new_r_box = round(new_tot / boxes, 2)
                         self.rate_box_entry.delete(0, "end")
                         self.rate_box_entry.insert(0, f"{new_r_box:.2f}")
+                        if cov > 0:
+                            new_r_sqft = round(new_r_box / cov, 2)
+                            self.rate_sqft_entry.delete(0, "end")
+                            self.rate_sqft_entry.insert(0, f"{new_r_sqft:.2f}")
+                    elif rate_sqft > 0:
+                        new_r_sqft = round(rate_sqft * factor, 2)
+                        self.rate_sqft_entry.delete(0, "end")
+                        self.rate_sqft_entry.insert(0, f"{new_r_sqft:.2f}")
+                        if cov > 0:
+                            new_r_box = round(new_r_sqft * cov, 2)
+                            self.rate_box_entry.delete(0, "end")
+                            self.rate_box_entry.insert(0, f"{new_r_box:.2f}")
         finally:
             self._is_updating = False
 
     def get_data(self):
-        try:
-            cov = float(self.cov_entry.get().strip() or 0.0)
-        except ValueError:
-            cov = 0.0
-        try:
-            sqft = float(self.sqft_entry.get().strip() or 0.0)
-        except ValueError:
-            sqft = 0.0
-        try:
-            r_sqft = float(self.rate_sqft_entry.get().strip() or 0.0)
-        except ValueError:
-            r_sqft = 0.0
-        try:
-            boxes = float(self.box_entry.get().strip() or 0.0)
-        except ValueError:
-            boxes = 0.0
-        try:
-            r_box = float(self.rate_box_entry.get().strip() or 0.0)
-        except ValueError:
-            r_box = 0.0
-        try:
-            tot = float(self.total_entry.get().strip() or 0.0)
-        except ValueError:
-            tot = round(sqft * r_sqft if sqft and r_sqft else boxes * r_box, 2)
+        ptype = self.get_product_type()
+        cov = 0.0
+        sqft = 0.0
+        r_sqft = 0.0
+        boxes = 0.0
+        r_box = 0.0
+
+        if ptype == "Sqft":
+            try:
+                sqft = float(self.sqft_entry.get().strip() or 0.0) if self.sqft_entry.get() != "—" else 0.0
+            except ValueError:
+                sqft = 0.0
+            try:
+                r_sqft = float(self.rate_sqft_entry.get().strip() or 0.0) if self.rate_sqft_entry.get() != "—" else 0.0
+            except ValueError:
+                r_sqft = 0.0
+            try:
+                tot = float(self.total_entry.get().strip() or 0.0)
+            except ValueError:
+                tot = round(sqft * r_sqft, 2)
+            if tot <= 0 and sqft > 0 and r_sqft > 0:
+                tot = round(sqft * r_sqft, 2)
+
+        elif ptype in ["Pieces", "Bags", "Nos"]:
+            try:
+                boxes = float(self.box_entry.get().strip() or 0.0) if self.box_entry.get() != "—" else 0.0
+            except ValueError:
+                boxes = 0.0
+            try:
+                r_box = float(self.rate_box_entry.get().strip() or 0.0) if self.rate_box_entry.get() != "—" else 0.0
+            except ValueError:
+                r_box = 0.0
+            try:
+                tot = float(self.total_entry.get().strip() or 0.0)
+            except ValueError:
+                tot = round(boxes * r_box, 2)
+            if tot <= 0 and boxes > 0 and r_box > 0:
+                tot = round(boxes * r_box, 2)
+
+        else: # Box
+            try:
+                cov = float(self.cov_entry.get().strip() or 0.0) if self.cov_entry.get() != "—" else 0.0
+            except ValueError:
+                cov = 0.0
+            try:
+                sqft = float(self.sqft_entry.get().strip() or 0.0) if self.sqft_entry.get() != "—" else 0.0
+            except ValueError:
+                sqft = 0.0
+            try:
+                r_sqft = float(self.rate_sqft_entry.get().strip() or 0.0) if self.rate_sqft_entry.get() != "—" else 0.0
+            except ValueError:
+                r_sqft = 0.0
+            try:
+                boxes = float(self.box_entry.get().strip() or 0.0) if self.box_entry.get() != "—" else 0.0
+            except ValueError:
+                boxes = 0.0
+            try:
+                r_box = float(self.rate_box_entry.get().strip() or 0.0) if self.rate_box_entry.get() != "—" else 0.0
+            except ValueError:
+                r_box = 0.0
+            try:
+                tot = float(self.total_entry.get().strip() or 0.0)
+            except ValueError:
+                tot = round(sqft * r_sqft if sqft and r_sqft else boxes * r_box, 2)
+            if tot <= 0:
+                if sqft > 0 and r_sqft > 0:
+                    tot = round(sqft * r_sqft, 2)
+                elif boxes > 0 and r_box > 0:
+                    tot = round(boxes * r_box, 2)
 
         tax_str = self.tax_combo.get().strip() if hasattr(self, "tax_combo") else "Excl. 18%"
         tax_mode = "inclusive" if "Incl" in tax_str else "exclusive"
-
-        if tot <= 0:
-            if sqft > 0 and r_sqft > 0:
-                tot = round(sqft * r_sqft, 2)
-            elif boxes > 0 and r_box > 0:
-                tot = round(boxes * r_box, 2)
 
         if tax_mode == "inclusive":
             line_gross = tot
@@ -744,6 +961,7 @@ class ItemRowWidget(ctk.CTkFrame):
             "description": self.desc_entry.get().strip(),
             "size": self.size_combo.get().strip(),
             "brand": self.brand_combo.get().strip(),
+            "product_type": ptype,
             "coverage_area": cov,
             "quantity_sqft": sqft,
             "rate_per_sqft": r_sqft,
@@ -821,10 +1039,10 @@ class AreaSectionWidget(ctk.CTkFrame):
         )
         del_area_btn.pack(side="right", padx=10)
 
-        # 2. Table Column Titles (12 columns matching layout + Action button)
+        # 2. Table Column Titles (13 columns matching layout + Action button)
         col_bar = ctk.CTkFrame(self, fg_color=(Theme.STONE, "#242220"), height=30, corner_radius=Theme.RADIUS_SM)
         col_bar.pack(fill="x", padx=8, pady=(2, 4))
-        item_col_weights = [1, 5, 2, 3, 2, 2, 2, 2, 2, 2, 2, 1]
+        item_col_weights = [1, 5, 2, 3, 2, 2, 2, 2, 2, 2, 2, 2, 1]
         for idx, w in enumerate(item_col_weights):
             col_bar.grid_columnconfigure(idx, weight=w, uniform="area_item_cols")
 
@@ -833,12 +1051,13 @@ class AreaSectionWidget(ctk.CTkFrame):
             "Item Description",
             "Size",
             "Brand",
+            "Type",
             "Cov (Sqft/Bx)",
             "Qty Sqft",
             "₹ / Sqft",
             "Tax (18%)",
-            "Boxes",
-            "₹ / Box",
+            "Qty (Unit)",
+            "₹ / Unit",
             "Total (₹)",
             ""
         ]
