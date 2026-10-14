@@ -3,6 +3,7 @@ Comprehensive verification test suite for AMA Ceramics Quotation Management Syst
 Tests database, models, calculations, services, PDF rendering, and UI construction.
 """
 import sys
+import os
 from pathlib import Path
 from datetime import date
 
@@ -408,6 +409,86 @@ def test_system():
     assert q_blank.gross_total == 6218.6, f"Expected gross 6218.6, got {q_blank.gross_total}"
     assert q_blank.net_total == 6218.6, f"Expected net 6218.6, got {q_blank.net_total}"
     print(f" -> PASS: Saved quote with blank description! Auto-fallback: '{q_blank.items[0].description}', Gross: ₹{q_blank.gross_total:,.2f}, GST: ₹{q_blank.total_tax:,.2f}, Net: ₹{q_blank.net_total:,.2f}")
+
+    print("\n[TEST 17] Verifying Lump-Sum Discount Distribution Across Item Rates & Zero Discount in PDF...")
+    # Clean up previous run if exists
+    old_disc = Quotation.get_or_none(Quotation.quotation_number == "AMA-2026-DISC-AUTO")
+    if old_disc:
+        QuotationItem.delete().where(QuotationItem.quotation == old_disc).execute()
+        QuotationArea.delete().where(QuotationArea.quotation == old_disc).execute()
+        old_disc.delete_instance()
+
+    # Initial quote gross = ₹85,000 (Inclusive mode)
+    # Item 1: 500 sqft @ ₹100 = ₹50,000
+    # Item 2: 350 sqft @ ₹100 = ₹35,000
+    disc_items = [
+        {
+            "description": "Floor Tile 600X1200",
+            "size": "600X1200",
+            "brand": "AMA Signature Collection",
+            "coverage_area": 15.5,
+            "quantity_sqft": 500.0,
+            "rate_per_sqft": 100.0,
+            "quantity_boxes": 32.26,
+            "rate_per_box": 1550.0,
+            "tax_mode": "inclusive",
+            "tax_percent": 18.0,
+            "total_amount": 50000.0,
+        },
+        {
+            "description": "Wall Tile 300X600",
+            "size": "300X600",
+            "brand": "AMA Signature Collection",
+            "coverage_area": 8.0,
+            "quantity_sqft": 350.0,
+            "rate_per_sqft": 100.0,
+            "quantity_boxes": 43.75,
+            "rate_per_box": 800.0,
+            "tax_mode": "inclusive",
+            "tax_percent": 18.0,
+            "total_amount": 35000.0,
+        }
+    ]
+    target_tot = 80000.0
+    gross_init = sum(it["total_amount"] for it in disc_items)
+    factor = target_tot / gross_init
+
+    # Pro-rata scaling directly on item rates and totals
+    for it in disc_items:
+        it["total_amount"] = round(it["total_amount"] * factor, 2)
+        it["rate_per_sqft"] = round(it["total_amount"] / it["quantity_sqft"], 2)
+        it["rate_per_box"] = round(it["rate_per_sqft"] * it["coverage_area"], 2)
+
+    # Reconcile 1-paisa rounding difference on last item
+    diff = round(target_tot - sum(it["total_amount"] for it in disc_items), 2)
+    if abs(diff) > 0:
+        disc_items[-1]["total_amount"] = round(disc_items[-1]["total_amount"] + diff, 2)
+        disc_items[-1]["rate_per_sqft"] = round(disc_items[-1]["total_amount"] / disc_items[-1]["quantity_sqft"], 2)
+        disc_items[-1]["rate_per_box"] = round(disc_items[-1]["rate_per_sqft"] * disc_items[-1]["coverage_area"], 2)
+
+    disc_payload = {
+        "quotation_number": "AMA-2026-DISC-AUTO",
+        "customer_id": cust.id,
+        "sales_person_id": sp.id,
+        "tax_mode": "inclusive",
+        "round_off": 0.0,
+        "areas": [{"area_name": "Living & Dining", "items": disc_items}]
+    }
+    q_disc = QuotationService.save_quotation(disc_payload)
+    assert abs(q_disc.net_total - 80000.0) < 0.01, f"Expected 80000, got {q_disc.net_total}"
+    assert abs(q_disc.round_off) < 0.01, f"Expected 0.0 round off, got {q_disc.round_off}"
+    assert abs(q_disc.items[0].rate_per_sqft - 94.12) < 0.01
+
+    pdf_disc = CeramicPDFGenerator.generate_quotation_pdf(q_disc.id)
+    assert os.path.exists(pdf_disc), "Discounted PDF was not generated"
+
+    import pypdfium2 as pdfium
+    pdf_doc = pdfium.PdfDocument(pdf_disc)
+    pdf_text = "".join(p.get_textpage().get_text_range() for p in pdf_doc)
+    assert "80,000.00" in pdf_text, "Target net total must appear in PDF"
+    assert "Discount / Round Off" not in pdf_text, "Discount / Round Off must NOT appear in PDF"
+    assert "Discount:" not in pdf_text, "Discount row must NOT appear in PDF"
+    print(f" -> PASS: ₹85,000 reduced to ₹80,000 target by distributing rates (~₹94.12/sqft). Round off is ₹0.00 and no discount row printed in PDF: {os.path.basename(pdf_disc)}")
 
     print("\n" + "=" * 65)
     print("  ALL CORE MODULES AND TESTS COMPLETED WITH 100% SUCCESS!")

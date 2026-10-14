@@ -712,8 +712,12 @@ class CeramicPDFGenerator:
             [Paragraph("CGST (9.0%):", style_summary_label), Paragraph(f"Rs. {cgst_val:,.2f}", style_summary_val)],
             [Paragraph("SGST (9.0%):", style_summary_label), Paragraph(f"Rs. {sgst_val:,.2f}", style_summary_val)],
             [Paragraph("Total GST (18.0%):", style_summary_label), Paragraph(f"Rs. {total_tax_val:,.2f}", style_summary_val)],
-            [Paragraph("Discount / Round Off:", style_summary_label), Paragraph(f"Rs. {round_off_str}", style_summary_val)],
         ]
+        if abs(quote.round_off) >= 0.01:
+            sub_tbl_data.append([
+                Paragraph("Round Off:", style_summary_label),
+                Paragraph(f"Rs. {round_off_str}", style_summary_val)
+            ])
         sub_tbl = Table(sub_tbl_data, colWidths=[120, 107])
         sub_tbl.setStyle(TableStyle([
             ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),

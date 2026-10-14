@@ -635,6 +635,66 @@ class ItemRowWidget(ctk.CTkFrame):
 
         self.on_recalc()
 
+    def apply_discount_factor(self, factor: float):
+        """Applies a proportional discount factor directly to this item's unit rates and line total."""
+        if self._is_updating:
+            return
+        self._is_updating = True
+        try:
+            cov_txt = self.cov_entry.get().strip()
+            cov = float(cov_txt) if cov_txt else 0.0
+            sqft_txt = self.sqft_entry.get().strip()
+            sqft = float(sqft_txt) if sqft_txt else 0.0
+            box_txt = self.box_entry.get().strip()
+            boxes = float(box_txt) if box_txt else 0.0
+
+            rate_sqft_txt = self.rate_sqft_entry.get().strip()
+            rate_sqft = float(rate_sqft_txt) if rate_sqft_txt else 0.0
+
+            rate_box_txt = self.rate_box_entry.get().strip()
+            rate_box = float(rate_box_txt) if rate_box_txt else 0.0
+
+            tot_txt = self.total_entry.get().strip()
+            tot = float(tot_txt) if tot_txt else 0.0
+
+            if tot <= 0:
+                if sqft > 0 and rate_sqft > 0:
+                    tot = sqft * rate_sqft
+                elif boxes > 0 and rate_box > 0:
+                    tot = boxes * rate_box
+
+            if tot > 0:
+                new_tot = round(tot * factor, 2)
+                self.total_entry.delete(0, "end")
+                self.total_entry.insert(0, f"{new_tot:.2f}")
+
+                if sqft > 0:
+                    new_r_sqft = round(new_tot / sqft, 2)
+                    self.rate_sqft_entry.delete(0, "end")
+                    self.rate_sqft_entry.insert(0, f"{new_r_sqft:.2f}")
+                    if cov > 0:
+                        new_r_box = round(new_r_sqft * cov, 2)
+                        self.rate_box_entry.delete(0, "end")
+                        self.rate_box_entry.insert(0, f"{new_r_box:.2f}")
+                elif boxes > 0:
+                    new_r_box = round(new_tot / boxes, 2)
+                    self.rate_box_entry.delete(0, "end")
+                    self.rate_box_entry.insert(0, f"{new_r_box:.2f}")
+                    if cov > 0:
+                        new_r_sqft = round(new_r_box / cov, 2)
+                        self.rate_sqft_entry.delete(0, "end")
+                        self.rate_sqft_entry.insert(0, f"{new_r_sqft:.2f}")
+                elif rate_sqft > 0:
+                    new_r_sqft = round(rate_sqft * factor, 2)
+                    self.rate_sqft_entry.delete(0, "end")
+                    self.rate_sqft_entry.insert(0, f"{new_r_sqft:.2f}")
+                    if cov > 0:
+                        new_r_box = round(new_r_sqft * cov, 2)
+                        self.rate_box_entry.delete(0, "end")
+                        self.rate_box_entry.insert(0, f"{new_r_box:.2f}")
+        finally:
+            self._is_updating = False
+
     def get_data(self):
         try:
             cov = float(self.cov_entry.get().strip() or 0.0)
@@ -1265,6 +1325,95 @@ class QuotationEditorView(ctk.CTkFrame):
         self.notes_entry = ctk.CTkTextbox(left_notes, height=75, font=ctk.CTkFont(size=11), corner_radius=Theme.RADIUS_INPUT, border_width=Theme.BORDER_WIDTH_INPUT, border_color=Theme.INSET_BORDER, fg_color=Theme.INSET_BG)
         self.notes_entry.pack(fill="x")
 
+        # 3. Lump-Sum Discount & Item Price Distribution Tool
+        disc_card = ctk.CTkFrame(
+            left_notes,
+            fg_color=("#FFF7ED", "#221A16"),
+            corner_radius=Theme.RADIUS_CARD,
+            border_width=1,
+            border_color=Theme.PRIMARY
+        )
+        disc_card.pack(fill="x", pady=(12, 0))
+
+        disc_header = ctk.CTkFrame(disc_card, fg_color="transparent")
+        disc_header.pack(fill="x", padx=12, pady=(10, 4))
+
+        ctk.CTkLabel(
+            disc_header,
+            text="🏷️ Lump-Sum Discount & Item Rate Distribution",
+            font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=12, weight="bold"),
+            text_color=Theme.PRIMARY
+        ).pack(side="left")
+
+        ctk.CTkLabel(
+            disc_card,
+            text="Distribute discount percentage directly across all item rates (no discount row shown in totals/PDF):",
+            font=ctk.CTkFont(size=10),
+            text_color=("#615D56", "#A8A297"),
+            wraplength=420,
+            justify="left"
+        ).pack(anchor="w", padx=12, pady=(0, 6))
+
+        # Inputs Grid
+        disc_grid = ctk.CTkFrame(disc_card, fg_color="transparent")
+        disc_grid.pack(fill="x", padx=12, pady=(0, 6))
+        disc_grid.grid_columnconfigure((0, 1, 2), weight=1)
+
+        ctk.CTkLabel(disc_grid, text="Target Total (₹):", font=ctk.CTkFont(size=10, weight="bold")).grid(row=0, column=0, padx=4, sticky="w")
+        self.discount_target_entry = ctk.CTkEntry(disc_grid, placeholder_text="e.g. 80000", height=28, font=ctk.CTkFont(size=11))
+        self.discount_target_entry.grid(row=1, column=0, padx=4, pady=(2, 4), sticky="ew")
+        self.discount_target_entry.bind("<KeyRelease>", self._on_discount_target_key)
+
+        ctk.CTkLabel(disc_grid, text="OR Discount (₹):", font=ctk.CTkFont(size=10, weight="bold")).grid(row=0, column=1, padx=4, sticky="w")
+        self.discount_val_entry = ctk.CTkEntry(disc_grid, placeholder_text="e.g. 5000", height=28, font=ctk.CTkFont(size=11))
+        self.discount_val_entry.grid(row=1, column=1, padx=4, pady=(2, 4), sticky="ew")
+        self.discount_val_entry.bind("<KeyRelease>", self._on_discount_val_key)
+
+        ctk.CTkLabel(disc_grid, text="OR Discount (%):", font=ctk.CTkFont(size=10, weight="bold")).grid(row=0, column=2, padx=4, sticky="w")
+        self.discount_pct_entry = ctk.CTkEntry(disc_grid, placeholder_text="e.g. 5.88", height=28, font=ctk.CTkFont(size=11))
+        self.discount_pct_entry.grid(row=1, column=2, padx=4, pady=(2, 4), sticky="ew")
+        self.discount_pct_entry.bind("<KeyRelease>", self._on_discount_pct_key)
+
+        # Buttons Row
+        disc_btn_row = ctk.CTkFrame(disc_card, fg_color="transparent")
+        disc_btn_row.pack(fill="x", padx=12, pady=(0, 6))
+
+        apply_disc_btn = ctk.CTkButton(
+            disc_btn_row,
+            text="Apply Discount to All Items ⚡",
+            font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11, weight="bold"),
+            fg_color=Theme.PRIMARY,
+            hover_color=Theme.PRIMARY_HOVER,
+            corner_radius=Theme.RADIUS_PILL,
+            height=28,
+            command=self.apply_distributed_discount
+        )
+        apply_disc_btn.pack(side="left", padx=(0, 6))
+
+        clear_disc_btn = ctk.CTkButton(
+            disc_btn_row,
+            text="Reset",
+            font=ctk.CTkFont(size=10),
+            width=50,
+            height=28,
+            corner_radius=Theme.RADIUS_PILL,
+            fg_color=Theme.BTN_SECONDARY_BG,
+            text_color=(Theme.BLACK, Theme.PAPER),
+            hover_color=Theme.STONE,
+            command=self.clear_discount_inputs
+        )
+        clear_disc_btn.pack(side="left")
+
+        # Feedback Label
+        self.discount_feedback_lbl = ctk.CTkLabel(
+            disc_card,
+            text="",
+            font=ctk.CTkFont(size=10),
+            wraplength=420,
+            justify="left"
+        )
+        self.discount_feedback_lbl.pack(anchor="w", padx=12, pady=(0, 8))
+
         # Right: Financial Totals Box
         right_box = ctk.CTkFrame(t_layout, fg_color=Theme.INSET_BG, corner_radius=16, border_width=Theme.BORDER_WIDTH_CARD, border_color=Theme.INSET_BORDER)
         right_box.grid(row=0, column=1, sticky="nsew")
@@ -1299,8 +1448,8 @@ class QuotationEditorView(ctk.CTkFrame):
         self.gross_total_lbl = ctk.CTkLabel(r_grid, text="₹ 0.00", font=ctk.CTkFont(size=13, weight="bold"))
         self.gross_total_lbl.grid(row=4, column=1, pady=(4, 2), sticky="e")
 
-        # 5. Round Off / Discount
-        ctk.CTkLabel(r_grid, text="Round Off / Discount (±₹):", font=ctk.CTkFont(size=11)).grid(row=5, column=0, pady=2, sticky="w")
+        # 5. Round Off
+        ctk.CTkLabel(r_grid, text="Round Off (±₹):", font=ctk.CTkFont(size=11)).grid(row=5, column=0, pady=2, sticky="w")
         self.round_off_entry = ctk.CTkEntry(r_grid, width=100, font=ctk.CTkFont(size=11))
         self.round_off_entry.insert(0, "0.00")
         self.round_off_entry.grid(row=5, column=1, pady=2, sticky="e")
@@ -1796,6 +1945,275 @@ class QuotationEditorView(ctk.CTkFrame):
             fg_color=Theme.PRIMARY,
             command=save_quick_cust
         ).pack(pady=(0, 20))
+
+    def _get_current_gross_total(self) -> float:
+        total_gross = 0.0
+        for aw in getattr(self, "area_widgets", []):
+            adata = aw.get_data()
+            for it in adata.get("items", []):
+                taxable = it.get("taxable_amount")
+                gst = it.get("gst_amount")
+                line_gross = it.get("line_gross")
+                if line_gross is None:
+                    tot = it.get("total_amount", 0.0)
+                    t_mode = it.get("tax_mode", "exclusive")
+                    if t_mode == "exclusive":
+                        taxable = tot
+                        gst = round(taxable * 0.18, 2)
+                        line_gross = round(taxable + gst, 2)
+                    else:
+                        line_gross = tot
+                total_gross += line_gross
+        return round(total_gross, 2)
+
+    def _on_discount_target_key(self, event=None):
+        if getattr(self, "_syncing_discount_inputs", False):
+            return
+        self._syncing_discount_inputs = True
+        try:
+            val_str = self.discount_target_entry.get().strip()
+            if not val_str:
+                self.discount_val_entry.delete(0, "end")
+                self.discount_pct_entry.delete(0, "end")
+                self.discount_feedback_lbl.configure(text="")
+                return
+            target = float(val_str)
+            curr_gross = self._get_current_gross_total()
+            if curr_gross > 0 and target <= curr_gross:
+                disc_amt = curr_gross - target
+                disc_pct = (disc_amt / curr_gross) * 100.0
+                self.discount_val_entry.delete(0, "end")
+                self.discount_val_entry.insert(0, f"{disc_amt:.2f}")
+                self.discount_pct_entry.delete(0, "end")
+                self.discount_pct_entry.insert(0, f"{disc_pct:.2f}")
+                self.discount_feedback_lbl.configure(
+                    text=f"Target: ₹{target:,.2f}  |  Discount: -₹{disc_amt:,.2f} ({disc_pct:.2f}%) to be distributed",
+                    text_color=Theme.PRIMARY
+                )
+            elif curr_gross > 0 and target > curr_gross:
+                self.discount_val_entry.delete(0, "end")
+                self.discount_pct_entry.delete(0, "end")
+                self.discount_feedback_lbl.configure(
+                    text=f"Target ₹{target:,.2f} exceeds current total ₹{curr_gross:,.2f}",
+                    text_color=Theme.WARNING
+                )
+            else:
+                self.discount_val_entry.delete(0, "end")
+                self.discount_pct_entry.delete(0, "end")
+                self.discount_feedback_lbl.configure(text="")
+        except ValueError:
+            pass
+        finally:
+            self._syncing_discount_inputs = False
+
+    def _on_discount_val_key(self, event=None):
+        if getattr(self, "_syncing_discount_inputs", False):
+            return
+        self._syncing_discount_inputs = True
+        try:
+            val_str = self.discount_val_entry.get().strip()
+            if not val_str:
+                self.discount_target_entry.delete(0, "end")
+                self.discount_pct_entry.delete(0, "end")
+                self.discount_feedback_lbl.configure(text="")
+                return
+            disc_amt = float(val_str)
+            curr_gross = self._get_current_gross_total()
+            if curr_gross > 0:
+                target = max(0.0, curr_gross - disc_amt)
+                disc_pct = (disc_amt / curr_gross) * 100.0
+                self.discount_target_entry.delete(0, "end")
+                self.discount_target_entry.insert(0, f"{target:.2f}")
+                self.discount_pct_entry.delete(0, "end")
+                self.discount_pct_entry.insert(0, f"{disc_pct:.2f}")
+                self.discount_feedback_lbl.configure(
+                    text=f"Discount: -₹{disc_amt:,.2f} ({disc_pct:.2f}%)  |  Target: ₹{target:,.2f}",
+                    text_color=Theme.PRIMARY
+                )
+            else:
+                self.discount_target_entry.delete(0, "end")
+                self.discount_pct_entry.delete(0, "end")
+                self.discount_feedback_lbl.configure(text="")
+        except ValueError:
+            pass
+        finally:
+            self._syncing_discount_inputs = False
+
+    def _on_discount_pct_key(self, event=None):
+        if getattr(self, "_syncing_discount_inputs", False):
+            return
+        self._syncing_discount_inputs = True
+        try:
+            val_str = self.discount_pct_entry.get().strip()
+            if not val_str:
+                self.discount_target_entry.delete(0, "end")
+                self.discount_val_entry.delete(0, "end")
+                self.discount_feedback_lbl.configure(text="")
+                return
+            disc_pct = float(val_str)
+            curr_gross = self._get_current_gross_total()
+            if curr_gross > 0:
+                disc_amt = round(curr_gross * (disc_pct / 100.0), 2)
+                target = max(0.0, curr_gross - disc_amt)
+                self.discount_target_entry.delete(0, "end")
+                self.discount_target_entry.insert(0, f"{target:.2f}")
+                self.discount_val_entry.delete(0, "end")
+                self.discount_val_entry.insert(0, f"{disc_amt:.2f}")
+                self.discount_feedback_lbl.configure(
+                    text=f"Discount: {disc_pct:.2f}% (-₹{disc_amt:,.2f})  |  Target: ₹{target:,.2f}",
+                    text_color=Theme.PRIMARY
+                )
+            else:
+                self.discount_target_entry.delete(0, "end")
+                self.discount_val_entry.delete(0, "end")
+                self.discount_feedback_lbl.configure(text="")
+        except ValueError:
+            pass
+        finally:
+            self._syncing_discount_inputs = False
+
+    def clear_discount_inputs(self):
+        self._syncing_discount_inputs = True
+        try:
+            self.discount_target_entry.delete(0, "end")
+            self.discount_val_entry.delete(0, "end")
+            self.discount_pct_entry.delete(0, "end")
+            self.discount_feedback_lbl.configure(text="")
+        finally:
+            self._syncing_discount_inputs = False
+
+    def apply_distributed_discount(self):
+        # 1. Collect all active items
+        active_items = []
+        for aw in self.area_widgets:
+            for iw in aw.item_widgets:
+                d = iw.get_data()
+                has_content = (
+                    bool(d.get("description", "").strip()) or
+                    d.get("quantity_sqft", 0.0) > 0 or
+                    d.get("quantity_boxes", 0.0) > 0 or
+                    d.get("rate_per_sqft", 0.0) > 0 or
+                    d.get("rate_per_box", 0.0) > 0 or
+                    d.get("total_amount", 0.0) > 0
+                )
+                if has_content and (d.get("total_amount", 0.0) > 0 or d.get("line_gross", 0.0) > 0):
+                    active_items.append((aw, iw))
+
+        if not active_items:
+            msgbox.showwarning("No Items", "Please add quotation items with valid quantities and rates first.")
+            return
+
+        curr_gross = sum(iw.get_data().get("line_gross", 0.0) for _, iw in active_items)
+        if curr_gross <= 0:
+            msgbox.showwarning("Zero Total", "Current quotation gross total is ₹0.00. Cannot apply discount.")
+            return
+
+        # 2. Determine target
+        target_str = self.discount_target_entry.get().strip()
+        val_str = self.discount_val_entry.get().strip()
+        pct_str = self.discount_pct_entry.get().strip()
+
+        target_total = None
+        if target_str:
+            try:
+                target_total = float(target_str)
+            except ValueError:
+                pass
+        elif val_str:
+            try:
+                disc_amt = float(val_str)
+                target_total = curr_gross - disc_amt
+            except ValueError:
+                pass
+        elif pct_str:
+            try:
+                disc_pct = float(pct_str)
+                target_total = curr_gross * (1.0 - disc_pct / 100.0)
+            except ValueError:
+                pass
+
+        if target_total is None:
+            msgbox.showwarning("Input Required", "Please enter Target Total (₹), Discount (₹), or Discount (%).")
+            return
+
+        if target_total <= 0:
+            msgbox.showerror("Invalid Value", "Target total must be greater than zero.")
+            return
+
+        if target_total > curr_gross:
+            confirm = msgbox.askyesno(
+                "Target Higher Than Current",
+                f"Target total (₹ {target_total:,.2f}) is greater than current total (₹ {curr_gross:,.2f}).\n\nDo you want to adjust prices upward?"
+            )
+            if not confirm:
+                return
+
+        disc_amount = curr_gross - target_total
+        disc_percentage = (disc_amount / curr_gross) * 100.0
+        factor = target_total / curr_gross
+
+        # 3. Apply discount factor to each item row
+        for _, iw in active_items:
+            iw.apply_discount_factor(factor)
+
+        # 4. Check for rounding discrepancy on the line_gross sum
+        new_gross = sum(iw.get_data().get("line_gross", 0.0) for _, iw in active_items)
+        gross_diff = round(target_total - new_gross, 2)
+        if abs(gross_diff) > 0 and active_items:
+            last_aw, last_iw = active_items[-1]
+            tax_str = last_iw.tax_combo.get().strip() if hasattr(last_iw, "tax_combo") else "Excl. 18%"
+            is_incl = "Incl" in tax_str
+            try:
+                current_last_tot = float(last_iw.total_entry.get().strip() or 0.0)
+                if is_incl:
+                    adj_tot = round(current_last_tot + gross_diff, 2)
+                else:
+                    adj_tot = round(current_last_tot + (gross_diff / 1.18), 2)
+
+                if adj_tot > 0:
+                    last_iw.total_entry.delete(0, "end")
+                    last_iw.total_entry.insert(0, f"{adj_tot:.2f}")
+
+                    sqft = float(last_iw.sqft_entry.get().strip() or 0.0)
+                    cov = float(last_iw.cov_entry.get().strip() or 0.0)
+                    boxes = float(last_iw.box_entry.get().strip() or 0.0)
+                    if sqft > 0:
+                        r_sqft = round(adj_tot / sqft, 2)
+                        last_iw.rate_sqft_entry.delete(0, "end")
+                        last_iw.rate_sqft_entry.insert(0, f"{r_sqft:.2f}")
+                        if cov > 0:
+                            last_iw.rate_box_entry.delete(0, "end")
+                            last_iw.rate_box_entry.insert(0, f"{round(r_sqft * cov, 2):.2f}")
+                    elif boxes > 0:
+                        r_box = round(adj_tot / boxes, 2)
+                        last_iw.rate_box_entry.delete(0, "end")
+                        last_iw.rate_box_entry.insert(0, f"{r_box:.2f}")
+            except Exception:
+                pass
+
+        # 5. Clear round off entry to 0.00 so no discount row appears at bottom or in PDF
+        self.round_off_entry.delete(0, "end")
+        self.round_off_entry.insert(0, "0.00")
+
+        # 6. Recalculate all area subtotals & editor totals
+        for aw in self.area_widgets:
+            aw.on_item_recalc()
+        self.recalculate_totals()
+
+        # 7. Update UI feedback
+        self.discount_feedback_lbl.configure(
+            text=f"✓ Distributed {disc_percentage:.2f}% discount (-₹{disc_amount:,.2f}) across all items.\nTarget ₹{target_total:,.2f} achieved with clean 0.00 round off.",
+            text_color=Theme.SUCCESS
+        )
+
+        msgbox.showinfo(
+            "Discount Distributed Successfully",
+            f"A discount of ₹ {disc_amount:,.2f} ({disc_percentage:.2f}%) was distributed across {len(active_items)} item(s).\n\n"
+            f"• Original Quote: ₹ {curr_gross:,.2f}\n"
+            f"• New Target Total: ₹ {target_total:,.2f}\n"
+            f"• All item sqft/box rates have been updated directly.\n"
+            f"• No separate discount row will appear in totals or the exported PDF."
+        )
 
     def recalculate_totals(self):
         total_taxable = 0.0
