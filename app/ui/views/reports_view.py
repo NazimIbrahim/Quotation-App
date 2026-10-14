@@ -170,6 +170,19 @@ class ReportsView(ctk.CTkFrame):
 
         ctk.CTkButton(
             tb_box,
+            text="📑 Quotations Audit (Filter)...",
+            font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11, weight="bold"),
+            fg_color=("#3B82F6", "#2563EB"),
+            hover_color=("#2563EB", "#1D4ED8"),
+            text_color="#FFFFFF",
+            corner_radius=Theme.RADIUS_PILL,
+            border_width=Theme.BORDER_WIDTH_BUTTON,
+            command=self.open_quotations_export_modal,
+            height=30
+        ).pack(side="left", padx=4)
+
+        ctk.CTkButton(
+            tb_box,
             text="⚙️ Custom Date/Month...",
             font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=11),
             fg_color="transparent",
@@ -720,3 +733,8 @@ class ReportsView(ctk.CTkFrame):
             command=modal.destroy,
             height=36
         ).pack(side="right")
+
+    def open_quotations_export_modal(self):
+        """Opens dedicated quotation audit filter and export modal."""
+        from app.ui.components.export_dialog import open_quotations_export_dialog
+        open_quotations_export_dialog(self)

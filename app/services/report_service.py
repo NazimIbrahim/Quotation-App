@@ -770,3 +770,171 @@ class ReportService:
                 ])
 
         return output_filepath
+
+    @staticmethod
+    def get_filtered_quotations_data(start_date=None, end_date=None, sales_person_id=None, status=None):
+        """Aggregates quotations and summary KPIs based on date range, salesperson, and status filter."""
+        from app.services.quotation_service import QuotationService
+
+        quotes = QuotationService.get_all_quotations(
+            status=status,
+            sales_person_id=sales_person_id,
+            start_date=start_date,
+            end_date=end_date,
+        )
+
+        sp_name = "All Sales Associates"
+        if sales_person_id and sales_person_id not in ("All", "all", 0, "0", "All Sales Associates"):
+            sp = SalesPerson.get_or_none(SalesPerson.id == sales_person_id)
+            if sp:
+                sp_name = sp.name
+
+        status_label = status if status and status not in ("All", "all") else "All Statuses"
+        if not status_label.startswith("Only ") and status_label in ("Won", "Open", "In-Review", "Lost"):
+            status_label = f"Only {status_label}"
+
+        total_count = len(quotes)
+        total_net = sum(float(q.net_total or 0.0) for q in quotes)
+        total_gross = sum(float(q.gross_total or 0.0) for q in quotes)
+        total_tax = sum(float(q.total_tax or 0.0) for q in quotes)
+        total_cleared = sum(float(q.get_cleared_payments() or 0.0) for q in quotes)
+
+        won_quotes = [q for q in quotes if q.status == Quotation.STATUS_WON]
+        open_quotes = [q for q in quotes if q.status == Quotation.STATUS_OPEN]
+        in_review_quotes = [q for q in quotes if q.status == Quotation.STATUS_IN_REVIEW]
+        lost_quotes = [q for q in quotes if q.status == Quotation.STATUS_LOST]
+
+        won_total = sum(float(q.net_total or 0.0) for q in won_quotes)
+        won_cleared = sum(float(q.get_cleared_payments() or 0.0) for q in won_quotes)
+        won_balance = sum(float(q.get_outstanding_balance() or 0.0) for q in won_quotes)
+        pipeline_total = sum(float(q.net_total or 0.0) for q in open_quotes + in_review_quotes)
+        outstanding_balance = sum(float(q.get_outstanding_balance() or 0.0) for q in quotes)
+
+        # Period label formatting
+        if start_date and end_date:
+            s_dt = start_date if isinstance(start_date, (date, datetime)) else datetime.strptime(str(start_date), "%Y-%m-%d").date()
+            e_dt = end_date if isinstance(end_date, (date, datetime)) else datetime.strptime(str(end_date), "%Y-%m-%d").date()
+            period_label = f"{s_dt.strftime('%d %b %Y')} to {e_dt.strftime('%d %b %Y')}"
+        elif start_date:
+            s_dt = start_date if isinstance(start_date, (date, datetime)) else datetime.strptime(str(start_date), "%Y-%m-%d").date()
+            period_label = f"From {s_dt.strftime('%d %b %Y')}"
+        elif end_date:
+            e_dt = end_date if isinstance(end_date, (date, datetime)) else datetime.strptime(str(end_date), "%Y-%m-%d").date()
+            period_label = f"Until {e_dt.strftime('%d %b %Y')}"
+        else:
+            period_label = "All Time"
+
+        return {
+            "quotations": quotes,
+            "total_count": total_count,
+            "won_count": len(won_quotes),
+            "open_count": len(open_quotes),
+            "in_review_count": len(in_review_quotes),
+            "lost_count": len(lost_quotes),
+            "total_net": round(total_net, 2),
+            "total_gross": round(total_gross, 2),
+            "total_tax": round(total_tax, 2),
+            "total_cleared": round(total_cleared, 2),
+            "won_total": round(won_total, 2),
+            "won_cleared": round(won_cleared, 2),
+            "won_balance": round(won_balance, 2),
+            "pipeline_total": round(pipeline_total, 2),
+            "outstanding_balance": round(outstanding_balance, 2),
+            "sales_person_name": sp_name,
+            "status_filter": status_label,
+            "period_label": period_label,
+            "start_date": start_date,
+            "end_date": end_date,
+        }
+
+    @staticmethod
+    def export_quotations_csv(output_filepath: str = None, start_date=None, end_date=None, sales_person_id=None, status=None) -> str:
+        """Exports filtered quotations audit report to CSV format."""
+        data = ReportService.get_filtered_quotations_data(
+            start_date=start_date,
+            end_date=end_date,
+            sales_person_id=sales_person_id,
+            status=status
+        )
+
+        status_slug = (data["status_filter"].replace(" ", "_")).replace("-", "_")
+        if not output_filepath:
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            output_filepath = str(OUTPUT_PDF_DIR / f"Quotations_Report_{status_slug}_{timestamp}.csv")
+
+        with open(output_filepath, mode="w", newline="", encoding="utf-8") as f:
+            writer = csv.writer(f)
+            writer.writerow(["=== QUOTATIONS AUDIT REPORT ==="])
+            writer.writerow(["Generated At", datetime.now().strftime("%Y-%m-%d %H:%M:%S")])
+            writer.writerow(["Time Period", data["period_label"]])
+            writer.writerow(["Sales Executive", data["sales_person_name"]])
+            writer.writerow(["Status Filter", data["status_filter"]])
+            writer.writerow(["Total Quotations Found", data["total_count"]])
+            writer.writerow(["Total Net Value (INR)", f"{data['total_net']:.2f}"])
+            writer.writerow(["Won Sales Value (INR)", f"{data['won_total']:.2f}"])
+            writer.writerow(["Pipeline Value (INR)", f"{data['pipeline_total']:.2f}"])
+            writer.writerow(["Cleared Payments (INR)", f"{data['total_cleared']:.2f}"])
+            writer.writerow(["Outstanding Balance (INR)", f"{data['outstanding_balance']:.2f}"])
+            writer.writerow([])
+            writer.writerow([
+                "Sl",
+                "Quotation Number",
+                "Date",
+                "Customer Name",
+                "Customer Phone",
+                "Delivery / Site Address",
+                "Primary Sales Rep",
+                "Assisted By",
+                "Status",
+                "Tax Mode",
+                "Taxable Amount (INR)",
+                "Total GST (INR)",
+                "Gross Total (INR)",
+                "Round Off / Disc (INR)",
+                "Net Total (INR)",
+                "Cleared Payments (INR)",
+                "Outstanding Balance (INR)",
+            ])
+
+            for idx, q in enumerate(data["quotations"], start=1):
+                writer.writerow([
+                    idx,
+                    q.quotation_number,
+                    q.quotation_date.strftime("%Y-%m-%d") if hasattr(q.quotation_date, "strftime") else str(q.quotation_date),
+                    q.customer_name,
+                    q.customer_phone,
+                    q.delivery_address or "",
+                    q.sales_person_name,
+                    q.assisted_by_name or "-",
+                    q.status,
+                    getattr(q, "tax_mode", "exclusive"),
+                    f"{float(q.taxable_amount or 0.0):.2f}",
+                    f"{float(q.total_tax or 0.0):.2f}",
+                    f"{float(q.gross_total or 0.0):.2f}",
+                    f"{float(q.round_off or 0.0):.2f}",
+                    f"{float(q.net_total or 0.0):.2f}",
+                    f"{float(q.get_cleared_payments() or 0.0):.2f}",
+                    f"{float(q.get_outstanding_balance() or 0.0):.2f}",
+                ])
+
+            writer.writerow([
+                "TOTAL",
+                f"{data['total_count']} Quotes",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                data["status_filter"],
+                "",
+                f"{sum(float(q.taxable_amount or 0.0) for q in data['quotations']):.2f}",
+                f"{data['total_tax']:.2f}",
+                f"{data['total_gross']:.2f}",
+                f"{sum(float(q.round_off or 0.0) for q in data['quotations']):.2f}",
+                f"{data['total_net']:.2f}",
+                f"{data['total_cleared']:.2f}",
+                f"{data['outstanding_balance']:.2f}",
+            ])
+
+        return output_filepath

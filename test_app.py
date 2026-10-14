@@ -5,7 +5,7 @@ Tests database, models, calculations, services, PDF rendering, and UI constructi
 import sys
 import os
 from pathlib import Path
-from datetime import date
+from datetime import date, timedelta
 
 # Ensure root in path
 PROJECT_ROOT = Path(__file__).resolve().parent
@@ -881,6 +881,214 @@ def test_system():
     assert "Discount:" not in text_cera
     assert "Discount / Round Off" not in text_cera
     print(f" -> PASS: CERA discount exclusion verified: ₹110k total reduced to ₹100k target by adjusting non-CERA ₹85k -> ₹75k (10,000/85,000 = 11.76%). CERA ₹25k untouched at 0% discount. PDF: {os.path.basename(pdf_cera)}")
+
+    # -------------------------------------------------------------
+    # 22. EXPORT QUOTATION REPORT FOR TIME PERIOD OF SALESPERSONS (WON, OPEN, IN-REVIEW, LOST)
+    # -------------------------------------------------------------
+    print("\n[TEST 22] Verifying Quotation Export for Time Periods of Salespersons (Only Won, Only Open, Only In-Review, Only Lost)...")
+    today = date.today()
+    week_ago = today - timedelta(days=7)
+    two_weeks_ago = today - timedelta(days=14)
+
+    # Prepare quotations with varied statuses and dates
+    # 1. Won Quote (Today, lead_sp)
+    q_won_test = Quotation.create(
+        quotation_number=f"AMA-{today.year}-TEST-WON",
+        quotation_date=today,
+        customer=cust,
+        sales_person=lead_sp,
+        customer_name=cust.name,
+        customer_phone=cust.mobile_number,
+        delivery_address="Audit Test Suite Site A",
+        sales_person_name=lead_sp.name,
+        status=Quotation.STATUS_WON,
+        tax_mode="exclusive",
+        taxable_amount=50000.0,
+        cgst_amount=4500.0,
+        sgst_amount=4500.0,
+        total_tax=9000.0,
+        gross_total=59000.0,
+        round_off=0.0,
+        net_total=59000.0
+    )
+
+    # 2. Open Quote (Today, lead_sp)
+    q_open_test = Quotation.create(
+        quotation_number=f"AMA-{today.year}-TEST-OPEN",
+        quotation_date=today,
+        customer=cust,
+        sales_person=lead_sp,
+        customer_name=cust.name,
+        customer_phone=cust.mobile_number,
+        delivery_address="Audit Test Suite Site B",
+        sales_person_name=lead_sp.name,
+        status=Quotation.STATUS_OPEN,
+        tax_mode="exclusive",
+        taxable_amount=30000.0,
+        cgst_amount=2700.0,
+        sgst_amount=2700.0,
+        total_tax=5400.0,
+        gross_total=35400.0,
+        round_off=0.0,
+        net_total=35400.0
+    )
+
+    # 3. In-Review Quote (5 days ago, asst_sp as lead)
+    q_rev_test = Quotation.create(
+        quotation_number=f"AMA-{today.year}-TEST-REV",
+        quotation_date=today - timedelta(days=5),
+        customer=cust,
+        sales_person=asst_sp,
+        customer_name=cust.name,
+        customer_phone=cust.mobile_number,
+        delivery_address="Audit Test Suite Site C",
+        sales_person_name=asst_sp.name,
+        status=Quotation.STATUS_IN_REVIEW,
+        tax_mode="exclusive",
+        taxable_amount=40000.0,
+        cgst_amount=3600.0,
+        sgst_amount=3600.0,
+        total_tax=7200.0,
+        gross_total=47200.0,
+        round_off=0.0,
+        net_total=47200.0
+    )
+
+    # 4. Lost Quote (10 days ago, lead_sp)
+    q_lost_test = Quotation.create(
+        quotation_number=f"AMA-{today.year}-TEST-LOST",
+        quotation_date=today - timedelta(days=10),
+        customer=cust,
+        sales_person=lead_sp,
+        customer_name=cust.name,
+        customer_phone=cust.mobile_number,
+        delivery_address="Audit Test Suite Site D",
+        sales_person_name=lead_sp.name,
+        status=Quotation.STATUS_LOST,
+        tax_mode="exclusive",
+        taxable_amount=20000.0,
+        cgst_amount=1800.0,
+        sgst_amount=1800.0,
+        total_tax=3600.0,
+        gross_total=23600.0,
+        round_off=0.0,
+        net_total=23600.0
+    )
+
+    # Add partial payment to Won quote to test Cleared & Outstanding calculations
+    Payment.create(
+        quotation=q_won_test,
+        payment_date=today,
+        amount=25000.0,
+        payment_mode="NEFT / Bank Transfer",
+        status=Payment.STATUS_CLEARED,
+        reference_notes="Audit Advance"
+    )
+
+    # Test A: Status filtering
+    won_quotes = QuotationService.get_all_quotations(
+        status="Only Won", start_date=two_weeks_ago, end_date=today
+    )
+    assert all(q.status == Quotation.STATUS_WON for q in won_quotes)
+    assert any(q.id == q_won_test.id for q in won_quotes)
+    assert not any(q.id in (q_open_test.id, q_rev_test.id, q_lost_test.id) for q in won_quotes)
+
+    open_quotes = QuotationService.get_all_quotations(
+        status="Only Open", start_date=two_weeks_ago, end_date=today
+    )
+    assert all(q.status == Quotation.STATUS_OPEN for q in open_quotes)
+    assert any(q.id == q_open_test.id for q in open_quotes)
+
+    rev_quotes = QuotationService.get_all_quotations(
+        status="Only In-Review", start_date=two_weeks_ago, end_date=today
+    )
+    assert all(q.status == Quotation.STATUS_IN_REVIEW for q in rev_quotes)
+    assert any(q.id == q_rev_test.id for q in rev_quotes)
+
+    lost_quotes = QuotationService.get_all_quotations(
+        status="Only Lost", start_date=two_weeks_ago, end_date=today
+    )
+    assert all(q.status == Quotation.STATUS_LOST for q in lost_quotes)
+    assert any(q.id == q_lost_test.id for q in lost_quotes)
+
+    # Test B: Salesperson + Time Period filtering
+    sp_won = QuotationService.get_all_quotations(
+        status="Only Won", sales_person_id=lead_sp.id, start_date=week_ago, end_date=today
+    )
+    assert any(q.id == q_won_test.id for q in sp_won)
+    for q in sp_won:
+        assert (q.sales_person_id == lead_sp.id or q.assisted_by_id == lead_sp.id)
+        assert q.status == Quotation.STATUS_WON
+
+    # Test C: ReportService data aggregation & KPIs
+    rpt_data = ReportService.get_filtered_quotations_data(
+        start_date=two_weeks_ago,
+        end_date=today,
+        sales_person_id=lead_sp.id,
+        status="Only Won"
+    )
+    assert rpt_data["status_filter"] == "Only Won"
+    assert rpt_data["sales_person_name"] == lead_sp.name
+    assert rpt_data["won_count"] >= 1
+    assert rpt_data["total_cleared"] >= 25000.0
+
+    # Test D: Export CSV Report
+    csv_file = ReportService.export_quotations_csv(
+        start_date=two_weeks_ago,
+        end_date=today,
+        sales_person_id=lead_sp.id,
+        status="Only Won"
+    )
+    assert os.path.exists(csv_file)
+    assert os.path.getsize(csv_file) > 100
+    with open(csv_file, mode="r", encoding="utf-8") as f:
+        csv_text = f.read()
+    assert "=== QUOTATIONS AUDIT REPORT ===" in csv_text
+    assert "Only Won" in csv_text
+    assert lead_sp.name in csv_text
+    assert q_won_test.quotation_number in csv_text
+    print(f" -> PASS: CSV Export verified: {os.path.basename(csv_file)}")
+
+    # Test E: Export PDF Report
+    pdf_report_path = ReportPDFGenerator.generate_quotations_report_pdf(
+        start_date=two_weeks_ago,
+        end_date=today,
+        sales_person_id=lead_sp.id,
+        status="Only Won"
+    )
+    assert os.path.exists(pdf_report_path)
+    assert os.path.getsize(pdf_report_path) > 1000
+
+    pdf_doc = pdfium.PdfDocument(pdf_report_path)
+    pdf_text = "".join(p.get_textpage().get_text_range() for p in pdf_doc)
+    assert "QUOTATIONS AUDIT REPORT" in pdf_text
+    assert "Only Won" in pdf_text
+    assert lead_sp.name in pdf_text
+    assert q_won_test.quotation_number in pdf_text
+    print(f" -> PASS: PDF Report verified with corporate branding, KPI cards, itemized table, and audit sign-off: {os.path.basename(pdf_report_path)}")
+
+    # Test F: Test Open & Lost PDF Exports
+    pdf_open = ReportPDFGenerator.generate_quotations_report_pdf(
+        start_date=two_weeks_ago,
+        end_date=today,
+        status="Only Open"
+    )
+    assert os.path.exists(pdf_open)
+    doc_open = pdfium.PdfDocument(pdf_open)
+    text_open = "".join(p.get_textpage().get_text_range() for p in doc_open)
+    assert "Only Open" in text_open
+    print(f" -> PASS: Only Open PDF report verified: {os.path.basename(pdf_open)}")
+
+    pdf_lost = ReportPDFGenerator.generate_quotations_report_pdf(
+        start_date=two_weeks_ago,
+        end_date=today,
+        status="Only Lost"
+    )
+    assert os.path.exists(pdf_lost)
+    doc_lost = pdfium.PdfDocument(pdf_lost)
+    text_lost = "".join(p.get_textpage().get_text_range() for p in doc_lost)
+    assert "Only Lost" in text_lost
+    print(f" -> PASS: Only Lost PDF report verified: {os.path.basename(pdf_lost)}")
 
     print("\n" + "=" * 65)
     print("  ALL CORE MODULES AND TESTS COMPLETED WITH 100% SUCCESS!")

@@ -59,18 +59,51 @@ class QuotationService:
         return f"{prefix}{next_seq:04d}"
 
     @staticmethod
-    def get_all_quotations(status=None, sales_person_id=None, search_query=None):
+    def get_all_quotations(status=None, sales_person_id=None, search_query=None, start_date=None, end_date=None):
         """Fetches quotations with optional filtering and pre-aggregates cleared payments in a single query."""
         query = Quotation.select().order_by(Quotation.id.desc())
         
-        if status and status != "All":
-            query = query.where(Quotation.status == status)
+        if status:
+            s_clean = str(status).strip()
+            if s_clean.lower().startswith("only "):
+                s_clean = s_clean[5:].strip()
+            if s_clean.lower() in ("in review", "in-review"):
+                s_clean = Quotation.STATUS_IN_REVIEW
+            elif s_clean.lower() == "won":
+                s_clean = Quotation.STATUS_WON
+            elif s_clean.lower() == "open":
+                s_clean = Quotation.STATUS_OPEN
+            elif s_clean.lower() == "lost":
+                s_clean = Quotation.STATUS_LOST
+
+            if s_clean not in ("All", "All Statuses", ""):
+                query = query.where(Quotation.status == s_clean)
             
-        if sales_person_id:
-            query = query.where(
-                (Quotation.sales_person_id == sales_person_id) |
-                (Quotation.assisted_by_id == sales_person_id)
-            )
+        if sales_person_id and sales_person_id not in ("All", "all", 0, "0", "All Sales Associates"):
+            try:
+                sp_id = int(sales_person_id)
+                query = query.where(
+                    (Quotation.sales_person_id == sp_id) |
+                    (Quotation.assisted_by_id == sp_id)
+                )
+            except (ValueError, TypeError):
+                pass
+
+        if start_date:
+            if isinstance(start_date, str):
+                try:
+                    start_date = datetime.strptime(start_date, "%Y-%m-%d").date()
+                except ValueError:
+                    pass
+            query = query.where(Quotation.quotation_date >= start_date)
+
+        if end_date:
+            if isinstance(end_date, str):
+                try:
+                    end_date = datetime.strptime(end_date, "%Y-%m-%d").date()
+                except ValueError:
+                    pass
+            query = query.where(Quotation.quotation_date <= end_date)
             
         if search_query:
             pattern = f"%{search_query}%"

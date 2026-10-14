@@ -965,3 +965,180 @@ class ReportPDFGenerator:
 
         doc.build(story, canvasmaker=NumberedCanvas)
         return output_filepath
+
+    # =========================================================================
+    # 4. GENERATE FILTERED QUOTATIONS REPORT PDF
+    # =========================================================================
+    @classmethod
+    def generate_quotations_report_pdf(
+        cls,
+        output_filepath: str = None,
+        start_date=None,
+        end_date=None,
+        sales_person_id=None,
+        status=None
+    ) -> str:
+        """Generates corporate executive PDF audit report of quotations filtered by date range, salesperson & status."""
+        data = ReportService.get_filtered_quotations_data(
+            start_date=start_date,
+            end_date=end_date,
+            sales_person_id=sales_person_id,
+            status=status
+        )
+
+        status_slug = (data["status_filter"].replace(" ", "_")).replace("-", "_")
+        if not output_filepath:
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            output_filepath = str(OUTPUT_PDF_DIR / f"Quotations_Report_{status_slug}_{timestamp}.pdf")
+
+        styles = cls._get_styles()
+
+        status_style_won = ParagraphStyle(
+            "StatusWon", parent=styles["td_center"],
+            fontName="Helvetica-Bold", textColor=cls.SUCCESS, fontSize=7, leading=9
+        )
+        status_style_open = ParagraphStyle(
+            "StatusOpen", parent=styles["td_center"],
+            fontName="Helvetica-Bold", textColor=cls.SECONDARY, fontSize=7, leading=9
+        )
+        status_style_rev = ParagraphStyle(
+            "StatusRev", parent=styles["td_center"],
+            fontName="Helvetica-Bold", textColor=cls.WARNING, fontSize=7, leading=9
+        )
+        status_style_lost = ParagraphStyle(
+            "StatusLost", parent=styles["td_center"],
+            fontName="Helvetica-Bold", textColor=cls.DANGER, fontSize=7, leading=9
+        )
+
+        doc = SimpleDocTemplate(
+            output_filepath,
+            pagesize=A4,
+            leftMargin=24,
+            rightMargin=24,
+            topMargin=24,
+            bottomMargin=24,
+        )
+
+        story = []
+
+        # 1. Header Banner
+        header_elems = cls._create_header_elements(
+            title_str="QUOTATIONS AUDIT REPORT",
+            subtitle_str=f"Timeframe: {data['period_label']}  |  Salesperson: {data['sales_person_name']}  |  Filter: {data['status_filter']}",
+            styles=styles
+        )
+        story.extend(header_elems)
+        story.append(Spacer(1, cls.SECTION_GAP))
+
+        # 2. KPI Summary Cards
+        kpi_cards = [
+            ("TOTAL QUOTATIONS", f"{data['total_count']}", f"Won: {data['won_count']} | Open: {data['open_count']}", "#1565C0"),
+            ("TOTAL VALUATION", f"Rs. {data['total_net']:,.0f}", f"Pipeline: Rs. {data['pipeline_total']:,.0f}", "#0F172A"),
+            ("CLEARED PAYMENTS", f"Rs. {data['total_cleared']:,.0f}", "Realized collections", "#059669"),
+            ("OUTSTANDING", f"Rs. {data['outstanding_balance']:,.0f}", "Pending balance", "#D97706" if data["outstanding_balance"] > 0 else "#059669"),
+        ]
+        story.append(cls._create_kpi_cards_table(kpi_cards, styles))
+        story.append(Spacer(1, cls.SECTION_GAP))
+
+        # 3. Itemized Quotation Table
+        story.append(Paragraph("<b><font color='#1565C0'>■</font> ITEMIZED QUOTATION REGISTRY</b>", styles["sec_title"]))
+        story.append(Spacer(1, 4))
+
+        # Column widths summing to 547 pt:
+        cols = [20, 92, 108, 85, 66, 60, 60, 56]
+        table_data = [[
+            Paragraph("NO.", styles["th"]),
+            Paragraph("QUOTE # / DATE", styles["th"]),
+            Paragraph("CUSTOMER & PHONE", styles["th"]),
+            Paragraph("SALES REP", styles["th"]),
+            Paragraph("NET TOTAL", styles["th"]),
+            Paragraph("CLEARED", styles["th"]),
+            Paragraph("OUTSTANDING", styles["th"]),
+            Paragraph("STATUS", styles["th"]),
+        ]]
+
+        if not data["quotations"]:
+            empty_p = Paragraph("<font color='#64748B'><i>No quotations found matching the selected timeframe and salesperson filters.</i></font>", styles["td_center"])
+            table_data.append([empty_p, "", "", "", "", "", "", ""])
+        else:
+            for idx, q in enumerate(data["quotations"], start=1):
+                if hasattr(q.quotation_date, "strftime"):
+                    d_str = q.quotation_date.strftime("%d %b %Y")
+                else:
+                    d_str = str(q.quotation_date)
+
+                c_name = (q.customer_name or "")[:25]
+                c_phone = q.customer_phone or "-"
+
+                rep_str = f"<b>{(q.sales_person_name or '')[:18]}</b>"
+                if q.assisted_by_name:
+                    rep_str += f"<br/><font color='#64748B'>Asst: {(q.assisted_by_name or '')[:14]}</font>"
+
+                cleared_val = float(q.get_cleared_payments() or 0.0)
+                balance_val = float(q.get_outstanding_balance() or 0.0)
+
+                cleared_str = f"Rs. {cleared_val:,.0f}" if cleared_val > 0 else "-"
+                balance_str = f"Rs. {balance_val:,.0f}" if balance_val > 0 else "-"
+
+                st = q.status
+                if st == Quotation.STATUS_WON:
+                    st_p = Paragraph("<b>WON</b>", status_style_won)
+                elif st == Quotation.STATUS_OPEN:
+                    st_p = Paragraph("<b>OPEN</b>", status_style_open)
+                elif st == Quotation.STATUS_IN_REVIEW:
+                    st_p = Paragraph("<b>IN REVIEW</b>", status_style_rev)
+                elif st == Quotation.STATUS_LOST:
+                    st_p = Paragraph("<b>LOST</b>", status_style_lost)
+                else:
+                    st_p = Paragraph(f"<b>{(st or '').upper()}</b>", styles["td_center"])
+
+                table_data.append([
+                    Paragraph(str(idx), styles["td_center"]),
+                    Paragraph(f"<b>{q.quotation_number}</b><br/><font color='#64748B'>{d_str}</font>", styles["td"]),
+                    Paragraph(f"<b>{c_name}</b><br/><font color='#64748B'>{c_phone}</font>", styles["td"]),
+                    Paragraph(rep_str, styles["td"]),
+                    Paragraph(f"<b>Rs. {float(q.net_total or 0.0):,.0f}</b>", styles["td_bold_right"]),
+                    Paragraph(f"<font color='#059669'>{cleared_str}</font>", styles["td_right"]),
+                    Paragraph(f"<font color='#DC2626'>{balance_str}</font>" if balance_val > 0 else balance_str, styles["td_right"]),
+                    st_p,
+                ])
+
+        table_data.append([
+            Paragraph("", styles["total_td"]),
+            Paragraph(f"<b>TOTAL ({data['total_count']})</b>", styles["total_td"]),
+            Paragraph("", styles["total_td"]),
+            Paragraph("Team Total", styles["total_td"]),
+            Paragraph(f"Rs. {data['total_net']:,.0f}", styles["total_td_right"]),
+            Paragraph(f"Rs. {data['total_cleared']:,.0f}", styles["total_td_right"]),
+            Paragraph(f"Rs. {data['outstanding_balance']:,.0f}", styles["total_td_right"]),
+            Paragraph(f"<b>{data['status_filter']}</b>", styles["total_td"]),
+        ])
+
+        q_table = Table(table_data, colWidths=cols, repeatRows=1)
+        t_style = [
+            ('BACKGROUND', (0, 0), (-1, 0), cls.PRIMARY),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ('TOPPADDING', (0, 0), (-1, -1), 3.5),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 3.5),
+            ('LEFTPADDING', (0, 0), (-1, -1), 3),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 3),
+            ('INNERGRID', (0, 0), (-1, -1), 0.5, cls.BORDER_LIGHT),
+            ('BOX', (0, 0), (-1, -1), 0.5, cls.BORDER_LIGHT),
+            ('BACKGROUND', (0, -1), (-1, -1), cls.DARK_NAVY),
+        ]
+        if not data["quotations"]:
+            t_style.append(('SPAN', (0, 1), (-1, 1)))
+        else:
+            for r in range(1, len(data["quotations"]) + 1):
+                if r % 2 == 0:
+                    t_style.append(('BACKGROUND', (0, r), (-1, r), cls.BG_LIGHT))
+
+        q_table.setStyle(TableStyle(t_style))
+        story.append(q_table)
+        story.append(Spacer(1, cls.SECTION_GAP))
+
+        # 4. Audit Sign-off
+        story.append(KeepTogether([cls._create_sign_off_table(styles)]))
+
+        doc.build(story, canvasmaker=NumberedCanvas)
+        return output_filepath

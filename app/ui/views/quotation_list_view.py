@@ -8,6 +8,7 @@ import tkinter.messagebox as msgbox
 import customtkinter as ctk
 
 from app.ui.theme import Theme
+from app.ui.components.export_dialog import open_quotations_export_dialog
 from app.services.quotation_service import QuotationService
 from app.services.pdf_service import CeramicPDFGenerator
 from app.database.models import Quotation, SalesPerson
@@ -52,6 +53,21 @@ class QuotationListView(ctk.CTkFrame):
         btn_box = ctk.CTkFrame(top_bar, fg_color="transparent")
         btn_box.pack(side="right")
 
+        export_btn = ctk.CTkButton(
+            btn_box,
+            text="📊 Export Report",
+            font=ctk.CTkFont(family=Theme.FONT_FAMILY, size=12, weight="bold"),
+            fg_color=Theme.BTN_SECONDARY_BG,
+            text_color=(Theme.BLACK, Theme.PAPER),
+            hover_color=Theme.BTN_SECONDARY_HOVER,
+            border_width=Theme.BORDER_WIDTH_BUTTON,
+            border_color=Theme.BTN_SECONDARY_BORDER,
+            corner_radius=Theme.RADIUS_PILL,
+            command=self.open_export_modal,
+            height=36
+        )
+        export_btn.pack(side="left", padx=(0, 8))
+
         new_btn = ctk.CTkButton(
             btn_box,
             text="+ Create Quotation",
@@ -63,7 +79,7 @@ class QuotationListView(ctk.CTkFrame):
             command=lambda: self.controller.show_view("quotation_editor", None),
             height=36
         )
-        new_btn.pack(side="right", padx=(8, 0))
+        new_btn.pack(side="left")
 
         # 2. Filter & Search Controls Bar
         filter_bar = ctk.CTkFrame(self, fg_color="transparent")
@@ -545,3 +561,11 @@ class QuotationListView(ctk.CTkFrame):
         if confirm:
             QuotationService.delete_quotation(quote_id)
             self.refresh_table()
+
+    def open_export_modal(self):
+        """Opens modal dialog to filter quotations by timeframe, salesperson and status for PDF/CSV export."""
+        open_quotations_export_dialog(
+            parent=self,
+            default_status=self.selected_status,
+            default_salesperson_id=self.selected_salesperson_id
+        )
